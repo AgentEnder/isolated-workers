@@ -40,6 +40,7 @@ isolated-workers/
 ## Current Phase
 
 **Phase**: Initial Setup (Plans 1-2)
+
 - Defining repository structure
 - Establishing build tooling (Nx + pnpm)
 - Documenting design decisions
@@ -50,6 +51,7 @@ isolated-workers/
 ### Source of Inspiration
 
 This project extracts patterns from Nx's isolated plugin architecture:
+
 - Worker spawning and socket management
 - Type-safe messaging with transaction IDs
 - Connection lifecycle management
@@ -75,7 +77,7 @@ This project extracts patterns from Nx's isolated plugin architecture:
 ### Communication Pattern
 
 - Request/response with transaction IDs (not just fire-and-forget)
-- Unix domain sockets (*nix) / named pipes (Windows)
+- Unix domain sockets (\*nix) / named pipes (Windows)
 - Timeout guards (default 10 minutes, configurable)
 - Pending operation tracking
 - Message definitions use `DefineMessages<T>` pattern (from Nx3)
@@ -97,6 +99,13 @@ This project extracts patterns from Nx's isolated plugin architecture:
 
 ## Development Guidelines
 
+### Installing Dependencies
+
+- In general, avoid it. Only add dependencies when absolutely necessary, or explicitly instructed.
+- When adding dependencies, dev tooling that is going to be used across multiple packages should be added at the root level.
+- Any package-specific dependencies should be added to that package's `package.json`.
+- Use `pnpm` for package management, and store versions in `pnpm-workspace.yaml`'s default catalog.
+
 ### Code Style
 
 - Follow existing patterns from Nx isolation code
@@ -111,6 +120,7 @@ This project extracts patterns from Nx's isolated plugin architecture:
 2. Consider the type safety implications of your changes
 3. Reference design decisions when relevant to specific work (`.ai/design-decisions/`)
 4. Check implementation plans when needed for context (`.ai/plans/`)
+5. **Keep plan status in sync**: When working on an implementation phase that ties back to a plan in `.ai/plans/`, update the plan status in the README to reflect current work (e.g., mark as "In Progress" when starting, "Completed" when finished)
 
 ### When Stuck
 
@@ -119,33 +129,52 @@ This project extracts patterns from Nx's isolated plugin architecture:
 3. Review design decisions when relevant to your work
 4. Ask clarifying questions about requirements
 
-## Current Task Status
+### After Changes
 
-- [x] Design decisions documented
-- [x] Architecture plan updated with Nx3 messaging patterns
-- [ ] Nx monorepo initialized
-- [ ] pnpm workspace configured
-- [ ] Core library package structure created
-- [ ] Worker spawning mechanism implemented
-- [ ] Type-safe messaging layer implemented
-- [ ] Tests written and passing
+1. Run typechecks and linting: `pnpm run-many -t  lint,build`
+2. Run unit tests: `pnpm nx run-many -t test`
+3. Run e2e: `pnpm nx run-many -t e2e`
 
-## Next Steps
+## AI Workflow
 
-After this initial setup:
-1. Implement worker spawner with socket server
-2. Build connection manager with retry logic
-3. Create messaging layer with DefineMessages pattern and type helpers
-4. Add tests for all components (unit + type tests)
-5. Set up documentation site
-6. Create initial examples
+This project uses a structured approach for AI agent collaboration. See [`.ai/README.md`](./.ai/README.md) for full details.
+
+### Quick Reference
+
+**Three Layers of Documentation:**
+
+1. **Plans** (`.ai/plans/`): **WHAT & WHY** — Consumer workflows, edge cases, success criteria
+2. **Design Decisions** (`.ai/design-decisions/`): **WHY** — ADRs documenting key choices
+3. **Implementation** (`.ai/implementation/`): **HOW** — Technical specs, file structure, code
+
+### Working with Plans
+
+- Plans provide guidance, not implementation details
+- Read the plan first to understand the problem
+- Update plan status in `.ai/plans/README.md` as you work
+- Create implementation docs in `.ai/implementation/` for the HOW
+
+### Plan vs Implementation
+
+| Plan (`.ai/plans/`) | Implementation (`.ai/implementation/`) |
+|---------------------|----------------------------------------|
+| "Workers need graceful shutdown" | "Create `src/core/worker.ts` with `shutdown()` method" |
+| "Support cross-platform sockets" | "Implement `SocketAdapter` interface with Unix/Windows adapters" |
+| "Type-safe messaging" | "Define `MessageOf<T, K>` helper type in `src/types/messages.ts`" |
+
+### Key Rule
+
+**Never mix planning and implementation details.** Plans stay high-level; implementation gets specific.
 
 ## Contact
 
 For questions about architecture or decisions, reference `.ai/` folder:
+
+- AI workflow guide: `.ai/README.md`
 - Design decisions: `.ai/design-decisions/`
 - Implementation plans: `.ai/plans/`
 - Nx isolation patterns: `../nx/packages/nx/src/project-graph/plugins/isolation/`
 
 For questions about monorepo setup or testing patterns, reference:
+
 - cli-forge repository: `../cli-forge`
