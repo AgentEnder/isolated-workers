@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "../dist/out-tsc/examples",
+    "emitDeclarationOnly": true,
+    "composite": true
+  },
+  "references": [
+    {
+      "path": "../packages/isolated-workers/tsconfig.lib.json"
+    }
+  ],
+  "include": ["**/*.ts"]
+}

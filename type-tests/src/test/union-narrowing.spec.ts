@@ -1,6 +1,10 @@
 import { describe, test, expect } from 'vitest';
 import { loadFixture } from '../lib/compiler.js';
 import * as ts from 'typescript';
+import {
+  getFirstDeclaration,
+  getRequiredProperty,
+} from '../lib/assertions.js';
 
 describe('Union Narrowing', () => {
   describe('ProcessEvent discriminated union', () => {
@@ -11,16 +15,13 @@ describe('Union Narrowing', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'ProcessEventMessage');
 
-      expect(processEventSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        processEventSymbol!.declarations![0]
+        getFirstDeclaration(processEventSymbol)
       );
 
-      const payloadProp = type.getProperty('payload');
-      expect(payloadProp).toBeDefined();
+      const payloadProp = getRequiredProperty(type, 'payload');
 
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
 
       // Payload should be a union
       expect(payloadType.isUnion()).toBe(true);
@@ -44,11 +45,11 @@ describe('Union Narrowing', () => {
         .find((s) => s.name === 'ProcessEventMessage');
 
       const type = typeChecker.getTypeAtLocation(
-        processEventSymbol!.declarations![0]
+        getFirstDeclaration(processEventSymbol)
       );
 
-      const payloadProp = type.getProperty('payload');
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadProp = getRequiredProperty(type, 'payload');
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
 
       if (payloadType.isUnion()) {
         const discriminatorValues = payloadType.types.map((t) => {
@@ -74,11 +75,11 @@ describe('Union Narrowing', () => {
         .find((s) => s.name === 'ProcessEventMessage');
 
       const type = typeChecker.getTypeAtLocation(
-        processEventSymbol!.declarations![0]
+        getFirstDeclaration(processEventSymbol)
       );
 
-      const payloadProp = type.getProperty('payload');
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadProp = getRequiredProperty(type, 'payload');
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
 
       if (payloadType.isUnion()) {
         // Find the user type member
@@ -92,8 +93,10 @@ describe('Union Narrowing', () => {
         });
 
         expect(userType).toBeDefined();
-        expect(userType!.getProperty('userId')).toBeDefined();
-        expect(userType!.getProperty('action')).toBeDefined();
+        if (userType) {
+          expect(userType.getProperty('userId')).toBeDefined();
+          expect(userType.getProperty('action')).toBeDefined();
+        }
       }
     });
 
@@ -105,11 +108,11 @@ describe('Union Narrowing', () => {
         .find((s) => s.name === 'ProcessEventMessage');
 
       const type = typeChecker.getTypeAtLocation(
-        processEventSymbol!.declarations![0]
+        getFirstDeclaration(processEventSymbol)
       );
 
-      const payloadProp = type.getProperty('payload');
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadProp = getRequiredProperty(type, 'payload');
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
 
       if (payloadType.isUnion()) {
         // Find the error type member
@@ -123,8 +126,10 @@ describe('Union Narrowing', () => {
         });
 
         expect(errorType).toBeDefined();
-        expect(errorType!.getProperty('code')).toBeDefined();
-        expect(errorType!.getProperty('message')).toBeDefined();
+        if (errorType) {
+          expect(errorType.getProperty('code')).toBeDefined();
+          expect(errorType.getProperty('message')).toBeDefined();
+        }
       }
     });
   });
@@ -137,16 +142,13 @@ describe('Union Narrowing', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'FetchDataResult');
 
-      expect(fetchDataResultSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        fetchDataResultSymbol!.declarations![0]
+        getFirstDeclaration(fetchDataResultSymbol)
       );
 
-      const payloadProp = type.getProperty('payload');
-      expect(payloadProp).toBeDefined();
+      const payloadProp = getRequiredProperty(type, 'payload');
 
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
 
       // Should be a union
       expect(payloadType.isUnion()).toBe(true);
@@ -167,11 +169,11 @@ describe('Union Narrowing', () => {
         .find((s) => s.name === 'FetchDataResult');
 
       const type = typeChecker.getTypeAtLocation(
-        fetchDataResultSymbol!.declarations![0]
+        getFirstDeclaration(fetchDataResultSymbol)
       );
 
-      const payloadProp = type.getProperty('payload');
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadProp = getRequiredProperty(type, 'payload');
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
 
       if (payloadType.isUnion()) {
         const successType = payloadType.types.find((t) => {
@@ -184,7 +186,9 @@ describe('Union Narrowing', () => {
         });
 
         expect(successType).toBeDefined();
-        expect(successType!.getProperty('data')).toBeDefined();
+        if (successType) {
+          expect(successType.getProperty('data')).toBeDefined();
+        }
       }
     });
 
@@ -196,11 +200,11 @@ describe('Union Narrowing', () => {
         .find((s) => s.name === 'FetchDataResult');
 
       const type = typeChecker.getTypeAtLocation(
-        fetchDataResultSymbol!.declarations![0]
+        getFirstDeclaration(fetchDataResultSymbol)
       );
 
-      const payloadProp = type.getProperty('payload');
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadProp = getRequiredProperty(type, 'payload');
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
 
       if (payloadType.isUnion()) {
         const errorType = payloadType.types.find((t) => {
@@ -213,7 +217,9 @@ describe('Union Narrowing', () => {
         });
 
         expect(errorType).toBeDefined();
-        expect(errorType!.getProperty('error')).toBeDefined();
+        if (errorType) {
+          expect(errorType.getProperty('error')).toBeDefined();
+        }
       }
     });
   });
@@ -226,10 +232,8 @@ describe('Union Narrowing', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'AllServiceMessages');
 
-      expect(allMessagesSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        allMessagesSymbol!.declarations![0]
+        getFirstDeclaration(allMessagesSymbol)
       );
 
       // Should be a union
@@ -267,10 +271,8 @@ describe('Union Narrowing', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'ServiceMessages');
 
-      expect(serviceMessagesSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        serviceMessagesSymbol!.declarations![0]
+        getFirstDeclaration(serviceMessagesSymbol)
       );
 
       // Should have processEvent property
@@ -290,11 +292,11 @@ describe('Union Narrowing', () => {
         .find((s) => s.name === 'ProcessEventMessage');
 
       const type = typeChecker.getTypeAtLocation(
-        processEventSymbol!.declarations![0]
+        getFirstDeclaration(processEventSymbol)
       );
 
-      const payloadProp = type.getProperty('payload');
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadProp = getRequiredProperty(type, 'payload');
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
 
       // The payload should be a union where each member has a discriminant
       expect(payloadType.isUnion()).toBe(true);
@@ -326,12 +328,20 @@ describe('Union Narrowing', () => {
         });
 
         // userType has userId, systemType does not
-        expect(userType!.getProperty('userId')).toBeDefined();
-        expect(systemType!.getProperty('userId')).toBeUndefined();
+        if (userType) {
+          expect(userType.getProperty('userId')).toBeDefined();
+        }
+        if (systemType) {
+          expect(systemType.getProperty('userId')).toBeUndefined();
+        }
 
         // systemType has event, userType does not
-        expect(systemType!.getProperty('event')).toBeDefined();
-        expect(userType!.getProperty('event')).toBeUndefined();
+        if (systemType) {
+          expect(systemType.getProperty('event')).toBeDefined();
+        }
+        if (userType) {
+          expect(userType.getProperty('event')).toBeUndefined();
+        }
       }
     });
   });

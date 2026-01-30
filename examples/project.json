@@ -1,0 +1,9 @@
+{
+  "name": "examples",
+  "targets": {
+    "run-example": {
+      "command": "tsx --tsconfig {projectRoot}/tsconfig.json {projectRoot}/{args.example}/host.ts"
+    }
+  },
+  "implicitDependencies": ["isolated-workers"]
+}

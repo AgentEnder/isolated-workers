@@ -1,6 +1,10 @@
 import * as ts from 'typescript';
 import { describe, expect, test } from 'vitest';
 import { loadFixture } from '../lib/compiler.js';
+import {
+  getFirstDeclaration,
+  getRequiredProperty,
+} from '../lib/assertions.js';
 
 describe('Type Helpers', () => {
   describe('MessageOf type', () => {
@@ -12,10 +16,8 @@ describe('Type Helpers', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'LoadMessage');
 
-      expect(loadMessageSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        loadMessageSymbol!.declarations![0]
+        getFirstDeclaration(loadMessageSymbol)
       );
 
       // Check that LoadMessage has the required properties
@@ -24,10 +26,9 @@ describe('Type Helpers', () => {
       expect(type.getProperty('payload')).toBeDefined();
 
       // Check payload type
-      const payloadProp = type.getProperty('payload');
-      expect(payloadProp).toBeDefined();
+      const payloadProp = getRequiredProperty(type, 'payload');
 
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
       expect(payloadType.getProperty('config')).toBeDefined();
     });
 
@@ -38,16 +39,13 @@ describe('Type Helpers', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'ComputeMessage');
 
-      expect(computeMessageSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        computeMessageSymbol!.declarations![0]
+        getFirstDeclaration(computeMessageSymbol)
       );
 
-      const payloadProp = type.getProperty('payload');
-      expect(payloadProp).toBeDefined();
+      const payloadProp = getRequiredProperty(type, 'payload');
 
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
       expect(payloadType.getProperty('data')).toBeDefined();
     });
 
@@ -58,16 +56,13 @@ describe('Type Helpers', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'ShutdownMessage');
 
-      expect(shutdownMessageSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        shutdownMessageSymbol!.declarations![0]
+        getFirstDeclaration(shutdownMessageSymbol)
       );
 
-      const payloadProp = type.getProperty('payload');
-      expect(payloadProp).toBeDefined();
+      const payloadProp = getRequiredProperty(type, 'payload');
 
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
       const forceProp = payloadType.getProperty('force');
       expect(forceProp).toBeDefined();
     });
@@ -81,10 +76,8 @@ describe('Type Helpers', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'LoadResult');
 
-      expect(loadResultSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        loadResultSymbol!.declarations![0]
+        getFirstDeclaration(loadResultSymbol)
       );
 
       // Check that it has tx, type, and payload
@@ -93,8 +86,8 @@ describe('Type Helpers', () => {
       expect(type.getProperty('payload')).toBeDefined();
 
       // Check payload type
-      const payloadProp = type.getProperty('payload');
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadProp = getRequiredProperty(type, 'payload');
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
       expect(payloadType.getProperty('loaded')).toBeDefined();
     });
 
@@ -105,14 +98,12 @@ describe('Type Helpers', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'ComputeResult');
 
-      expect(computeResultSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        computeResultSymbol!.declarations![0]
+        getFirstDeclaration(computeResultSymbol)
       );
 
-      const payloadProp = type.getProperty('payload');
-      const payloadType = typeChecker.getTypeOfSymbol(payloadProp!);
+      const payloadProp = getRequiredProperty(type, 'payload');
+      const payloadType = typeChecker.getTypeOfSymbol(payloadProp);
       expect(payloadType.getProperty('sum')).toBeDefined();
     });
   });
@@ -125,10 +116,8 @@ describe('Type Helpers', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'MessagesWithResults');
 
-      expect(withResultSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        withResultSymbol!.declarations![0]
+        getFirstDeclaration(withResultSymbol)
       );
 
       // Should be a union type
@@ -155,10 +144,8 @@ describe('Type Helpers', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'AllWorkerMessages');
 
-      expect(allMessagesSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        allMessagesSymbol!.declarations![0]
+        getFirstDeclaration(allMessagesSymbol)
       );
 
       // Should be a union type
@@ -167,10 +154,9 @@ describe('Type Helpers', () => {
       if (type.isUnion()) {
         // Check that we can find the type property in each union member
         for (const member of type.types) {
-          const typeProp = member.getProperty('type');
-          expect(typeProp).toBeDefined();
+          const typeProp = getRequiredProperty(member, 'type');
 
-          const typePropType = typeChecker.getTypeOfSymbol(typeProp!);
+          const typePropType = typeChecker.getTypeOfSymbol(typeProp);
           const typeValue = typeChecker.typeToString(typePropType);
           expect(['"load"', '"compute"', '"shutdown"']).toContain(typeValue);
         }
@@ -186,10 +172,8 @@ describe('Type Helpers', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'AllWorkerResults');
 
-      expect(allResultsSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        allResultsSymbol!.declarations![0]
+        getFirstDeclaration(allResultsSymbol)
       );
 
       // Should be a union type
@@ -198,10 +182,9 @@ describe('Type Helpers', () => {
       if (type.isUnion()) {
         // Should only have loadResult and computeResult
         for (const member of type.types) {
-          const typeProp = member.getProperty('type');
-          expect(typeProp).toBeDefined();
+          const typeProp = getRequiredProperty(member, 'type');
 
-          const typePropType = typeChecker.getTypeOfSymbol(typeProp!);
+          const typePropType = typeChecker.getTypeOfSymbol(typeProp);
           const typeValue = typeChecker.typeToString(typePropType);
           expect(['"loadResult"', '"computeResult"']).toContain(typeValue);
         }
@@ -218,10 +201,8 @@ describe('Type Helpers', () => {
         .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias)
         .find((s) => s.name === 'WorkerMessages');
 
-      expect(workerMessagesSymbol).toBeDefined();
-
       const type = typeChecker.getTypeAtLocation(
-        workerMessagesSymbol!.declarations![0]
+        getFirstDeclaration(workerMessagesSymbol)
       );
 
       // The type should have load, compute, and shutdown properties

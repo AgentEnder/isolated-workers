@@ -1,0 +1,20 @@
+{
+  "name": "isolated-workers-examples",
+  "private": true,
+  "dependencies": {
+    "isolated-workers": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  },
+  "scripts": {
+    "run:basic-ping": "tsx --tsconfig tsconfig.json basic-ping/host.ts",
+    "run:error-handling": "tsx --tsconfig tsconfig.json error-handling/host.ts",
+    "run:middleware": "tsx --tsconfig tsconfig.json middleware/host.ts",
+    "run:timeout-config": "tsx --tsconfig tsconfig.json timeout-config/host.ts",
+    "run:custom-serializer": "tsx --tsconfig tsconfig.json custom-serializer/host.ts",
+    "run:worker-lifecycle": "tsx --tsconfig tsconfig.json worker-lifecycle/host.ts"
+  },
+  "type": "module"
+}

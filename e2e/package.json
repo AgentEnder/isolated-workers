@@ -1,0 +1,11 @@
+{
+  "name": "isolated-workers-e2e",
+  "private": true,
+  "dependencies": {
+    "yaml": "^2.3.4"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  }
+}

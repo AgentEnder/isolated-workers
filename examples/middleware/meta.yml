@@ -1,0 +1,17 @@
+id: middleware
+title: Middleware Pipeline
+description: |
+  Demonstrates how to use middleware to intercept and process messages. Middleware can log messages, add metadata, validate structure, or transform payloads. Both the host and worker can have their own middleware pipelines.
+entryPoint: host.ts
+fileMap:
+  './messages.ts': 'messages.ts'
+  './host.ts': 'host.ts'
+  './worker.ts': 'worker.ts'
+commands:
+  - command: 'pnpm run:middleware'
+    title: 'Run the example'
+    assertions:
+      - contains: '[OUTGOING]'
+      - contains: '[INCOMING]'
+      - contains: 'Hello, World!'
+      - contains: 'Worker closed successfully'

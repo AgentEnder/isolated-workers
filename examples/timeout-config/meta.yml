@@ -1,0 +1,17 @@
+id: timeout-config
+title: Timeout Configuration
+description: |
+  Demonstrates the flexible timeout configuration system. You can set timeouts for worker startup, server connection, a default message timeout, and per-message-type timeouts for fine-grained control over long-running operations.
+entryPoint: host.ts
+fileMap:
+  './messages.ts': 'messages.ts'
+  './host.ts': 'host.ts'
+  './worker.ts': 'worker.ts'
+commands:
+  - command: 'pnpm run:timeout-config'
+    title: 'Run the example'
+    assertions:
+      - contains: 'Timeout configuration:'
+      - contains: 'Quick ping completed'
+      - contains: 'Slow process completed'
+      - contains: 'Worker closed successfully'

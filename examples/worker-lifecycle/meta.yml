@@ -1,0 +1,19 @@
+id: worker-lifecycle
+title: Worker Lifecycle Management
+description: |
+  Demonstrates worker lifecycle management including status checking (isActive, isConnected), state persistence across requests, and graceful shutdown. Shows how workers maintain state between messages and how to handle the worker after it's closed.
+entryPoint: host.ts
+fileMap:
+  './messages.ts': 'messages.ts'
+  './host.ts': 'host.ts'
+  './worker.ts': 'worker.ts'
+commands:
+  - command: 'pnpm run:worker-lifecycle'
+    title: 'Run the example'
+    assertions:
+      - contains: 'Worker Created'
+      - contains: 'isActive: true'
+      - contains: 'isConnected: true'
+      - contains: 'Request count:'
+      - contains: 'isActive: false'
+      - contains: 'Worker is not active'

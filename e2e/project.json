@@ -1,0 +1,10 @@
+{
+  "name": "e2e",
+  "implicitDependencies": ["examples", "isolated-workers"],
+  "targets": {
+    "e2e": {
+      "command": "tsx {projectRoot}/run-examples.ts",
+      "dependsOn": ["isolated-workers:build"]
+    }
+  }
+}

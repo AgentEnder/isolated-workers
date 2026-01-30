@@ -1,0 +1,16 @@
+id: basic-ping
+title: Basic Ping-Pong Worker
+description: |
+  A simple example demonstrating the basics of isolated-workers: spawning a worker process, sending messages, and receiving responses. This example shows the fundamental request/response pattern with type-safe message definitions.
+entryPoint: host.ts
+fileMap:
+  './messages.ts': 'messages.ts'
+  './host.ts': 'host.ts'
+  './worker.ts': 'worker.ts'
+commands:
+  - command: 'pnpm run:basic-ping'
+    title: 'Run the example'
+    assertions:
+      - contains: 'Worker spawned with PID'
+      - contains: 'Received response:'
+      - contains: 'Worker closed successfully'
