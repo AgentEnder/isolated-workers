@@ -10,8 +10,9 @@ This directory contains the phased implementation plans for the isolated-workers
 | 2   | [Architecture Design](./02-architecture.md)                      | ✅ Completed   | System architecture and component design            |
 | 3   | [Package Structure](./03-package-structure.md)                   | ✅ Completed   | Nx monorepo setup and package configuration         |
 | 4   | [Type Safety Infrastructure](./04-type-safety-infrastructure.md) | ✅ Completed   | Type tests and assertion utilities                  |
-| 5   | [Core Implementation](./05-core-implementation.md)               | 🔄 In Progress | Worker spawner, connection manager, messaging layer |
+| 5   | [Core Implementation](./05-core-implementation.md)               | ✅ Completed   | Worker spawner, connection manager, messaging layer |
 | 6   | [Testing, Examples & Docs](./06-testing-and-docs.md)             | ⏳ Pending     | Unit/type/E2E tests, runnable examples, docs site   |
+| 7   | [Enhanced Configuration](./07-enhanced-configuration.md)         | 📝 Draft       | Comprehensive configuration options and middleware  |
 
 ## Status Legend
 
@@ -22,9 +23,11 @@ This directory contains the phased implementation plans for the isolated-workers
 
 ## Current Focus
 
-**Active Plan**: 05 - Core Implementation
+**Active Plan**: 07 - Enhanced Configuration System
 
-**Next Up**: 06 - Testing, Examples & Documentation
+**Status**: Design and planning phase complete, ready for implementation
+
+**Next Up**: Implement enhanced configuration options per Phase 7 plan
 
 ## Plan Dependencies
 
@@ -39,9 +42,11 @@ This directory contains the phased implementation plans for the isolated-workers
       └→ 05-core-implementation
             ↓
       06-testing-examples-docs
+            ↓
+      07-enhanced-configuration
 ```
 
-**Note:** Phase 6 combines testing and documentation because examples serve as both E2E tests and documentation content.
+**Note:** Phase 6 combines testing and documentation because examples serve as both E2E tests and documentation content. Phase 7 builds on the core implementation to add comprehensive configuration options.
 
 ## Creating New Plans
 
