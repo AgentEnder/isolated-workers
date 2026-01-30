@@ -1,0 +1,21 @@
+{
+  "name": "@isolated-workers/type-tests",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "isolated-workers": "workspace:*",
+    "typescript": "catalog:"
+  },
+  "devDependencies": {
+    "@nx/vitest": "catalog:",
+    "vitest": "catalog:"
+  },
+  "nx": {
+    "name": "type-tests"
+  }
+}
