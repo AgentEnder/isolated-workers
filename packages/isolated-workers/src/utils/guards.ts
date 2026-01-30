@@ -1,6 +1,8 @@
-import { AnyMessage, AnyResult } from '../types/messages.js';
+import type { AnyMessage, AllResults, MessageDefs } from '../types/index.js';
 
-export function isWorkerMessage(message: unknown): message is AnyMessage {
+export function isWorkerMessage<TDefs extends MessageDefs = MessageDefs>(
+  message: unknown
+): message is AnyMessage<TDefs> {
   return (
     typeof message === 'object' &&
     message !== null &&
@@ -9,7 +11,9 @@ export function isWorkerMessage(message: unknown): message is AnyMessage {
   );
 }
 
-export function isWorkerResult(result: unknown): result is AnyResult {
+export function isWorkerResult<TDefs extends MessageDefs = MessageDefs>(
+  result: unknown
+): result is AllResults<TDefs> {
   return (
     typeof result === 'object' &&
     result !== null &&

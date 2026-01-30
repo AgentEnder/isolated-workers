@@ -1,10 +1,13 @@
 import { isWorkerMessage, isWorkerResult } from './guards.js';
-import type { AnyMessage } from '../types/messages.js';
 
 describe('type guards', () => {
   describe('isWorkerMessage', () => {
     test('returns true for valid worker message', () => {
-      const message: AnyMessage = { type: 'test', payload: { data: 'test' } };
+      const message = {
+        tx: 'test-tx',
+        type: 'test',
+        payload: { data: 'test' },
+      };
       expect(isWorkerMessage(message)).toBe(true);
     });
 
@@ -19,7 +22,11 @@ describe('type guards', () => {
 
   describe('isWorkerResult', () => {
     test('returns true for valid worker result', () => {
-      const result = { type: 'testResult', payload: { data: 'result' } };
+      const result = {
+        tx: 'test-tx',
+        type: 'testResult',
+        payload: { data: 'result' },
+      };
       expect(isWorkerResult(result)).toBe(true);
     });
 
