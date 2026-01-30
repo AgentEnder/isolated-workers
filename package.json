@@ -15,6 +15,7 @@
     "eslint": "catalog:",
     "nx": "catalog:",
     "prettier": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:"
   },
   "nx": {
