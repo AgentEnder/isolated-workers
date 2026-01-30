@@ -141,3 +141,52 @@ export type ResultPayloadOf<
   TDefs extends MessageDefs,
   K extends WithResult<TDefs>
 > = TDefs[K] extends { result: unknown } ? TDefs[K]['result'] : never;
+
+/**
+ * Union of all message types (requests and responses).
+ * Use this for middleware, transaction ID generators, and other
+ * functions that handle any message type.
+ *
+ * @example
+ * type MyMessages = DefineMessages<{
+ *   load: { payload: { config: string }; result: { loaded: true } };
+ * }>;
+ *
+ * function middleware(msg: AnyMessage<MyMessages>) {
+ *   console.log('Handling:', msg.type);
+ * }
+ */
+export type AnyMessage<TDefs extends MessageDefs> =
+  | AllMessages<TDefs>
+  | AllResults<TDefs>;
+
+/**
+ * Middleware function type for message inspection/transformation.
+ * Applied sequentially in the order provided.
+ *
+ * Messages are sealed before being passed to middleware, so you can
+ * modify existing properties but cannot add new ones.
+ *
+ * @example
+ * const logMiddleware: Middleware<MyMessages> = (msg, direction) => {
+ *   console.log(`${direction}:`, msg.type);
+ *   return msg;
+ * };
+ */
+export type Middleware<TDefs extends MessageDefs = MessageDefs> = (
+  message: AnyMessage<TDefs>,
+  direction: 'incoming' | 'outgoing'
+) => AnyMessage<TDefs> | void | Promise<AnyMessage<TDefs> | void>;
+
+/**
+ * Transaction ID generator function type.
+ * Receives a message and returns a unique transaction ID string.
+ *
+ * @example
+ * const customGen: TransactionIdGenerator<MyMessages> = (msg) => {
+ *   return `${msg.type}-${Date.now()}`;
+ * };
+ */
+export type TransactionIdGenerator<TDefs extends MessageDefs = MessageDefs> = (
+  message: AnyMessage<TDefs>
+) => string;

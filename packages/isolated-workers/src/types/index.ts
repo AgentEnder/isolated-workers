@@ -1,29 +1,24 @@
-// Legacy types
-export type {
-  WorkerMessage,
-  WorkerResult,
-  AnyMessage,
-  AnyResult,
-} from './messages.js';
-
 // DefineMessages system
 export type {
   BaseMessage,
+  DefineMessages,
   MessageDef,
   MessageDefs,
-  DefineMessages,
 } from './messages.js';
 
 // Type helpers
 export type {
-  MaybePromise,
-  WithResult,
-  MessageOf,
-  ResultOf,
   AllMessages,
   AllResults,
-  MessageResult,
+  AnyMessage,
   Handlers,
+  MaybePromise,
+  MessageOf,
+  MessageResult,
+  Middleware,
   PayloadOf,
+  ResultOf,
   ResultPayloadOf,
+  TransactionIdGenerator,
+  WithResult,
 } from './helpers.js';
