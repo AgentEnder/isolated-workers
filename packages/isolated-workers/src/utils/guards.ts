@@ -1,4 +1,4 @@
-import { AnyMessage, AnyResult } from './types.js';
+import { AnyMessage, AnyResult } from '../types/messages.js';
 
 export function isWorkerMessage(message: unknown): message is AnyMessage {
   return (

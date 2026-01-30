@@ -1,10 +1,16 @@
 import eslintNxPlugin from '@nx/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
 
 export default [
   {
-    ignores: ['**/node_modules/**', '**/.nx/**', '**/dist/**', '**/build/**', '**/*.spec.ts', '**/*.test.ts', '**/vitest.config.ts'],
+    ignores: [
+      '**/node_modules/**',
+      '**/.nx/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/vitest.config.ts',
+    ],
   },
   {
     plugins: {
@@ -40,7 +46,10 @@ export default [
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/no-empty-interface': 'error',
       '@typescript-eslint/no-inferrable-types': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',

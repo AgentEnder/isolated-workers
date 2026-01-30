@@ -1,4 +1,5 @@
-import { isWorkerMessage, isWorkerResult, type AnyMessage } from './utils.js';
+import { isWorkerMessage, isWorkerResult } from './guards.js';
+import type { AnyMessage } from '../types/messages.js';
 
 describe('type guards', () => {
   describe('isWorkerMessage', () => {
