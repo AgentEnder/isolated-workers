@@ -116,17 +116,19 @@ describe('buildDocsNavigation', () => {
     expect(nav[1].children?.[1].title).toBe('A'); // order: 2
   });
 
-  it('excludes docs without nav section', () => {
+  it('defaults docs without nav section to "Docs" section', () => {
     const docs: Record<string, DocMetadata> = {
-      '/docs/hidden': {
-        path: '/docs/hidden',
-        filePath: '/docs/hidden.md',
-        title: 'Hidden',
-        // no nav
+      '/docs/orphan': {
+        path: '/docs/orphan',
+        filePath: '/docs/orphan.md',
+        title: 'Orphan',
+        // no nav - should default to Docs section
       },
     };
 
     const nav = buildDocsNavigation(docs);
-    expect(nav).toHaveLength(0);
+    expect(nav).toHaveLength(1);
+    expect(nav[0].title).toBe('Docs');
+    expect(nav[0].children?.[0].title).toBe('Orphan');
   });
 });

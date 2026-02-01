@@ -1,6 +1,6 @@
+import matter from 'gray-matter';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import matter from 'gray-matter';
 
 export interface NavigationItem {
   title: string;
@@ -77,6 +77,7 @@ export async function scanDocs(
       // Determine URL path (frontmatter override or derived)
       const derivedPath = filePathToUrlPath(filePath, docsRoot);
       const urlPath = frontmatter.path || derivedPath;
+      console.log('Found docs page:', urlPath);
 
       docs[urlPath] = {
         path: urlPath,
@@ -114,16 +115,16 @@ export function buildDocsNavigation(
   > = {};
 
   for (const doc of Object.values(docs)) {
-    if (!doc.nav?.section) continue;
-
-    const { section, order } = doc.nav;
+    let { section, order } = doc.nav ?? {};
+    section ??= 'Docs';
+    order ??= 999;
     if (!sections[section]) {
       sections[section] = [];
     }
     sections[section].push({
       title: doc.title,
       path: doc.path,
-      order: order ?? 999,
+      order,
     });
   }
 

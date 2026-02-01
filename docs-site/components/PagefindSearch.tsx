@@ -250,7 +250,7 @@ export function PagefindSearch() {
         <div
           className="
             absolute top-full right-0 mt-2 z-50
-            w-96 max-h-[400px] overflow-y-auto
+            w-96 max-h-100 overflow-y-auto
             bg-secondary/98 backdrop-blur-xl
             rounded-xl border border-white/10
             shadow-[0_0_30px_-10px_rgba(0,240,255,0.3)]

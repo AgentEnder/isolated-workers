@@ -2,7 +2,6 @@
 title: Error Handling
 description: How errors propagate from workers to hosts
 nav:
-  section: Docs
   order: 2
 ---
 
