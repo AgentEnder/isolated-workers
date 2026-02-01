@@ -17,19 +17,19 @@ This example shows:
 
 First, define the message types in a shared file that both host and worker import:
 
-{{file:messages.ts}}
+{% file messages.ts %}
 
 ### Host
 
 The host imports the message types and handles both success and error cases:
 
-{{file:host.ts}}
+{% file host.ts %}
 
 ### Worker
 
 The worker imports the same message types and throws errors for invalid operations:
 
-{{file:worker.ts}}
+{% file worker.ts %}
 
 ## Running
 

@@ -17,19 +17,19 @@ The ping-pong example shows:
 
 First, define the message types in a shared file that both host and worker import:
 
-{{file:messages.ts}}
+{% file messages.ts %}
 
 ### Host (Client)
 
 The host imports the message types and uses them with `createWorker<Messages>()`:
 
-{{file:host.ts}}
+{% file host.ts %}
 
 ### Worker
 
 The worker imports the same message types and uses `Handlers<Messages>` for type-safe handlers:
 
-{{file:worker.ts}}
+{% file worker.ts %}
 
 ## Running the Example
 
