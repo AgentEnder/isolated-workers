@@ -11,6 +11,8 @@ import { createHighlighter } from 'shiki';
 import { unified } from 'unified';
 import type { PageContextServer } from 'vike/types';
 import { type ExampleMetadata } from '../../../server/utils/examples';
+import { parseLiquidTag } from '../../../server/utils/liquid-tags';
+import { extractHunk, stripMarkers } from '../../../server/utils/regions';
 
 interface CodeFile {
   filename: string;
@@ -102,11 +104,13 @@ async function highlightCode(code: string, language: string): Promise<string> {
 }
 
 /**
- * Check if a paragraph node contains only a file placeholder
+ * Check if a paragraph node contains a file placeholder.
+ * Supports both legacy {{file:...}} and new {% file ... %} syntax.
+ * Returns the filename and optional hunk if found.
  */
-function isFilePlaceholder(
+function extractFilePlaceholder(
   node: RootContent
-): { isPlaceholder: true; filename: string } | { isPlaceholder: false } {
+): { isPlaceholder: true; filename: string; hunk?: string } | { isPlaceholder: false } {
   if (node.type !== 'paragraph' || node.children.length !== 1) {
     return { isPlaceholder: false };
   }
@@ -116,9 +120,19 @@ function isFilePlaceholder(
     return { isPlaceholder: false };
   }
 
-  const match = child.value.match(/^\{\{file:([^}]+)\}\}$/);
-  if (match) {
-    return { isPlaceholder: true, filename: match[1].trim() };
+  const text = child.value.trim();
+
+  // Try new Liquid syntax first: {% file path %} or {% file path#hunk %}
+  const tag = parseLiquidTag(text);
+  if (tag && tag.type === 'file') {
+    return { isPlaceholder: true, filename: tag.path, hunk: tag.hunk };
+  }
+
+  // Fall back to legacy {{file:...}} syntax for backwards compatibility
+  const legacyMatch = text.match(/^\{\{file:([^}]+)\}\}$/);
+  if (legacyMatch) {
+    const [filename, hunk] = legacyMatch[1].trim().split('#');
+    return { isPlaceholder: true, filename, hunk };
   }
 
   return { isPlaceholder: false };
@@ -164,7 +178,7 @@ async function parseMarkdownToSegments(
   let currentChunk: RootContent[] = [];
 
   for (const node of tree.children) {
-    const placeholderCheck = isFilePlaceholder(node);
+    const placeholderCheck = extractFilePlaceholder(node);
 
     if (placeholderCheck.isPlaceholder) {
       // Flush current HTML chunk if any
@@ -179,15 +193,30 @@ async function parseMarkdownToSegments(
       // Find the file and create a file segment
       const file = files.find((f) => f.filename === placeholderCheck.filename);
       if (file) {
-        const highlightedHtml = await highlightCode(
-          file.content,
-          file.language
-        );
+        // Extract hunk or strip markers from full file
+        let content: string;
+        if (placeholderCheck.hunk) {
+          try {
+            content = extractHunk(file.content, placeholderCheck.hunk);
+          } catch {
+            throw new Error(
+              `Region '${placeholderCheck.hunk}' not found in file "${placeholderCheck.filename}" in example "${example.id}".`
+            );
+          }
+        } else {
+          content = stripMarkers(file.content);
+        }
+
+        const highlightedHtml = await highlightCode(content, file.language);
+        const displayName = placeholderCheck.hunk
+          ? `${file.filename}#${placeholderCheck.hunk}`
+          : file.filename;
+
         segments.push({
           type: 'file',
-          filename: file.filename,
+          filename: displayName,
           language: file.language,
-          content: file.content,
+          content,
           highlightedHtml,
         });
         renderedFiles.push(file.filename);
