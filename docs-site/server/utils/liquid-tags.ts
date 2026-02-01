@@ -53,8 +53,8 @@ export function parseLiquidTag(tag: string): LiquidTag | null {
 }
 
 /**
- * Check if a string contains a Liquid tag placeholder.
+ * Check if a string is a valid Liquid tag placeholder.
  */
 export function isLiquidTag(text: string): boolean {
-  return /^\{%\s+\w+\s+.+?\s*%\}$/.test(text.trim());
+  return parseLiquidTag(text) !== null;
 }
