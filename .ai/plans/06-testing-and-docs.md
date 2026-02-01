@@ -119,7 +119,7 @@ it('should propagate errors from worker', async () => {
   }>({ script: './e2e/fixtures/error-worker.ts' });
 
   await expect(worker.send('error', { msg: 'test' })).rejects.toThrow(
-    'test error'
+    'test error',
   );
 
   await worker.close();

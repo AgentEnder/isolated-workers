@@ -80,18 +80,18 @@ packages:
 
 catalog:
   nx: 22.2.0
-  "@nx/js": 22.2.0
-  "@nx/vite": 22.2.0
-  "@nx/vitest": 1.3.1
-  "@nx/web": 22.2.0
-  "@nx/workspace": 22.2.0
-  "@nx/webpack": 22.2.0
-  "@swc-node/register": 1.11.1
-  "@swc/core": 1.15.3
-  "@swc/helpers": 0.5.17
-  "@types/node": 18.16.9
-  "@typescript-eslint/eslint-plugin": 7.16.0
-  "@typescript-eslint/parser": 7.16.0
+  '@nx/js': 22.2.0
+  '@nx/vite': 22.2.0
+  '@nx/vitest': 1.3.1
+  '@nx/web': 22.2.0
+  '@nx/workspace': 22.2.0
+  '@nx/webpack': 22.2.0
+  '@swc-node/register': 1.11.1
+  '@swc/core': 1.15.3
+  '@swc/helpers': 0.5.17
+  '@types/node': 18.16.9
+  '@typescript-eslint/eslint-plugin': 7.16.0
+  '@typescript-eslint/parser': 7.16.0
   eslint: 8.57.0
   eslint-config-prettier: 10.1.8
   prettier: 2.6.2
@@ -260,14 +260,14 @@ packages/isolated-workers/
 ### `packages/isolated-workers/vitest.config.ts`
 
 ```typescript
-import { defineConfig } from "vitest/config";
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
     globals: true,
-    environment: "node",
-    include: ["src/**/*.spec.ts"],
-    exclude: ["node_modules", "dist"],
+    environment: 'node',
+    include: ['src/**/*.spec.ts'],
+    exclude: ['node_modules', 'dist'],
   },
 });
 ```

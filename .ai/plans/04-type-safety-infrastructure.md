@@ -67,7 +67,7 @@ type AssertProperty<T, K extends PropertyKey, U> = Pick<T, K>[K] extends U
 
 // Usage
 type Config = { host: string; port: number };
-type Test = AssertProperty<Config, "host", string>; // true
+type Test = AssertProperty<Config, 'host', string>; // true
 ```
 
 #### 4. `AssertNotIndexSignature<T>`
@@ -95,8 +95,8 @@ type AssertHasProperties<T, P extends PropertyKey[]> = P extends (keyof T)[]
 
 // Usage
 type Config = { host: string; port: number };
-type Test = AssertHasProperties<Config, ["host", "port"]>; // true
-type Test2 = AssertHasProperties<Config, ["host", "port", "missing"]>; // compile error
+type Test = AssertHasProperties<Config, ['host', 'port']>; // true
+type Test2 = AssertHasProperties<Config, ['host', 'port', 'missing']>; // compile error
 ```
 
 ### Assertion File Structure
@@ -121,14 +121,14 @@ export type IsFalse<T extends boolean> = T extends false ? true : never;
 
 ```typescript
 // src/lib/message-types.spec.ts
-it("should infer exact payload types for messages", () => {
+it('should infer exact payload types for messages', () => {
   type Messages = {
     compute: { n: number };
     result: { value: number };
   };
 
-  type ComputePayload = Extract<Messages, { type: "compute" }>["payload"];
-  type ResultPayload = Extract<Messages, { type: "result" }>["payload"];
+  type ComputePayload = Extract<Messages, { type: 'compute' }>['payload'];
+  type ResultPayload = Extract<Messages, { type: 'result' }>['payload'];
 
   // Should be exactly { n: number }, not { n: number } | undefined
   type Test1 = AssertEqual<ComputePayload, { n: number }>;
@@ -145,19 +145,19 @@ it("should infer exact payload types for messages", () => {
 
 ```typescript
 // src/lib/handler-types.spec.ts
-it("should infer correct handler parameter types", () => {
+it('should infer correct handler parameter types', () => {
   type Handlers = {
     load: (payload: { config: string }) => Promise<{ loaded: true }>;
     process: (payload: { data: number[] }) => { processed: number };
   };
 
   // Extract handler types
-  type LoadHandler = Handlers["load"];
-  type ProcessHandler = Handlers["process"];
+  type LoadHandler = Handlers['load'];
+  type ProcessHandler = Handlers['process'];
 
   // Verify parameter types
-  type Test1 = AssertProperty<Parameters<LoadHandler>[0], "config", string>;
-  type Test2 = AssertProperty<Parameters<ProcessHandler>[0], "data", number[]>;
+  type Test1 = AssertProperty<Parameters<LoadHandler>[0], 'config', string>;
+  type Test2 = AssertProperty<Parameters<ProcessHandler>[0], 'data', number[]>;
 
   const test1 = (IsTrue<Test1> = true);
   const test2 = (IsTrue<Test2> = true);
@@ -170,17 +170,17 @@ it("should infer correct handler parameter types", () => {
 
 ```typescript
 // src/lib/request-response.spec.ts
-it("should pair request with correct response type", () => {
+it('should pair request with correct response type', () => {
   type Messages = {
     request: { data: string };
     response: { result: boolean };
   };
 
   // Request should send { data: string }
-  type RequestType = Extract<Messages, { type: "request" }>["payload"];
+  type RequestType = Extract<Messages, { type: 'request' }>['payload'];
   type Test1 = AssertEqual<RequestType, { data: string }>;
   // Response should be { result: boolean }
-  type ResponseType = Extract<Messages, { type: "response" }>["payload"];
+  type ResponseType = Extract<Messages, { type: 'response' }>['payload'];
   type Test2 = AssertEqual<ResponseType, { result: boolean }>;
   const test1 = (IsTrue<Test1> = true);
   const test2 = (IsTrue<Test2> = true);
@@ -193,7 +193,7 @@ it("should pair request with correct response type", () => {
 
 ```typescript
 // src/lib/worker-options.spec.ts
-it("should constrain worker options types", () => {
+it('should constrain worker options types', () => {
   type Options = {
     workerScript: string;
     env?: Record<string, string>;
@@ -201,10 +201,10 @@ it("should constrain worker options types", () => {
   };
 
   // Required properties should be present
-  type Test1 = AssertProperty<Options, "workerScript", string>;
+  type Test1 = AssertProperty<Options, 'workerScript', string>;
 
   // Optional properties should be optional
-  type Test2 = AssertEqual<Options["env"], Record<string, string> | undefined>;
+  type Test2 = AssertEqual<Options['env'], Record<string, string> | undefined>;
 
   const test1 = (IsTrue<Test1> = true);
   const test2 = (IsTrue<Test2> = true);
@@ -217,14 +217,14 @@ it("should constrain worker options types", () => {
 
 ```typescript
 // src/lib/union-narrowing.spec.ts
-it("should narrow union types correctly", () => {
+it('should narrow union types correctly', () => {
   type Message =
-    | { type: "load"; payload: { config: string } }
-    | { type: "compute"; payload: { data: number } }
-    | { type: "shutdown" };
+    | { type: 'load'; payload: { config: string } }
+    | { type: 'compute'; payload: { data: number } }
+    | { type: 'shutdown' };
 
   // Discriminated union should narrow based on type
-  type Payload = Message["payload"];
+  type Payload = Message['payload'];
 
   // Should be discriminated union
   type Test = AssertEqual<
@@ -300,7 +300,7 @@ it("should create proper message type relationships", () => {
 
 ```typescript
 // src/lib/handler-inference.spec.ts
-it("should infer handler types correctly", () => {
+it('should infer handler types correctly', () => {
   interface BaseMessage {
     tx: string;
   }
@@ -314,7 +314,7 @@ it("should infer handler types correctly", () => {
 
   type Handlers<TDefs extends MessageDefs> = {
     [K in keyof TDefs & string]: (
-      payload: TDefs[K]['payload']
+      payload: TDefs[K]['payload'],
     ) => TDefs[K] extends { result: unknown }
       ? MaybePromise<TDefs[K]['result'] | void>
       : MaybePromise<void>;
@@ -351,7 +351,7 @@ it("should infer handler types correctly", () => {
 
 ```typescript
 // src/lib/type-extraction.spec.ts
-it("should extract types correctly", () => {
+it('should extract types correctly', () => {
   type MessageDefs = {
     load: {
       payload: { config: string };
@@ -383,7 +383,11 @@ it("should extract types correctly", () => {
   }[keyof T & string];
 
   type MyMessages = AllMessages<MessageDefs>;
-  type Test2 = AssertProperty<Extract<MyMessages, { type: 'load' }>, 'payload', { config: string }>;
+  type Test2 = AssertProperty<
+    Extract<MyMessages, { type: 'load' }>,
+    'payload',
+    { config: string }
+  >;
 
   const test1 = (IsTrue<Test1> = true);
   const test2 = (IsTrue<Test2> = true);
@@ -398,7 +402,7 @@ Creates an in-memory TypeScript compiler program.
 
 ```typescript
 // src/lib/test-program.ts
-import * as ts from "typescript";
+import * as ts from 'typescript';
 
 export function createTestProgram(code: string) {
   const compilerOptions: ts.CompilerOptions = {
@@ -410,15 +414,15 @@ export function createTestProgram(code: string) {
 
   const host = ts.createCompilerHost(compilerOptions);
   const sourceFile = ts.createSourceFile(
-    "test.ts",
+    'test.ts',
     code,
     ts.ScriptTarget.Latest,
   );
 
   return {
-    program: ts.createProgram(["test.ts"], compilerOptions, {
+    program: ts.createProgram(['test.ts'], compilerOptions, {
       host,
-      rootNames: ["test.ts"],
+      rootNames: ['test.ts'],
     }),
     sourceFile,
     typeChecker: program.getTypeChecker(),
@@ -432,7 +436,7 @@ Finds an AST node using tsquery-like selection.
 
 ```typescript
 // src/lib/node-selector.ts
-import * as ts from "typescript";
+import * as ts from 'typescript';
 
 export function findNodeBySelector<T extends ts.Node>(
   sourceFile: ts.SourceFile,
@@ -450,7 +454,7 @@ export function findNodeBySelector<T extends ts.Node>(
     if (found) return true; // Stop when found
 
     // Simple selector matching
-    if (query.includes("PropertyAssignment")) {
+    if (query.includes('PropertyAssignment')) {
       if (ts.isPropertyAssignment(node)) {
         // Check name, etc.
       }
@@ -471,7 +475,7 @@ Compares two type strings for equality.
 
 ```typescript
 // src/lib/type-comparison.ts
-import { createTestProgram } from "./test-program";
+import { createTestProgram } from './test-program';
 
 export function compareTypes(expected: string, actual: string) {
   const { typeChecker: expectedChecker } = createTestProgram(expected);
@@ -562,7 +566,7 @@ export function handle(data: any): void {}
 export function handle<T>(data: T): void {}
 // or
 export function handle(data: unknown): void {
-  if (typeof data === "string") {
+  if (typeof data === 'string') {
     /* ... */
   }
 }
@@ -615,10 +619,10 @@ Provide runtime type guards for dynamic scenarios.
 ```typescript
 function isWorkerMessage(message: unknown): message is WorkerMessage {
   return (
-    typeof message === "object" &&
-    "type" in message &&
-    "payload" in message &&
-    typeof message.type === "string"
+    typeof message === 'object' &&
+    'type' in message &&
+    'payload' in message &&
+    typeof message.type === 'string'
   );
 }
 ```

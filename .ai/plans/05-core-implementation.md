@@ -40,7 +40,7 @@ interface WorkerHandle {
 }
 
 export async function createWorker(
-  options: WorkerOptions
+  options: WorkerOptions,
 ): Promise<WorkerHandle>;
 export async function shutdownWorker(handle: WorkerHandle): Promise<void>;
 ```
@@ -75,7 +75,7 @@ interface Connection {
 }
 
 export async function createConnection(
-  options: ConnectionOptions
+  options: ConnectionOptions,
 ): Promise<Connection>;
 ```
 
@@ -116,7 +116,7 @@ type DefineMessages<TDefs extends MessageDefs> = TDefs;
 
 type MessageOf<
   TDefs extends MessageDefs,
-  K extends keyof TDefs
+  K extends keyof TDefs,
 > = BaseMessage & {
   type: K;
   payload: TDefs[K]['payload'];
@@ -124,7 +124,7 @@ type MessageOf<
 
 type ResultOf<
   TDefs extends MessageDefs,
-  K extends keyof TDefs
+  K extends keyof TDefs,
 > = BaseMessage & {
   type: `${K & string}Result`;
   payload: TDefs[K] extends { result: infer R } ? R : never;
@@ -274,13 +274,13 @@ packages/isolated-workers/src/
 export interface WorkerClient<TMessages extends MessageDefs> {
   send<K extends keyof TMessages>(
     type: K,
-    payload: TMessages[K]['payload']
+    payload: TMessages[K]['payload'],
   ): Promise<TMessages[K] extends { result: infer R } ? R : void>;
   close(): Promise<void>;
 }
 
 export async function createWorkerClient<TMessages extends MessageDefs>(
-  options: WorkerOptions
+  options: WorkerOptions,
 ): Promise<WorkerClient<TMessages>>;
 ```
 
@@ -289,14 +289,14 @@ export async function createWorkerClient<TMessages extends MessageDefs>(
 ```typescript
 export type Handlers<TDefs extends MessageDefs> = {
   [K in keyof TDefs & string]: (
-    payload: TDefs[K]['payload']
+    payload: TDefs[K]['payload'],
   ) => TDefs[K] extends { result: infer R }
     ? MaybePromise<R | void>
     : MaybePromise<void>;
 };
 
 export function startWorkerServer<TMessages extends MessageDefs>(
-  handlers: Handlers<TMessages>
+  handlers: Handlers<TMessages>,
 ): void;
 ```
 

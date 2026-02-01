@@ -67,7 +67,10 @@ describe('Core Worker Types', () => {
 
       // Find WorkerOptions symbol
       const workerOptionsSymbol = typeChecker
-        .getSymbolsInScope(sourceFile, ts.SymbolFlags.TypeAlias | ts.SymbolFlags.Interface)
+        .getSymbolsInScope(
+          sourceFile,
+          ts.SymbolFlags.TypeAlias | ts.SymbolFlags.Interface
+        )
         .find((s) => s.name === 'WorkerOptions');
 
       expect(workerOptionsSymbol).toBeDefined();

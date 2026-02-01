@@ -1,0 +1,622 @@
+@import 'tailwindcss' source('../');
+
+body {
+  background-color: #09090b;
+}
+
+@theme {
+  /* Base colors */
+  --color-primary: #09090b;
+  --color-secondary: #131316;
+  --color-tertiary: #1c1c21;
+  --color-muted: #6b7280;
+
+  /* Neon palette */
+  --color-neon-cyan: #00f0ff;
+  --color-neon-purple: #bf00ff;
+  --color-neon-mint: #00ff9d;
+  --color-neon-orange: #ff6b35;
+  --color-neon-pink: #ff0080;
+  --color-neon-magenta: #e040fb;
+
+  /* Enhanced shadows */
+  --shadow-neon: 0 0 20px -5px #00f0ff;
+  --shadow-neon-sm: 0 0 10px -3px #00f0ff;
+  --shadow-neon-lg: 0 0 40px -10px #00f0ff;
+  --shadow-neon-purple: 0 0 20px -5px #bf00ff;
+  --shadow-neon-pink: 0 0 20px -5px #ff0080;
+  --shadow-neon-glow: 0 0 30px 0px rgba(0, 240, 255, 0.3);
+
+  /* Animations */
+  --animate-pulse-slow: pulse-slow 4s ease-in-out infinite;
+  --animate-gradient-x: gradient-x 3s ease-in-out infinite alternate;
+  --animate-glow-pulse: glow-pulse 2s ease-in-out infinite;
+  --animate-shine: shine 2s ease-in-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-scan: scan 8s linear infinite;
+  --animate-flicker: power-flicker 12s ease-in-out infinite;
+  --animate-flicker-alt: power-flicker-alt 15s ease-in-out infinite;
+  --animate-flicker-slow: power-flicker 20s ease-in-out infinite;
+}
+
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes gradient-x {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    filter: blur(20px);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(25px);
+  }
+}
+
+@keyframes shine {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(-20px) translateX(10px);
+  }
+  50% {
+    transform: translateY(-10px) translateX(-10px);
+  }
+  75% {
+    transform: translateY(-30px) translateX(5px);
+  }
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+/* Power flicker effect - very infrequent, burst-like */
+@keyframes power-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  /* Stable for most of the animation */
+  92% {
+    opacity: 1;
+  }
+  /* Quick burst of flickers at the end */
+  92.5% {
+    opacity: 0.4;
+  }
+  93% {
+    opacity: 1;
+  }
+  93.5% {
+    opacity: 0.6;
+  }
+  94% {
+    opacity: 1;
+  }
+  94.3% {
+    opacity: 0.3;
+  }
+  94.6% {
+    opacity: 0.9;
+  }
+  95% {
+    opacity: 1;
+  }
+}
+
+/* Alternative flicker pattern for variety */
+@keyframes power-flicker-alt {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  88.2% {
+    opacity: 0.5;
+  }
+  88.5% {
+    opacity: 1;
+  }
+  88.7% {
+    opacity: 0.7;
+  }
+  89% {
+    opacity: 1;
+  }
+}
+
+@keyframes underline-slide {
+  0% {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  100% {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+
+@keyframes border-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+  }
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+@layer base {
+  :root {
+    /* Toggleable effect variables */
+    --retro-grid-opacity: 0.06;
+    --retro-scanline-opacity: 0.02;
+    --retro-glow-intensity: 1;
+    --retro-animation-duration: 1;
+  }
+
+  /* Reduced motion: disable animations but keep static styles */
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --retro-animation-duration: 0;
+      --retro-scanline-opacity: 0;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Typography */
+  h1 {
+    @apply mb-4 text-4xl font-bold tracking-tight text-gray-100;
+  }
+  h2 {
+    @apply mt-10 mb-4 text-3xl font-bold tracking-tight text-gray-100;
+  }
+  h2:first-child {
+    @apply mt-0;
+  }
+  h3 {
+    @apply mt-8 mb-3 text-2xl font-semibold tracking-tight text-gray-100;
+  }
+  h3:first-child {
+    @apply mt-0;
+  }
+  ul {
+    @apply list-disc pl-6;
+  }
+  ol {
+    @apply list-decimal pl-6;
+  }
+  p {
+    @apply mb-2 mt-2;
+  }
+  a {
+    @apply text-neon-cyan hover:text-neon-mint visited:text-neon-purple/80 transition-colors;
+  }
+}
+
+/* ============================================
+   RETROWAVE UTILITY CLASSES
+   ============================================ */
+
+@layer utilities {
+  /* Perspective Grid Background */
+  .retro-grid {
+    --grid-color: rgba(0, 240, 255, var(--retro-grid-opacity));
+    background-image: linear-gradient(var(--grid-color) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 50%);
+    -webkit-mask-image: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.8) 0%,
+      transparent 50%
+    );
+  }
+
+  /* Scan Lines Overlay */
+  .retro-scanlines {
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, var(--retro-scanline-opacity)) 2px,
+      rgba(0, 0, 0, var(--retro-scanline-opacity)) 4px
+    );
+  }
+
+  /* Horizon Gradient */
+  .retro-horizon {
+    background: linear-gradient(
+      to top,
+      rgba(191, 0, 255, 0.08) 0%,
+      rgba(255, 0, 128, 0.04) 20%,
+      transparent 50%
+    );
+  }
+
+  /* Neon Text Glow */
+  .text-glow-cyan {
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5),
+      0 0 20px rgba(0, 240, 255, 0.3), 0 0 40px rgba(0, 240, 255, 0.2);
+  }
+
+  .text-glow-purple {
+    text-shadow: 0 0 10px rgba(191, 0, 255, 0.5),
+      0 0 20px rgba(191, 0, 255, 0.3), 0 0 40px rgba(191, 0, 255, 0.2);
+  }
+
+  .text-glow-pink {
+    text-shadow: 0 0 10px rgba(255, 0, 128, 0.5),
+      0 0 20px rgba(255, 0, 128, 0.3), 0 0 40px rgba(255, 0, 128, 0.2);
+  }
+
+  /* Subtle heading glow on hover */
+  .heading-glow {
+    transition: text-shadow 0.3s ease;
+  }
+  .heading-glow:hover {
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.4),
+      0 0 20px rgba(0, 240, 255, 0.2);
+  }
+
+  /* Enhanced border glow */
+  .border-glow {
+    position: relative;
+  }
+  .border-glow::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(0, 240, 255, 0.3),
+      rgba(191, 0, 255, 0.3)
+    );
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .border-glow:hover::before {
+    opacity: 1;
+  }
+
+  /* Shine effect for buttons */
+  .btn-shine {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-shine::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    transition: left 0.5s ease;
+  }
+  .btn-shine:hover::after {
+    left: 100%;
+  }
+
+  /* Animated underline for links */
+  .link-underline {
+    position: relative;
+  }
+  .link-underline::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #00f0ff, #bf00ff);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  }
+  .link-underline:hover::after {
+    transform: scaleX(1);
+  }
+
+  /* Terminal window dots */
+  .terminal-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .terminal-dots::before,
+  .terminal-dots::after,
+  .terminal-dots span {
+    content: '';
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  .terminal-dots::before {
+    background: #ff5f56;
+    box-shadow: 0 0 8px rgba(255, 95, 86, 0.5);
+  }
+  .terminal-dots::after {
+    background: #ffbd2e;
+    box-shadow: 0 0 8px rgba(255, 189, 46, 0.5);
+  }
+  .terminal-dots span {
+    background: #27ca40;
+    box-shadow: 0 0 8px rgba(39, 202, 64, 0.5);
+  }
+
+  /* Glassmorphism enhancement */
+  .glass-enhanced {
+    background: rgba(19, 19, 22, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+      0 0 20px -5px rgba(0, 240, 255, 0.1);
+  }
+
+  /* Section divider with gradient */
+  .divider-glow {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(0, 240, 255, 0.3),
+      transparent
+    );
+  }
+
+  /* Active indicator pulse - subtle and slow */
+  .active-pulse {
+    animation: border-glow 4s ease-in-out infinite;
+  }
+
+  /* Power flicker effects - triggered by JS, not continuous */
+  /* These classes are placeholders for JS-triggered flicker */
+  .neon-flicker,
+  .neon-flicker-alt,
+  .neon-flicker-slow,
+  .neon-flicker-delay-1,
+  .neon-flicker-delay-2,
+  .neon-flicker-delay-3 {
+    /* No animation by default - JS will trigger */
+  }
+
+  /* One-shot flicker animation - applied temporarily by JS */
+  .flickering {
+    animation: power-flicker-burst 0.3s ease-in-out;
+  }
+
+  /* Word-level flicker wrapper (used for text flickering) */
+  .flicker-word {
+    display: inline;
+  }
+  .flicker-word.flickering {
+    animation: power-flicker-burst 0.3s ease-in-out;
+  }
+
+  @keyframes power-flicker-burst {
+    0% {
+      opacity: 1;
+    }
+    15% {
+      opacity: 0.3;
+    }
+    30% {
+      opacity: 1;
+    }
+    45% {
+      opacity: 0.5;
+    }
+    60% {
+      opacity: 1;
+    }
+    75% {
+      opacity: 0.4;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  /* Disable effects class (for toggle) */
+  .retro-effects-disabled {
+    --retro-grid-opacity: 0;
+    --retro-scanline-opacity: 0;
+    --retro-glow-intensity: 0;
+  }
+}
+
+/* ============================================
+   COMPONENT-SPECIFIC OVERRIDES
+   ============================================ */
+
+/* Code blocks - enhanced syntax highlighting colors */
+.shiki {
+  --shiki-token-constant: #00f0ff;
+  --shiki-token-string: #00ff9d;
+  --shiki-token-comment: #6b7280;
+  --shiki-token-keyword: #bf00ff;
+  --shiki-token-parameter: #ff6b35;
+  --shiki-token-function: #e040fb;
+  --shiki-token-string-expression: #00ff9d;
+  --shiki-token-punctuation: #6b7280;
+  --shiki-token-link: #00f0ff;
+}
+
+/* Prose overrides for markdown content */
+.prose-retro {
+  --tw-prose-body: #d1d5db;
+  --tw-prose-headings: #f3f4f6;
+  --tw-prose-lead: #9ca3af;
+  --tw-prose-links: #00f0ff;
+  --tw-prose-bold: #f3f4f6;
+  --tw-prose-counters: #9ca3af;
+  --tw-prose-bullets: #00f0ff;
+  --tw-prose-hr: rgba(0, 240, 255, 0.2);
+  --tw-prose-quotes: #f3f4f6;
+  --tw-prose-quote-borders: #00f0ff;
+  --tw-prose-captions: #9ca3af;
+  --tw-prose-code: #00ff9d;
+  --tw-prose-pre-code: #d1d5db;
+  --tw-prose-pre-bg: rgba(0, 0, 0, 0.5);
+  --tw-prose-th-borders: rgba(0, 240, 255, 0.3);
+  --tw-prose-td-borders: rgba(0, 240, 255, 0.1);
+}
+
+/* ============================================
+   SEARCH COMPONENT STYLES
+   ============================================ */
+
+/* Style highlighted search terms in excerpts (Pagefind uses <mark>) */
+mark {
+  background: rgba(0, 240, 255, 0.2);
+  color: #00f0ff;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* ============================================
+   DOCS PROSE STYLES
+   ============================================ */
+
+/* Prose content within docs pages (used for markdown-rendered content) */
+.docs-prose {
+  color: #e5e7eb;
+  line-height: 1.7;
+}
+
+.docs-prose h2,
+.docs-prose h3 {
+  color: #f3f4f6;
+  font-weight: 600;
+}
+
+.docs-prose h2 {
+  font-size: 1.5rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+  padding-bottom: 0.5rem;
+}
+
+.docs-prose h2:first-child {
+  margin-top: 0;
+}
+
+.docs-prose h3 {
+  font-size: 1.125rem;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: #00f0ff;
+}
+
+.docs-prose h3:first-child {
+  margin-top: 0;
+}
+
+.docs-prose p {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.docs-prose p:first-child,
+.docs-prose h2 + p,
+.docs-prose h3 + p {
+  margin-top: 0;
+}
+
+.docs-prose p:last-child {
+  margin-bottom: 0;
+}
+
+/* Inline code within prose */
+.docs-prose code {
+  background: rgba(0, 240, 255, 0.1);
+  color: #00ff9d;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+/* Lists within prose */
+.docs-prose ul,
+.docs-prose ol {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.docs-prose li {
+  margin-bottom: 0.25rem;
+}
+
+.docs-prose li::marker {
+  color: #00f0ff;
+}

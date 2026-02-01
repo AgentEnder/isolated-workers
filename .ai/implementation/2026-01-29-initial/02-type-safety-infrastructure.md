@@ -125,7 +125,7 @@ export type WithResult<TDefs extends MessageDefs> = {
  */
 export type MessageOf<
   TDefs extends MessageDefs,
-  K extends keyof TDefs
+  K extends keyof TDefs,
 > = BaseMessage & {
   type: K;
   payload: TDefs[K]['payload'];
@@ -140,7 +140,7 @@ export type MessageOf<
  */
 export type ResultOf<
   TDefs extends MessageDefs,
-  K extends WithResult<TDefs>
+  K extends WithResult<TDefs>,
 > = BaseMessage & {
   type: `${K & string}Result`;
   payload: TDefs[K] extends { result: unknown } ? TDefs[K]['result'] : never;
@@ -165,10 +165,11 @@ export type AllResults<TDefs extends MessageDefs> = {
  */
 export type MessageResult<
   TMessageType extends string,
-  TDefs extends MessageDefs
-> = TMessageType extends WithResult<TDefs>
-  ? ResultOf<TDefs, TMessageType>
-  : never;
+  TDefs extends MessageDefs,
+> =
+  TMessageType extends WithResult<TDefs>
+    ? ResultOf<TDefs, TMessageType>
+    : never;
 
 /**
  * Handler function type for a message definition.
@@ -185,7 +186,7 @@ export type MessageResult<
  */
 export type Handlers<TDefs extends MessageDefs> = {
   [K in keyof TDefs & string]: (
-    payload: TDefs[K]['payload']
+    payload: TDefs[K]['payload'],
   ) => TDefs[K] extends { result: unknown }
     ? MaybePromise<TDefs[K]['result'] | void>
     : MaybePromise<void>;
@@ -196,7 +197,7 @@ export type Handlers<TDefs extends MessageDefs> = {
  */
 export type PayloadOf<
   TDefs extends MessageDefs,
-  K extends keyof TDefs
+  K extends keyof TDefs,
 > = TDefs[K]['payload'];
 
 /**
@@ -204,7 +205,7 @@ export type PayloadOf<
  */
 export type ResultPayloadOf<
   TDefs extends MessageDefs,
-  K extends WithResult<TDefs>
+  K extends WithResult<TDefs>,
 > = TDefs[K] extends { result: unknown } ? TDefs[K]['result'] : never;
 ````
 
@@ -355,7 +356,7 @@ export default defineConfig({
     alias: {
       'isolated-workers': path.resolve(
         __dirname,
-        '../packages/isolated-workers/dist'
+        '../packages/isolated-workers/dist',
       ),
     },
   },
@@ -381,7 +382,7 @@ import * as fs from 'fs';
 
 export function createTestProgram(
   code: string,
-  fileName: string = '__test__.ts'
+  fileName: string = '__test__.ts',
 ): {
   program: ts.Program;
   sourceFile: ts.SourceFile;
@@ -400,7 +401,7 @@ export function createTestProgram(
     fileName,
     code,
     ts.ScriptTarget.Latest,
-    true
+    true,
   );
 
   const compilerHost: ts.CompilerHost = {
@@ -445,11 +446,10 @@ export function typeHasProperty(type: ts.Type, propName: string): boolean {
  * Type assertion utilities
  */
 
-export type AssertEqual<T, U> = (<V>() => V extends T ? 1 : 2) extends <
-  V
->() => V extends U ? 1 : 2
-  ? true
-  : false;
+export type AssertEqual<T, U> =
+  (<V>() => V extends T ? 1 : 2) extends <V>() => V extends U ? 1 : 2
+    ? true
+    : false;
 
 export type AssertExtends<T, U> = T extends U ? true : false;
 
@@ -492,7 +492,7 @@ describe('Type Helpers', () => {
       const { program, sourceFile } = createTestProgram(code);
       const diagnostics = program.getSemanticDiagnostics(sourceFile);
       const typeErrors = diagnostics.filter(
-        (d) => d.category === ts.DiagnosticCategory.Error
+        (d) => d.category === ts.DiagnosticCategory.Error,
       );
 
       expect(typeErrors.length).toBe(0);
@@ -518,7 +518,7 @@ describe('Type Helpers', () => {
       const { program, sourceFile } = createTestProgram(code);
       const diagnostics = program.getSemanticDiagnostics(sourceFile);
       const typeErrors = diagnostics.filter(
-        (d) => d.category === ts.DiagnosticCategory.Error
+        (d) => d.category === ts.DiagnosticCategory.Error,
       );
 
       expect(typeErrors.length).toBe(0);
@@ -548,20 +548,19 @@ import type {
 } from 'isolated-workers';
 
 // Define messages
-interface WorkerMessages
-  extends DefineMessages<{
-    load: {
-      payload: { config: string };
-      result: { loaded: true };
-    };
-    compute: {
-      payload: { data: number[] };
-      result: { sum: number };
-    };
-    shutdown: {
-      payload: { force?: boolean };
-    };
-  }> {}
+interface WorkerMessages extends DefineMessages<{
+  load: {
+    payload: { config: string };
+    result: { loaded: true };
+  };
+  compute: {
+    payload: { data: number[] };
+    result: { sum: number };
+  };
+  shutdown: {
+    payload: { force?: boolean };
+  };
+}> {}
 
 // Type tests
 type LoadMessage = MessageOf<WorkerMessages, 'load'>;

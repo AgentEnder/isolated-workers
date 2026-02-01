@@ -1,13 +1,17 @@
 # Message Definition System
 
 ## Status
+
 **✅ Accepted**
 
 ## Context
+
 Define how messages and their type relationships are declared in the library, ensuring maximum type safety with minimal boilerplate.
 
 ## Problem
+
 Need a way to define message types that:
+
 - Clearly expresses message payloads and optional results
 - Provides type-safe request/response pairing
 - Enables exhaustive handler coverage checking
@@ -17,43 +21,50 @@ Need a way to define message types that:
 ## Alternatives Considered
 
 ### Option 1: Inline Discriminated Unions
+
 ```typescript
 type Message =
-  | { type: "load"; payload: { config: string } }
-  | { type: "compute"; payload: { data: number } };
+  | { type: 'load'; payload: { config: string } }
+  | { type: 'compute'; payload: { data: number } };
 
 type Result =
-  | { type: "loadResult"; payload: { loaded: boolean } }
-  | { type: "computeResult"; payload: { value: number } };
+  | { type: 'loadResult'; payload: { loaded: boolean } }
+  | { type: 'computeResult'; payload: { value: number } };
 ```
 
 **Pros:**
+
 - Simple to understand
 - No additional types
 
 **Cons:**
+
 - Message/result pairing not enforced at type level
 - Boilerplate when adding new messages
 - Hard to extract related types
 
 ### Option 2: Class-Based Messages
+
 ```typescript
 class LoadMessage {
-  type = "load" as const;
+  type = 'load' as const;
   constructor(public payload: { config: string }) {}
 }
 ```
 
 **Pros:**
+
 - OOP familiar pattern
 - Can add methods to messages
 
 **Cons:**
+
 - More verbose
 - Doesn't work well with IPC (serialization)
 - TypeScript classes don't serialize cleanly
 
 ### Option 3: DefineMessages Pattern (Selected)
+
 ```typescript
 type MessageDefs = DefineMessages<{
   load: {
@@ -68,6 +79,7 @@ type MessageDefs = DefineMessages<{
 ```
 
 **Pros:**
+
 - Clear relationship between messages and results
 - Type helpers extract needed types automatically
 - Handlers can be type-checked exhaustively
@@ -75,6 +87,7 @@ type MessageDefs = DefineMessages<{
 - No runtime overhead (type-level only)
 
 **Cons:**
+
 - Requires understanding of TypeScript advanced types
 - Initial learning curve
 
@@ -113,13 +126,19 @@ type WithResult<TDefs extends MessageDefs> = {
 }[keyof TDefs];
 
 // Extract the full message type for a given key
-type MessageOf<TDefs extends MessageDefs, K extends keyof TDefs> = BaseMessage & {
+type MessageOf<
+  TDefs extends MessageDefs,
+  K extends keyof TDefs,
+> = BaseMessage & {
   type: K;
   payload: TDefs[K]['payload'];
 };
 
 // Extract the full result type for a given key
-type ResultOf<TDefs extends MessageDefs, K extends WithResult<TDefs>> = BaseMessage & {
+type ResultOf<
+  TDefs extends MessageDefs,
+  K extends WithResult<TDefs>,
+> = BaseMessage & {
   type: `${K & string}Result`;
   payload: TDefs[K]['result'];
 };
@@ -135,10 +154,10 @@ type AllResults<TDefs extends MessageDefs> = {
 }[WithResult<TDefs> & string];
 
 // Maps a message type to its result type
-type MessageResult<T extends AllMessages<TDefs>['type'], TDefs extends MessageDefs> = ResultOf<
-  TDefs,
-  T & WithResult<TDefs>
->;
+type MessageResult<
+  T extends AllMessages<TDefs>['type'],
+  TDefs extends MessageDefs,
+> = ResultOf<TDefs, T & WithResult<TDefs>>;
 ```
 
 ### Handler Type
@@ -147,7 +166,7 @@ type MessageResult<T extends AllMessages<TDefs>['type'], TDefs extends MessageDe
 // Handler map type - handlers return just the result payload directly
 type Handlers<TDefs extends MessageDefs> = {
   [K in keyof TDefs & string]: (
-    payload: TDefs[K]['payload']
+    payload: TDefs[K]['payload'],
   ) => TDefs[K] extends { result: unknown }
     ? MaybePromise<TDefs[K]['result'] | void>
     : MaybePromise<void>;
@@ -189,7 +208,7 @@ const handlers: Handlers<WorkerMessages> = {
   shutdown: () => {
     // No response expected
     console.log('Shutting down...');
-  }
+  },
 };
 
 // Infrastructure automatically wraps responses
@@ -208,6 +227,7 @@ const handlers: Handlers<WorkerMessages> = {
 ## Consequences
 
 ### Positive
+
 - Excellent developer experience with full type inference
 - Impossible to send wrong payload type
 - Impossible to receive wrong result type
@@ -215,18 +235,22 @@ const handlers: Handlers<WorkerMessages> = {
 - Easy to add new message types
 
 ### Neutral
+
 - Requires TypeScript strict mode
 - Users need to understand basic TypeScript generics
 
 ### Negative
+
 - Initial learning curve for advanced TypeScript users
 - Cannot easily express dynamic message types (rarely needed)
 
 ## Related Decisions
+
 - Handler Payload Return Pattern - Handlers return raw payloads
 - Type Extraction Helper Library - Core type helpers
 - Zero `any` in Public API - Full type safety
 
 ## References
+
 - Nx3 messaging.ts implementation
 - TypeScript discriminated unions documentation

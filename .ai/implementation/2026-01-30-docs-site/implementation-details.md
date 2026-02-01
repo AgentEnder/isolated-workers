@@ -11,23 +11,23 @@ Build a modern, distinctive documentation site using **Vike** + **Pagefind** wit
 ### Color Palette: Dark Neon / Retro-Future
 
 \`\`\`css
-/* Base Colors (Dark Mode) */
---bg-primary: #09090b;      /* Nearly black */
---bg-secondary: #131316;    /* Slightly lighter */
---bg-tertiary: #1c1c21;     /* Card backgrounds */
+/_ Base Colors (Dark Mode) _/
+--bg-primary: #09090b; /_ Nearly black _/
+--bg-secondary: #131316; /_ Slightly lighter _/
+--bg-tertiary: #1c1c21; /_ Card backgrounds _/
 
-/* Neon Accents - vibrant but not oppressive */
---accent-primary: #00f0ff;    /* Cyan/electric blue */
---accent-secondary: #bf00ff;   /* Electric purple */
---accent-tertiary: #00ff9d;   /* Mint green */
---accent-warm: #ff6b35;        /* Warm orange for CTAs */
+/_ Neon Accents - vibrant but not oppressive _/
+--accent-primary: #00f0ff; /_ Cyan/electric blue _/
+--accent-secondary: #bf00ff; /_ Electric purple _/
+--accent-tertiary: #00ff9d; /_ Mint green _/
+--accent-warm: #ff6b35; /_ Warm orange for CTAs _/
 
-/* Text Colors */
---text-primary: #f0f0f0;     /* White */
---text-secondary: #a0a0b0;    /* Light gray */
---text-muted: #6b6b75;        /* Muted gray */
+/_ Text Colors _/
+--text-primary: #f0f0f0; /_ White _/
+--text-secondary: #a0a0b0; /_ Light gray _/
+--text-muted: #6b6b75; /_ Muted gray _/
 
-/* Semantic Colors */
+/_ Semantic Colors _/
 --success: #00ff9d;
 --warning: #ff9f43;
 --error: #ff4757;
@@ -54,145 +54,122 @@ Build a modern, distinctive documentation site using **Vike** + **Pagefind** wit
 
 ## Phase 1: Project Setup & Infrastructure
 
-### 1.1 Create Docs Project
+### 1.1 Scaffold with Vike CLI
 
-**Files to create**:
-\`\`\`
-docs/
-├── package.json
-├── tsconfig.json
-├── vite.config.ts          # Vite + Vike config
-├── tailwind.config.js        # Tailwind configuration
-├── postcss.config.js         # PostCSS for Tailwind
-└── .gitignore
+**Command**:
+\`\`\`bash
+cd docs-site && pnpm create vike@latest . --react --tailwindcss --eslint
 \`\`\`
 
-**Dependencies**:
-\`\`\`json
-{
-  "name": "docs-site",
-  "dependencies": {
-    "vike": "^1.0.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.0.0",
-    "@tailwindcss/vite": "^4.0.0",
-    "autoprefixer": "^10.0.0",
-    "postcss": "^8.0.0",
-    "tailwindcss": "^4.0.0",
-    "typescript": "^5.0.0",
-    "vite": "^6.0.0",
-    "pagefind": "^1.0.0"
-  }
-}
-\`\`\`
+This scaffolds the entire project structure including:
 
-**Nx integration**:
-- Add to \`nx.json\` as new project
-- Configure \`build\`, \`dev\` and \`preview\` targets
-- Set up proper project boundaries
+- \`package.json\` with dependencies
+- \`vite.config.ts\`
+- \`vike.config.ts\`
+- \`tailwind.config.js\`
+- \`renderer/\` with \`Layout.tsx\` and \`Link.tsx\`
+- \`pages/\` with \`index/+Page.tsx\`
+- TypeScript, ESLint configs
+
+**Nx integration** (auto-detected via plugins):
+
+- \`pnpm-workspace.yaml\` already includes \`docs-site\`
+- \`@nx/vite\` plugin auto-detects \`vite.config.ts\`
+- \`@nx/js\` plugin auto-detects TypeScript
+- Targets automatically available: \`build\`, \`dev\`, \`preview\`, \`typecheck\`, \`lint\`
+- No \`project.json\` or \`nx.json\` configuration needed
 
 ### 1.2 Configure Tailwind CSS
 
-**Tailwind config** (\`docs/tailwind.config.js\`):
+**Tailwind config** (\`docs-site/tailwind.config.js\`):
 \`\`\`javascript
 export default {
-  content: [
-    './renderer/**/*.{js,ts,jsx,tsx}',
-    './pages/**/*.{js,ts,jsx,tsx,md}',
-  ],
-  theme: {
-    extend: {
-      colors: {
-        primary: '#09090b',
-        secondary: '#131316',
-        tertiary: '#1c1c21',
-        neon: {
-          cyan: '#00f0ff',
-          purple: '#bf00ff',
-          mint: '#00ff9d',
-          orange: '#ff6b35',
-        },
-      },
-      boxShadow: {
-        'neon': '0 0 20px -5px var(--color-neon-cyan)',
-        'neon-sm': '0 0 10px -3px var(--color-neon-cyan)',
-      },
-    },
-  },
-  plugins: [
-    require('@tailwindcss/vite'),
-  ],
+content: [
+'./renderer/**/*.{js,ts,jsx,tsx}',
+'./pages/**/*.{js,ts,jsx,tsx,md}',
+],
+theme: {
+extend: {
+colors: {
+primary: '#09090b',
+secondary: '#131316',
+tertiary: '#1c1c21',
+neon: {
+cyan: '#00f0ff',
+purple: '#bf00ff',
+mint: '#00ff9d',
+orange: '#ff6b35',
+},
+},
+boxShadow: {
+'neon': '0 0 20px -5px var(--color-neon-cyan)',
+'neon-sm': '0 0 10px -3px var(--color-neon-cyan)',
+},
+},
+},
+plugins: [
+require('@tailwindcss/vite'),
+],
 }
 \`\`\`
 
-### 1.3 Create Pagefind Vite Plugin
+### 1.3 Add Pagefind
 
-**File**: \`docs/plugins/pagefind-plugin.ts\`
+**Install**:
+\`\`\`bash
+cd docs-site && pnpm add -D pagefind
+\`\`\`
 
-This is **only** custom Vite plugin needed - it runs Pagefind after build:
-
+**Create Pagefind plugin** (\`docs-site/plugins/pagefind-plugin.ts\`):
 \`\`\`typescript
 import { Plugin } from 'vite';
 import { execSync } from 'child_process';
 import path from 'path';
 
 export function pagefindPlugin(): Plugin {
-  return {
-    name: 'pagefind-plugin',
-    apply: 'build',
-    closeBundle() {
-      // Run Pagefind CLI after build completes
-      const outDir = this.meta?.config?.build?.outDir || 'dist';
-      const pagefindPath = path.resolve(
-        __dirname,
-        '../node_modules/.bin/pagefind'
-      );
+return {
+name: 'pagefind-plugin',
+apply: 'build',
+closeBundle() {
+const outDir = this.meta?.config?.build?.outDir || 'dist';
+const pagefindPath = path.resolve(
+process.cwd(),
+'node_modules/.bin/pagefind'
+);
 
       console.log('🔍 Running Pagefind indexing...');
-
       execSync(\`node \${pagefindPath} --site \${outDir}\`, {
         stdio: 'inherit',
       });
-
       console.log('✨ Pagefind indexing complete!');
     },
-  };
+
+};
 }
 \`\`\`
 
-**Usage in \`vite.config.ts\`**:
+**Update \`vite.config.ts\`** to add the plugin:
 \`\`\`typescript
-import { defineConfig } from 'vite';
-import vike from 'vike/vite';
-import react from '@vitejs/plugin-react';
 import { pagefindPlugin } from './plugins/pagefind-plugin';
 
-export default defineConfig({
-  plugins: [
-    react(),
-    vike(),
-    pagefindPlugin(),  // Post-build Pagefind integration
-  ],
-});
+// In plugins array:
+plugins: [
+react(),
+vike(),
+pagefindPlugin(), // Add after vike()
+],
 \`\`\`
 
-### 1.4 Vike Configuration
-
-**File**: \`docs/vike.config.ts\`
-\`\`\`typescript
-import vike from 'vike/config';
-
-export default vike({
-  prerender: {
-    crawl: true,
-    // Disable for now, we'll generate pages dynamically
-  },
-  // Override default Layout with our custom one
-  Layout: './renderer/Layout.tsx',
-});
+**Create \`docs-site/pagefind.json\`**:
+\`\`\`json
+{
+"rootSelector": "main",
+"glob": "\*_/_.{html,md}",
+"excludeSelectors": [
+"[data-pagefind-ignore]",
+".pagefind-ui"
+]
+}
 \`\`\`
 
 ---
@@ -201,9 +178,9 @@ export default vike({
 
 ### 2.1 Auto-Generated Navigation Structure
 
-**Create data hook**: \`docs/+data.server.ts\`
+**Create data hook**: \`docs-site/+data.server.ts\`
 
-This scans \`examples/\` and \`docs/pages/\` directories to build navigation:
+This scans \`examples/\` and \`docs-site/pages/\` directories to build navigation:
 
 \`\`\`typescript
 import { PageContextServer } from 'vike/types';
@@ -212,31 +189,31 @@ import path from 'path';
 import yaml from 'js-yaml';
 
 interface ExampleFrontmatter {
-  title: string;
-  description: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+title: string;
+description: string;
+difficulty: 'beginner' | 'intermediate' | 'advanced';
 }
 
 interface NavigationItem {
-  title: string;
-  path: string;
-  children?: NavigationItem[];
+title: string;
+path: string;
+children?: NavigationItem[];
 }
 
 export async function data(pageContext: PageContextServer) {
-  // Scan examples directory
-  const examplesDir = path.resolve(process.cwd(), '../examples');
-  const exampleDirs = await fs.readdir(examplesDir, { withFileTypes: true });
+// Scan examples directory
+const examplesDir = path.resolve(process.cwd(), '../examples');
+const exampleDirs = await fs.readdir(examplesDir, { withFileTypes: true });
 
-  const examples: Array<{
-    id: string;
-    title: string;
-    description: string;
-    difficulty: ExampleFrontmatter['difficulty'];
-  }> = [];
+const examples: Array<{
+id: string;
+title: string;
+description: string;
+difficulty: ExampleFrontmatter['difficulty'];
+}> = [];
 
-  for (const dir of exampleDirs) {
-    if (!dir.isDirectory()) continue;
+for (const dir of exampleDirs) {
+if (!dir.isDirectory()) continue;
 
     const contentPath = path.join(examplesDir, dir.name, 'content.md');
     try {
@@ -249,66 +226,67 @@ export async function data(pageContext: PageContextServer) {
     } catch {
       // Skip if no content.md
     }
-  }
 
-  // Build navigation structure
-  const navigation: NavigationItem[] = [
-    {
-      title: 'Getting Started',
-      path: '/getting-started',
-      children: [
-        { title: 'Installation', path: '/getting-started/installation' },
-        { title: 'Quick Start', path: '/getting-started/quick-start' },
-        { title: 'First Worker', path: '/getting-started/first-worker' },
-      ],
-    },
-    {
-      title: 'Guides',
-      path: '/guides',
-      children: [
-        { title: 'Type Safety', path: '/guides/type-safety' },
-        { title: 'Error Handling', path: '/guides/error-handling' },
-        { title: 'Best Practices', path: '/guides/best-practices' },
-      ],
-    },
-    {
-      title: 'Examples',
-      path: '/examples',
-      children: examples.map((ex) => ({
-        title: ex.title,
-        path: `/examples/${ex.id}`,
-      })),
-    },
-    {
-      title: 'API Reference',
-      path: '/api',
-      children: [
-        { title: 'createWorker', path: '/api/create-worker' },
-        { title: 'startWorkerServer', path: '/api/start-worker-server' },
-        { title: 'Handlers Type', path: '/api/handlers' },
-        { title: 'DefineMessages', path: '/api/define-messages' },
-      ],
-    },
-  ];
+}
 
-  return {
-    navigation,
-    examples,
-  };
+// Build navigation structure
+const navigation: NavigationItem[] = [
+{
+title: 'Getting Started',
+path: '/getting-started',
+children: [
+{ title: 'Installation', path: '/getting-started/installation' },
+{ title: 'Quick Start', path: '/getting-started/quick-start' },
+{ title: 'First Worker', path: '/getting-started/first-worker' },
+],
+},
+{
+title: 'Guides',
+path: '/guides',
+children: [
+{ title: 'Type Safety', path: '/guides/type-safety' },
+{ title: 'Error Handling', path: '/guides/error-handling' },
+{ title: 'Best Practices', path: '/guides/best-practices' },
+],
+},
+{
+title: 'Examples',
+path: '/examples',
+children: examples.map((ex) => ({
+title: ex.title,
+path: `/examples/${ex.id}`,
+})),
+},
+{
+title: 'API Reference',
+path: '/api',
+children: [
+{ title: 'createWorker', path: '/api/create-worker' },
+{ title: 'startWorkerServer', path: '/api/start-worker-server' },
+{ title: 'Handlers Type', path: '/api/handlers' },
+{ title: 'DefineMessages', path: '/api/define-messages' },
+],
+},
+];
+
+return {
+navigation,
+examples,
+};
 }
 
 function extractFrontmatter(content: string): ExampleFrontmatter {
-  const match = content.match(/^---\\n(.*?)\\n---/s);
-  if (!match) throw new Error('No frontmatter found');
+const match = content.match(/^---\\n(.\*?)\\n---/s);
+if (!match) throw new Error('No frontmatter found');
 
-  const yamlContent = match[1];
-  return yaml.load(yamlContent) as ExampleFrontmatter;
+const yamlContent = match[1];
+return yaml.load(yamlContent) as ExampleFrontmatter;
 }
 \`\`\`
 
 ### 2.2 Hybrid Floating Layout
 
-**File**: \`docs/renderer/Layout.tsx\`
+**File**: \`docs-site/renderer/Layout.tsx\`
 
 This implements hybrid floating navigation concept:
 
@@ -318,30 +296,30 @@ import { useState, useEffect } from 'react';
 import Link from './Link';
 
 export default function Layout({ pageContext, children }: {
-  pageContext: PageContext;
-  children: React.ReactNode;
+pageContext: PageContext;
+children: React.ReactNode;
 }) {
-  const { navigation } = pageContext.data;
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('');
+const { navigation } = pageContext.data;
+const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+const [activeSection, setActiveSection] = useState('');
 
-  // Only show sidebar on docs pages, not landing
-  const showSidebar = pageContext.urlPathname !== '/';
+// Only show sidebar on docs pages, not landing
+const showSidebar = pageContext.urlPathname !== '/';
 
-  return (
-    <div className="min-h-screen bg-primary text-primary font-sans">
-      {/* Floating Top Bar - Always visible, minimal */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-6 py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <Link href="/" className="flex items-center gap-3">
-            {/* Logo with subtle glow */}
-            <div className="relative">
-              <div className="absolute inset-0 blur-xl bg-neon-cyan opacity-20" />
-              <span className="relative text-2xl font-bold tracking-tight">
-                isolated-workers
-              </span>
-            </div>
-          </Link>
+return (
+<div className="min-h-screen bg-primary text-primary font-sans">
+{/_ Floating Top Bar - Always visible, minimal _/}
+<header className="fixed top-0 left-0 right-0 z-50 px-6 py-4">
+<div className="flex items-center justify-between max-w-7xl mx-auto">
+<Link href="/" className="flex items-center gap-3">
+{/_ Logo with subtle glow _/}
+<div className="relative">
+<div className="absolute inset-0 blur-xl bg-neon-cyan opacity-20" />
+<span className="relative text-2xl font-bold tracking-tight">
+isolated-workers
+</span>
+</div>
+</Link>
 
           <nav className="hidden md:flex items-center gap-6">
             {navigation.map((section) => (
@@ -415,13 +393,14 @@ export default function Layout({ pageContext, children }: {
       {/* Pagefind Search UI */}
       <div id="search" className="fixed top-20 right-6 z-50 w-80" />
     </div>
-  );
+
+);
 }
 \`\`\`
 
 ### 2.3 Link Component
 
-**File**: \`docs/renderer/Link.tsx\`
+**File**: \`docs-site/renderer/Link.tsx\`
 
 Vike's \`<a>\` doesn't work in client components - we need a custom Link:
 
@@ -429,26 +408,25 @@ Vike's \`<a>\` doesn't work in client components - we need a custom Link:
 import { navigate } from 'vike/client/router';
 
 export function Link({
-  href,
-  children,
-  className,
+href,
+children,
+className,
 }: {
-  href: string;
-  children: React.ReactNode;
-  className?: string;
+href: string;
+children: React.ReactNode;
+className?: string;
 }) {
-  return (
-    <a
-      href={href}
-      onClick={(e) => {
-        e.preventDefault();
-        navigate(href);
-      }}
-      className={className}
-    >
-      {children}
-    </a>
-  );
+return (
+<a
+href={href}
+onClick={(e) => {
+e.preventDefault();
+navigate(href);
+}}
+className={className} >
+{children}
+</a>
+);
 }
 \`\`\`
 
@@ -458,19 +436,19 @@ export function Link({
 
 ### 3.1 Landing Page
 
-**File**: \`docs/pages/index/+Page.tsx\`
+**File**: \`docs-site/pages/index/+Page.tsx\`
 
 \`\`\`tsx
 import { PageContextServer } from 'vike/types';
 
 export default function Page() {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-neon-cyan/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-neon-purple/10 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
+return (
+<div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+{/_ Animated background elements _/}
+<div className="absolute inset-0 overflow-hidden pointer-events-none">
+<div className="absolute top-1/4 left-1/4 w-96 h-96 bg-neon-cyan/10 rounded-full blur-3xl animate-pulse" />
+<div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-neon-purple/10 rounded-full blur-3xl animate-pulse delay-1000" />
+</div>
 
       <div className="relative z-10 text-center max-w-4xl mx-auto px-6">
         <h1 className="text-6xl md:text-8xl font-bold mb-6 tracking-tight">
@@ -522,25 +500,26 @@ export default function Page() {
         </div>
       </div>
     </div>
-  );
+
+);
 }
 \`\`\`
 
 ### 3.2 Examples Index Page
 
-**File**: \`docs/pages/examples/+Page.tsx\`
+**File**: \`docs-site/pages/examples/+Page.tsx\`
 
 \`\`\`tsx
 import { PageContext } from 'vike/types';
 
 export default function Page({ pageContext }: { pageContext: PageContext }) {
-  const { examples } = pageContext.data;
+const { examples } = pageContext.data;
 
-  return (
-    <div className="py-12">
-      <h1 className="text-4xl font-bold mb-8">
-        Examples
-      </h1>
+return (
+<div className="py-12">
+<h1 className="text-4xl font-bold mb-8">
+Examples
+</h1>
 
       <div className="space-y-6">
         {examples.map((example) => (
@@ -572,13 +551,14 @@ export default function Page({ pageContext }: { pageContext: PageContext }) {
         ))}
       </div>
     </div>
-  );
+
+);
 }
 \`\`\`
 
 ### 3.3 Individual Example Page
 
-**File**: \`docs/pages/examples/[id]/+Page.tsx\`
+**File**: \`docs-site/pages/examples/[id]/+Page.tsx\`
 
 \`\`\`tsx
 import { PageContextServer } from 'vike/types';
@@ -587,88 +567,89 @@ import path from 'path';
 import yaml from 'js-yaml';
 
 export async function onBeforeRender(pageContext: PageContextServer) {
-  const { id } = pageContext.routeParams;
+const { id } = pageContext.routeParams;
 
-  // Read example files
-  const exampleDir = path.resolve(process.cwd(), '../examples', id);
-  const contentPath = path.join(exampleDir, 'content.md');
-  const messagesPath = path.join(exampleDir, 'messages.ts');
-  const hostPath = path.join(exampleDir, 'host.ts');
-  const workerPath = path.join(exampleDir, 'worker.ts');
+// Read example files
+const exampleDir = path.resolve(process.cwd(), '../examples', id);
+const contentPath = path.join(exampleDir, 'content.md');
+const messagesPath = path.join(exampleDir, 'messages.ts');
+const hostPath = path.join(exampleDir, 'host.ts');
+const workerPath = path.join(exampleDir, 'worker.ts');
 
-  const [content, messages, host, worker] = await Promise.all([
-    fs.readFile(contentPath, 'utf-8'),
-    fs.readFile(messagesPath, 'utf-8'),
-    fs.readFile(hostPath, 'utf-8'),
-    fs.readFile(workerPath, 'utf-8'),
-  ]);
+const [content, messages, host, worker] = await Promise.all([
+fs.readFile(contentPath, 'utf-8'),
+fs.readFile(messagesPath, 'utf-8'),
+fs.readFile(hostPath, 'utf-8'),
+fs.readFile(workerPath, 'utf-8'),
+]);
 
-  return {
-    pageContext: {
-      title: id,
-      data: {
-        example: {
-          id,
-          content,
-          messages,
-          host,
-          worker,
-        },
-      },
-    },
-  };
+return {
+pageContext: {
+title: id,
+data: {
+example: {
+id,
+content,
+messages,
+host,
+worker,
+},
+},
+},
+};
 }
 
 export default function Page({ pageContext }: { pageContext: PageContext }) {
-  const { example } = pageContext.data;
+const { example } = pageContext.data;
 
-  // Parse {{file:filename}} placeholders
-  const content = example.content.replace(/\{\{file:(.*?)\}\}/g, (match, filename) => {
-    if (filename === 'messages.ts') {
-      return `<CodeBlock code={\`\${example.messages}\`} language="typescript" />`;
+// Parse {{file:filename}} placeholders
+const content = example.content.replace(/\{\{file:(.\*?)\}\}/g, (match, filename) => {
+if (filename === 'messages.ts') {
+return `<CodeBlock code={\`\${example.messages}\`} language="typescript" />`;
     }
     if (filename === 'host.ts') {
       return `<CodeBlock code={\`\${example.host}\`} language="typescript" />`;
     }
     if (filename === 'worker.ts') {
       return `<CodeBlock code={\`\${example.worker}\`} language="typescript" />`;
-    }
-    return match;
-  });
+}
+return match;
+});
 
-  return (
-    <article className="prose prose-invert prose-neon max-w-none">
-      <div
-        dangerouslySetInnerHTML={{ __html: content }}
-      />
-    </article>
-  );
+return (
+<article className="prose prose-invert prose-neon max-w-none">
+<div
+dangerouslySetInnerHTML={{ __html: content }}
+/>
+</article>
+);
 }
 \`\`\`
 
 ### 3.4 Documentation Pages
 
-**File**: \`docs/pages/_default.page.tsx\`
+**File**: \`docs-site/pages/\_default.page.tsx\`
 
 \`\`\`tsx
 import { PageContext } from 'vike/types';
 
 export default function Page({ pageContext, children }: {
-  pageContext: PageContext;
-  children: React.ReactNode;
+pageContext: PageContext;
+children: React.ReactNode;
 }) {
-  return (
-    <>
-      {children}
-    </>
-  );
+return (
+<>
+{children}
+</>
+);
 }
 \`\`\`
 
 Markdown files in subdirectories will automatically become pages. Create:
-- \`docs/pages/getting-started/installation.md\`
-- \`docs/pages/getting-started/quick-start.md\`
-- \`docs/pages/guides/type-safety.md\`
+
+- \`docs-site/pages/getting-started/installation.md\`
+- \`docs-site/pages/getting-started/quick-start.md\`
+- \`docs-site/pages/guides/type-safety.md\`
 - etc.
 
 ---
@@ -677,39 +658,38 @@ Markdown files in subdirectories will automatically become pages. Create:
 
 ### 4.1 Code Block Component
 
-**File**: \`docs/renderer/CodeBlock.tsx\`
+**File**: \`docs-site/renderer/CodeBlock.tsx\`
 
 With syntax highlighting using Shiki (or Prism.js with neon theme):
 
 \`\`\`tsx
 export function CodeBlock({ code, language }: {
-  code: string;
-  language: string;
+code: string;
+language: string;
 }) {
-  // Use Shiki for server-side highlighting, or client-side Prism
-  // For now, simple pre/code with styling
-  return (
-    <div className="my-6 rounded-xl overflow-hidden border border-white/10">
-      <div className="flex items-center justify-between px-4 py-2 bg-black/40 border-b border-white/5">
-        <span className="text-xs text-muted font-mono">{language}</span>
-        <button
-          className="text-xs text-neon-cyan hover:text-neon-mint transition-colors"
-          onClick={() => navigator.clipboard.writeText(code)}
-        >
-          Copy
-        </button>
-      </div>
-      <pre className="p-6 overflow-x-auto bg-black/60">
-        <code className="text-sm font-mono" dangerouslySetInnerHTML={{ __html: code }} />
-      </pre>
-    </div>
-  );
+// Use Shiki for server-side highlighting, or client-side Prism
+// For now, simple pre/code with styling
+return (
+<div className="my-6 rounded-xl overflow-hidden border border-white/10">
+<div className="flex items-center justify-between px-4 py-2 bg-black/40 border-b border-white/5">
+<span className="text-xs text-muted font-mono">{language}</span>
+<button
+className="text-xs text-neon-cyan hover:text-neon-mint transition-colors"
+onClick={() => navigator.clipboard.writeText(code)} >
+Copy
+</button>
+</div>
+<pre className="p-6 overflow-x-auto bg-black/60">
+<code className="text-sm font-mono" dangerouslySetInnerHTML={{ __html: code }} />
+</pre>
+</div>
+);
 }
 \`\`\`
 
 ### 4.2 Pagefind Search UI
 
-**File**: \`docs/renderer/Pagefind.tsx\`
+**File**: \`docs-site/renderer/Pagefind.tsx\`
 
 Custom Pagefind UI integration:
 
@@ -717,27 +697,27 @@ Custom Pagefind UI integration:
 import { useEffect, useState } from 'react';
 
 export function PagefindSearch() {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
+const [query, setQuery] = useState('');
+const [results, setResults] = useState<any[]>([]);
+const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    // Load Pagefind UI library
-    const script = document.createElement('script');
-    script.src = '/pagefind/pagefind-ui.js';
-    document.body.appendChild(script);
-  }, []);
+useEffect(() => {
+// Load Pagefind UI library
+const script = document.createElement('script');
+script.src = '/pagefind/pagefind-ui.js';
+document.body.appendChild(script);
+}, []);
 
-  return (
-    <div className="relative">
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onFocus={() => setIsOpen(true)}
-        placeholder="Search docs..."
-        className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-primary placeholder:text-muted focus:border-neon-cyan focus:outline-none transition-colors"
-      />
+return (
+<div className="relative">
+<input
+type="text"
+value={query}
+onChange={(e) => setQuery(e.target.value)}
+onFocus={() => setIsOpen(true)}
+placeholder="Search docs..."
+className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-primary placeholder:text-muted focus:border-neon-cyan focus:outline-none transition-colors"
+/>
 
       {isOpen && query && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-secondary rounded-xl border border-white/10 shadow-neon overflow-hidden max-h-96 overflow-y-auto">
@@ -760,7 +740,8 @@ export function PagefindSearch() {
         </div>
       )}
     </div>
-  );
+
+);
 }
 \`\`\`
 
@@ -772,14 +753,16 @@ export function PagefindSearch() {
 
 Update existing example \`content.md\` files to use consistent front-matter:
 
-\`\`\`yaml
----
+## \`\`\`yaml
+
 title: Basic Ping-Pong Worker
 description: This example demonstrates the fundamental request/response pattern
 difficulty: beginner
 tags:
-  - basics
-  - request-response
+
+- basics
+- request-response
+
 ---
 
 ## Overview
@@ -804,73 +787,38 @@ Option A: Manual markdown with TSDoc comments in source
 Option B: Auto-generate from TSDoc using \`typedoc\` or \`api-extractor\`
 
 For MVP, manually create API pages with type definitions extracted from source:
-- \`docs/pages/api/create-worker.md\`
-- \`docs/pages/api/start-worker-server.md\`
-- \`docs/pages/api/handlers.md\`
+
+- \`docs-site/pages/api/create-worker.md\`
+- \`docs-site/pages/api/start-worker-server.md\`
+- \`docs-site/pages/api/handlers.md\`
 - etc.
 
 ---
 
 ## Phase 6: Build & Deployment
 
-### 6.1 Nx Configuration
+### 6.1 Verify Nx Auto-Detection
 
-Update \`nx.json\`:
+Nx auto-detects the \`docs-site\` project via workspace plugins:
 
-\`\`\`json
-{
-  "projects": {
-    "docs-site": {
-      "root": "docs",
-      "sourceRoot": "docs",
-      "projectType": "application",
-      "targets": {
-        "build": {
-          "executor": "@nx/vite:build",
-          "options": {
-            "configFile": "docs/vite.config.ts"
-          },
-          "outputs": ["{projectRoot}/dist"]
-        },
-        "dev": {
-          "executor": "@nx/vite:dev-server",
-          "options": {
-            "configFile": "docs/vite.config.ts"
-          }
-        },
-        "preview": {
-          "executor": "@nx/vite:preview-server",
-          "options": {
-            "configFile": "docs/vite.config.ts"
-          }
-        }
-      }
-    }
-  }
-}
+- \`@nx/vite\` plugin detects \`vite.config.ts\`
+- \`@nx/js\` plugin detects TypeScript
+- Available targets: \`build\`, \`dev\`, \`preview\`, \`typecheck\`, \`lint\`
+
+**Verify**:
+\`\`\`bash
+nx show project docs-site
+pnpm nx run docs-site:build
+pnpm nx run docs-site:dev
+pnpm nx run docs-site:preview
 \`\`\`
 
-### 6.2 Pagefind Configuration
-
-**File**: \`docs/pagefind.json\`
-
-\`\`\`json
-{
-  "rootSelector": "main",
-  "glob": "**/*.{html,md}",
-  "excludeSelectors": [
-    "[data-pagefind-ignore]",
-    ".pagefind-ui"
-  ]
-}
-\`\`\`
-
-### 6.3 Build Process
+### 6.2 Build Process
 
 1. Run \`pnpm nx run docs-site:build\`
-2. Vike builds pages to \`docs/dist/\`
-3. Pagefind plugin runs automatically, indexing \`docs/dist/\`
-4. Search files generated in \`docs/dist/pagefind/\`
+2. Vike builds pages to \`docs-site/dist/\`
+3. Pagefind plugin runs automatically, indexing \`docs-site/dist/\`
+4. Search files generated in \`docs-site/dist/pagefind/\`
 5. Deploy to static host (Vercel, Netlify, GitHub Pages)
 
 ---
@@ -910,12 +858,12 @@ Update \`nx.json\`:
 
 ### Trade-offs Considered
 
-| Decision | Alternative | Chosen Because |
-|-----------|-------------|-----------------|
+| Decision                | Alternative        | Chosen Because                                  |
+| ----------------------- | ------------------ | ----------------------------------------------- |
 | Vike hooks for examples | Custom Vite plugin | Vike's \`+data.server.ts\` is designed for this |
-| Pagefind post-build | Pre-build index | Post-build captures final rendered HTML |
-| Tailwind CSS | Styled Components | Faster development, easier theming |
-| Dark neon theme | Light theme | User requested distinctive, dark is more unique |
+| Pagefind post-build     | Pre-build index    | Post-build captures final rendered HTML         |
+| Tailwind CSS            | Styled Components  | Faster development, easier theming              |
+| Dark neon theme         | Light theme        | User requested distinctive, dark is more unique |
 
 ---
 

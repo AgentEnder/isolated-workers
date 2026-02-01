@@ -1,6 +1,7 @@
 packages:
   - packages/*
   - docs
+  - docs-site
   - examples
   - e2e
   - tools/scripts

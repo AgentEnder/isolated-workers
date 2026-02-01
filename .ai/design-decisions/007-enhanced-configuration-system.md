@@ -23,20 +23,22 @@ The current middleware is a global singleton that gets replaced on each registra
 **Decision**: Replace global singleton middleware with per-instance middleware function arrays.
 
 **Rationale**:
+
 - Each worker/server can have its own middleware pipeline
 - Sequential application (left-to-right) matches common expectations
 - Middleware that throws/rejects should fail fast and propagate the error
 - Simpler than chaining/composition patterns while maintaining flexibility
 
 **Signature**:
+
 ```typescript
 type MiddlewareFn = (
   message: unknown,
-  direction: 'incoming' | 'outgoing'
+  direction: 'incoming' | 'outgoing',
 ) => unknown | Promise<unknown>;
 
 interface WorkerOptions<TDefs extends MessageDefs = MessageDefs> {
-  middleware?: MiddlewareFn[];  // Applied left-to-right
+  middleware?: MiddlewareFn[]; // Applied left-to-right
 }
 ```
 
@@ -45,6 +47,7 @@ interface WorkerOptions<TDefs extends MessageDefs = MessageDefs> {
 **Decision**: Attach the message terminator to the serializer interface, not as a separate option.
 
 **Rationale**:
+
 - Terminator must match on both client and server
 - Serializer must match on both sides already
 - Coupling them reduces likelihood of misconfiguration
@@ -52,11 +55,12 @@ interface WorkerOptions<TDefs extends MessageDefs = MessageDefs> {
 - Default: JSON serializer with `\n` terminator
 
 **Interface**:
+
 ```typescript
 interface Serializer {
   serialize<T>(data: T): string | Buffer;
   deserialize<T>(data: string | Buffer): T;
-  terminator: string | Buffer;  // Bundled with serializer
+  terminator: string | Buffer; // Bundled with serializer
 }
 ```
 
@@ -65,6 +69,7 @@ interface Serializer {
 **Decision**: Server never accepts socket path directly - always reads from environment variable.
 
 **Rationale**:
+
 - Prevents socket path mismatches between client and server
 - Client spawns server and controls the socket path via env var
 - Server has no reason to override - it's spawned specifically for that path
@@ -75,6 +80,7 @@ interface Serializer {
 **Decision**: Provide `AnyMessage<TDefs>` as a separate type helper instead of modifying `DefineMessages`.
 
 **Rationale**:
+
 - Keeps `DefineMessages` simple - it just returns `TDefs`
 - No need for `Omit<TDefs, 'AnyMessage'>` in other type helpers
 - Type helpers stay clean and don't need to exclude synthetic properties
@@ -82,6 +88,7 @@ interface Serializer {
 - Follows existing pattern of type extraction helpers
 
 **Implementation**:
+
 ```typescript
 // DefineMessages stays simple
 type DefineMessages<TDefs extends MessageDefs> = TDefs;
@@ -99,12 +106,14 @@ function handle(msg: AnyMessage<MyMessages>) {}
 **Decision**: Make options interfaces generic over `MessageDefs` for typed transaction ID generators.
 
 **Rationale**:
+
 - Transaction ID generator receives actual message types
 - Better type inference for middleware and handlers
 - Consistent with type-safe philosophy
 - Defaults to `MessageDefs` for legacy/untyped usage
 
 **Signature**:
+
 ```typescript
 interface WorkerOptions<TDefs extends MessageDefs = MessageDefs> {
   txIdGenerator?: (message: AnyMessage<TDefs>) => string;
@@ -116,12 +125,14 @@ interface WorkerOptions<TDefs extends MessageDefs = MessageDefs> {
 **Decision**: Introduce `MetaLogger` wrapper that checks log levels before delegating to actual logger.
 
 **Rationale**:
+
 - Logger interface stays simple with `debug/info/warn/error` methods
 - Log level filtering happens in wrapper, not in every logger implementation
 - Users can provide custom logger without implementing filtering logic
 - Default logger uses console methods
 
 **Structure**:
+
 ```typescript
 interface Logger {
   debug(...parts: unknown[]): void;
@@ -132,7 +143,10 @@ interface Logger {
 
 // Internal wrapper
 class MetaLogger {
-  constructor(private logger: Logger, private level: LogLevel) {}
+  constructor(
+    private logger: Logger,
+    private level: LogLevel,
+  ) {}
   // Filters calls based on configured level
 }
 ```
@@ -142,18 +156,21 @@ class MetaLogger {
 **Decision**: Split options between `createWorker` (client-side) and `createWorkerServer` (server-side) based on where they're used.
 
 **Rationale**:
+
 - Some options only make sense on one side (e.g., `detached` for client, `disconnectBehavior` for server)
 - Shared options (logger, serializer, middleware) configured on both sides
 - User's responsibility to ensure shared options match
 - Clear separation prevents confusion about where configuration takes effect
 
 **Client-side** (`WorkerOptions`):
+
 - Worker spawning: `script`, `env`, `spawnOptions`, `detached`
 - Connection: `startupTimeout`, `reconnectAttempts`, `reconnectDelay`, `reconnectMaxDelay`
 - Messaging: `middleware`, `serializer`, `txIdGenerator`
 - Logging: `logLevel`, `logger`
 
 **Server-side** (`WorkerServerOptions`):
+
 - Lifecycle: `hostConnectTimeout`, `disconnectBehavior`
 - Messaging: `middleware`, `serializer`, `txIdGenerator`
 - Logging: `logLevel`, `logger`
@@ -163,6 +180,7 @@ class MetaLogger {
 **Decision**: `detached: true` sets both the `detached` spawn option AND calls `unref()` on the child process.
 
 **Rationale**:
+
 - Detached workers shouldn't prevent parent from exiting
 - `detached` flag alone doesn't prevent parent blocking
 - `unref()` removes process from event loop's reference count
@@ -173,6 +191,7 @@ class MetaLogger {
 **Decision**: Nest connection options under `connection` property with flexible delay function.
 
 **Rationale**:
+
 - Groups related options together (attempts, delay, maxDelay)
 - Cleaner API surface with nested configuration
 - Delay function allows custom backoff curves (exponential, linear, polynomial, etc.)
@@ -180,11 +199,12 @@ class MetaLogger {
 - Users have full control over retry strategy
 
 **Options**:
+
 ```typescript
 interface ConnectionConfig {
-  attempts?: number;              // Default: 5
-  delay?: number | ((attempt: number) => number);  // Default: 100ms or exponential fn
-  maxDelay?: number;              // Default: 5000ms cap
+  attempts?: number; // Default: 5
+  delay?: number | ((attempt: number) => number); // Default: 100ms or exponential fn
+  maxDelay?: number; // Default: 5000ms cap
 }
 
 interface WorkerOptions {
@@ -193,6 +213,7 @@ interface WorkerOptions {
 ```
 
 **Examples**:
+
 ```typescript
 // Exponential backoff (default behavior)
 connection: { delay: 100, maxDelay: 5000 }
@@ -209,6 +230,7 @@ connection: {
 **Decision**: Allow configuration of server behavior when host disconnects, and expose `disconnect()`/`reconnect()` methods on worker client for `keep-alive` scenarios.
 
 **Rationale**:
+
 - Nx pattern: shutdown on first disconnect (single-use workers)
 - Long-running services may want to keep-alive for reconnections
 - Users with `keep-alive` need explicit control to disconnect/reconnect
@@ -217,10 +239,12 @@ connection: {
 - Default to `'shutdown'` to match Nx behavior
 
 **Server Options**:
+
 - `'shutdown'`: Server stops when host disconnects (default)
 - `'keep-alive'`: Server continues running, waits for reconnection
 
 **Worker Client API**:
+
 ```typescript
 interface WorkerClient<TMessages> {
   send<K extends keyof TMessages>(...): Promise<...>;
@@ -238,6 +262,7 @@ interface WorkerClient<TMessages> {
 **Decision**: Export generic helper types for common function signatures.
 
 **Rationale**:
+
 - Users writing middleware/generators need proper types
 - Prevents users from manually reconstructing complex types
 - Better DX - import and use directly
@@ -245,14 +270,15 @@ interface WorkerClient<TMessages> {
 - Consistent with TypeScript best practices
 
 **Exported Types**:
+
 ```typescript
 export type Middleware<TDefs extends MessageDefs = MessageDefs> = (
   message: AnyMessage<TDefs>,
-  direction: 'incoming' | 'outgoing'
+  direction: 'incoming' | 'outgoing',
 ) => unknown | Promise<unknown>;
 
 export type TransactionIdGenerator<TDefs extends MessageDefs = MessageDefs> = (
-  message: AnyMessage<TDefs>
+  message: AnyMessage<TDefs>,
 ) => string;
 ```
 
@@ -261,6 +287,7 @@ export type TransactionIdGenerator<TDefs extends MessageDefs = MessageDefs> = (
 **Decision**: Enforce class-based serializers and use constructor name for mismatch detection across process boundaries.
 
 **Rationale**:
+
 - Serializers must match on both sides but can't be sent over IPC
 - Class name provides reliable identifier that can be passed via env var
 - Enables automatic detection of mismatches on worker startup
@@ -269,6 +296,7 @@ export type TransactionIdGenerator<TDefs extends MessageDefs = MessageDefs> = (
 - Prevents subtle bugs from serializer mismatches
 
 **Implementation**:
+
 ```typescript
 abstract class Serializer {
   abstract serialize<T>(data: T): string | Buffer;
@@ -277,8 +305,12 @@ abstract class Serializer {
 }
 
 class JsonSerializer extends Serializer {
-  serialize<T>(data: T): string { return JSON.stringify(data); }
-  deserialize<T>(data: string | Buffer): T { return JSON.parse(data.toString()); }
+  serialize<T>(data: T): string {
+    return JSON.stringify(data);
+  }
+  deserialize<T>(data: string | Buffer): T {
+    return JSON.parse(data.toString());
+  }
   terminator = '\n';
 }
 
@@ -289,7 +321,7 @@ env.ISOLATED_WORKERS_SERIALIZER = serializer.constructor.name;
 if (serializer.constructor.name !== process.env.ISOLATED_WORKERS_SERIALIZER) {
   throw new Error(
     `Serializer mismatch: host uses ${process.env.ISOLATED_WORKERS_SERIALIZER}, ` +
-    `worker uses ${serializer.constructor.name}`
+      `worker uses ${serializer.constructor.name}`,
   );
 }
 ```
@@ -299,6 +331,7 @@ if (serializer.constructor.name !== process.env.ISOLATED_WORKERS_SERIALIZER) {
 **Decision**: Pending messages keep host process alive via `setTimeout` references (not unref'd).
 
 **Rationale**:
+
 - Pending messages represent active work that should complete
 - Unreffing timeouts could cause unexpected process shutdown mid-operation
 - Node.js ref counting ensures process stays alive while work is pending
@@ -307,6 +340,7 @@ if (serializer.constructor.name !== process.env.ISOLATED_WORKERS_SERIALIZER) {
 - Timeout cleanup happens when message completes or times out
 
 **Behavior**:
+
 - Each pending message increments Node's ref counter via `setTimeout`
 - Process will not exit until all pending messages complete or timeout
 - Explicit `close()` clears pending messages and allows exit

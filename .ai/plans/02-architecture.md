@@ -84,14 +84,14 @@ const handlers: Handlers<MyMessageDefs> = {
   shutdown: () => {
     // Fire-and-forget, no response
     console.log('Shutting down...');
-  }
+  },
 };
 
 // Set up socket server
 const server = createServer((socket) => {
   // Route messages via consumeMessage
   socket.on(
-    "data",
+    'data',
     consumeMessagesFromSocket((raw) => {
       const message = JSON.parse(raw.toString());
       if (isWorkerMessage(message)) {
@@ -100,7 +100,7 @@ const server = createServer((socket) => {
     }),
   );
 
-  socket.on("end", () => {
+  socket.on('end', () => {
     // Cleanup and exit
   });
 });
@@ -198,12 +198,18 @@ type WithResult<TDefs extends MessageDefs> = {
   [K in keyof TDefs]: TDefs[K] extends { result: unknown } ? K : never;
 }[keyof TDefs];
 
-type MessageOf<TDefs extends MessageDefs, K extends keyof TDefs> = BaseMessage & {
+type MessageOf<
+  TDefs extends MessageDefs,
+  K extends keyof TDefs,
+> = BaseMessage & {
   type: K;
   payload: TDefs[K]['payload'];
 };
 
-type ResultOf<TDefs extends MessageDefs, K extends WithResult<TDefs>> = BaseMessage & {
+type ResultOf<
+  TDefs extends MessageDefs,
+  K extends WithResult<TDefs>,
+> = BaseMessage & {
   type: `${K & string}Result`;
   payload: TDefs[K]['result'];
 };
@@ -219,7 +225,7 @@ type AllResults<TDefs extends MessageDefs> = {
 // Handler type - returns just the result payload
 type Handlers<TDefs extends MessageDefs> = {
   [K in keyof TDefs & string]: (
-    payload: TDefs[K]['payload']
+    payload: TDefs[K]['payload'],
   ) => TDefs[K] extends { result: unknown }
     ? MaybePromise<TDefs[K]['result'] | void>
     : MaybePromise<void>;
@@ -267,7 +273,9 @@ const RESULT_TYPES: ReadonlyArray<WorkerResult['type']> = [
   'computeResult',
 ];
 
-export function isWorkerMessage(message: Serializable): message is WorkerMessage {
+export function isWorkerMessage(
+  message: Serializable,
+): message is WorkerMessage {
   return (
     typeof message === 'object' &&
     message !== null &&
@@ -291,7 +299,7 @@ export function isWorkerResult(message: Serializable): message is WorkerResult {
 export async function consumeMessage(
   socket: Socket,
   raw: WorkerMessage,
-  handlers: Handlers<WorkerMessageDefs>
+  handlers: Handlers<WorkerMessageDefs>,
 ): Promise<void> {
   const type = raw.type as keyof WorkerMessageDefs & string;
   const handler = handlers[type];
@@ -299,9 +307,7 @@ export async function consumeMessage(
   // Type widening for dynamic dispatch - safe because types guarantee
   // message.type always indexes into the matching handler
   const resultPayload = await (
-    handler as (
-      payload: WorkerMessage['payload']
-    ) => MaybePromise<unknown>
+    handler as (payload: WorkerMessage['payload']) => MaybePromise<unknown>
   )(raw.payload);
 
   // Infrastructure automatically wraps response
@@ -316,7 +322,7 @@ export async function consumeMessage(
 
 export function sendMessageOverSocket(
   socket: Socket,
-  message: WorkerMessage | WorkerResult
+  message: WorkerMessage | WorkerResult,
 ): void {
   socket.write(JSON.stringify(message) + MESSAGE_END_SEQ);
 }
@@ -357,10 +363,13 @@ export function sendMessageOverSocket(
 
 ```typescript
 // Message definition type (user provides this)
-export type MessageDefinitions = Record<string, {
-  payload: unknown;
-  result?: unknown;
-}>;
+export type MessageDefinitions = Record<
+  string,
+  {
+    payload: unknown;
+    result?: unknown;
+  }
+>;
 
 // Worker options
 export interface WorkerOptions<TDefs extends MessageDefinitions = never> {
@@ -374,12 +383,12 @@ export interface WorkerOptions<TDefs extends MessageDefinitions = never> {
 export interface WorkerClient<TDefs extends MessageDefinitions = never> {
   send<K extends keyof TDefs & string>(
     type: K,
-    payload: TDefs[K]['payload']
+    payload: TDefs[K]['payload'],
   ): Promise<void>;
 
   request<K extends WithResult<TDefs> & string>(
     type: K,
-    payload: TDefs[K]['payload']
+    payload: TDefs[K]['payload'],
   ): Promise<ResultOf<TDefs, K>['payload']>;
 
   shutdown(): Promise<void>;
@@ -399,12 +408,18 @@ type BaseMessage = { tx: string };
 // Type extraction helpers
 type MessageDefs = Record<string, { payload: unknown; result?: unknown }>;
 
-type MessageOf<TDefs extends MessageDefs, K extends keyof TDefs> = BaseMessage & {
+type MessageOf<
+  TDefs extends MessageDefs,
+  K extends keyof TDefs,
+> = BaseMessage & {
   type: K;
   payload: TDefs[K]['payload'];
 };
 
-type ResultOf<TDefs extends MessageDefs, K extends WithResult<TDefs>> = BaseMessage & {
+type ResultOf<
+  TDefs extends MessageDefs,
+  K extends WithResult<TDefs>,
+> = BaseMessage & {
   type: `${K & string}Result`;
   payload: TDefs[K]['result'];
 };
@@ -416,7 +431,7 @@ type WithResult<TDefs extends MessageDefs> = {
 // Handler type - returns raw payload
 type Handlers<TDefs extends MessageDefs> = {
   [K in keyof TDefs & string]: (
-    payload: TDefs[K]['payload']
+    payload: TDefs[K]['payload'],
   ) => TDefs[K] extends { result: unknown }
     ? MaybePromise<TDefs[K]['result'] | void>
     : MaybePromise<void>;

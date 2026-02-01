@@ -156,11 +156,11 @@ This project uses a structured approach for AI agent collaboration. See [`.ai/RE
 
 ### Plan vs Implementation
 
-| Plan (`.ai/plans/`) | Implementation (`.ai/implementation/`) |
-|---------------------|----------------------------------------|
-| "Workers need graceful shutdown" | "Create `src/core/worker.ts` with `shutdown()` method" |
-| "Support cross-platform sockets" | "Implement `SocketAdapter` interface with Unix/Windows adapters" |
-| "Type-safe messaging" | "Define `MessageOf<T, K>` helper type in `src/types/messages.ts`" |
+| Plan (`.ai/plans/`)              | Implementation (`.ai/implementation/`)                            |
+| -------------------------------- | ----------------------------------------------------------------- |
+| "Workers need graceful shutdown" | "Create `src/core/worker.ts` with `shutdown()` method"            |
+| "Support cross-platform sockets" | "Implement `SocketAdapter` interface with Unix/Windows adapters"  |
+| "Type-safe messaging"            | "Define `MessageOf<T, K>` helper type in `src/types/messages.ts`" |
 
 ### Key Rule
 

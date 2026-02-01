@@ -12,15 +12,17 @@ We need to implement the core worker infrastructure following the patterns estab
 
 ### 1. Cross-Platform Socket Support
 
-**Decision**: Support both Unix domain sockets (*nix) and Windows named pipes through a platform adapter pattern.
+**Decision**: Support both Unix domain sockets (\*nix) and Windows named pipes through a platform adapter pattern.
 
 **Rationale**:
+
 - Node.js abstracts most socket operations, but path generation differs
 - Unix uses filesystem paths (`/tmp/...` or abstract sockets)
 - Windows uses named pipe paths (`\\.\pipe\...`)
 - Platform detection happens at runtime via `process.platform`
 
 **Implementation**:
+
 ```typescript
 interface SocketAdapter {
   createServer(path: string): Server;
@@ -34,12 +36,14 @@ interface SocketAdapter {
 **Decision**: Support a single middleware function with direction context (`'send' | 'receive'`) rather than separate pre/post hooks.
 
 **Rationale**:
+
 - Simpler API - one registration point
 - Direction context allows observing both directions
 - Can transform messages in either direction
 - Reduces complexity while maintaining flexibility
 
 **Implementation**:
+
 ```typescript
 type MiddlewareDirection = 'send' | 'receive';
 
@@ -56,11 +60,13 @@ type Middleware = (context: MiddlewareContext) => unknown | Promise<unknown>;
 **Decision**: Provide a pluggable serializer interface with a default JSON implementation.
 
 **Rationale**:
+
 - Users may need custom serialization (binary data, compression, etc.)
 - Error serialization needs special handling to preserve stack traces
 - Simple interface that can be swapped globally
 
 **Implementation**:
+
 ```typescript
 interface Serializer {
   serialize<T>(data: T): string | Buffer;
@@ -80,12 +86,14 @@ interface SerializedError {
 **Decision**: Four-phase lifecycle with explicit state transitions.
 
 **Rationale**:
+
 - Clear separation of concerns
 - Allows proper cleanup at each phase
 - Easier to debug and test
 - Prevents resource leaks
 
 **Phases**:
+
 1. **Spawn**: Create process + socket server
 2. **Connect**: Establish parent-to-worker connection
 3. **Message**: Send/receive with transaction IDs
@@ -96,12 +104,14 @@ interface SerializedError {
 **Decision**: Use UUID-based transaction IDs for pairing requests with responses.
 
 **Rationale**:
+
 - Allows multiple concurrent in-flight requests
 - Simple correlation mechanism
 - Can use `crypto.randomUUID()` (Node.js 14.17+)
 - Cleared from pending map when response received
 
 **Implementation**:
+
 ```typescript
 interface BaseMessage {
   tx: string; // Transaction ID
@@ -113,11 +123,13 @@ interface BaseMessage {
 **Decision**: Serialize errors to a plain object that can cross process boundaries, then reconstruct.
 
 **Rationale**:
+
 - Error instances cannot be directly serialized
 - Need to preserve essential properties (message, stack, code)
 - Special handling for common error types (e.g., Node.js errors with `code`)
 
 **Implementation**:
+
 ```typescript
 export function serializeError(error: Error): SerializedError;
 export function deserializeError(serialized: SerializedError): Error;
@@ -128,11 +140,13 @@ export function deserializeError(serialized: SerializedError): Error;
 **Decision**: Implement exponential backoff with jitter for connection retries.
 
 **Rationale**:
+
 - Worker startup takes time (socket creation)
 - Exponential backoff prevents overwhelming the system
 - Jitter prevents thundering herd when multiple workers start
 
 **Formula**:
+
 ```
 delay = baseDelay * 2^attempt + jitter(0-100ms)
 ```
@@ -142,6 +156,7 @@ delay = baseDelay * 2^attempt + jitter(0-100ms)
 **Decision**: Handlers return raw payloads; infrastructure wraps them automatically.
 
 **Rationale**:
+
 - Simpler handler code - just return the result
 - Consistent with Nx's pattern
 - Infrastructure handles the response message format

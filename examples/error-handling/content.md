@@ -5,6 +5,7 @@ Demonstrates error propagation from worker to host.
 ## Overview
 
 This example shows:
+
 - How errors thrown in worker handlers propagate back to the host
 - Proper error handling with try/catch
 - Error messages are preserved across process boundaries

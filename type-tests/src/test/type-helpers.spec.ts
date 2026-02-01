@@ -1,10 +1,7 @@
 import * as ts from 'typescript';
 import { describe, expect, test } from 'vitest';
 import { loadFixture } from '../lib/compiler.js';
-import {
-  getFirstDeclaration,
-  getRequiredProperty,
-} from '../lib/assertions.js';
+import { getFirstDeclaration, getRequiredProperty } from '../lib/assertions.js';
 
 describe('Type Helpers', () => {
   describe('MessageOf type', () => {

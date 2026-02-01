@@ -1,10 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { loadFixture } from '../lib/compiler.js';
 import * as ts from 'typescript';
-import {
-  getFirstDeclaration,
-  getRequiredProperty,
-} from '../lib/assertions.js';
+import { getFirstDeclaration, getRequiredProperty } from '../lib/assertions.js';
 
 describe('Union Narrowing', () => {
   describe('ProcessEvent discriminated union', () => {

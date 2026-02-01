@@ -30,6 +30,7 @@ Research & Planning          →          Implementation
 **Purpose**: Define WHAT we're building and WHY
 
 **Contents**:
+
 - Consumer workflows and use cases
 - Edge cases and error scenarios
 - Success criteria and acceptance criteria
@@ -37,6 +38,7 @@ Research & Planning          →          Implementation
 - Research excerpts and references
 
 **Style**:
+
 - Focus on problems and requirements
 - Minimal implementation details
 - No specific file paths or code
@@ -51,12 +53,14 @@ Research & Planning          →          Implementation
 **Purpose**: Document WHY we chose specific approaches
 
 **Contents**:
+
 - Architecture Decision Records (ADRs)
 - Technology choices with rationale
 - Alternatives considered
 - Trade-offs and consequences
 
 **Style**:
+
 - Decision-focused
 - Include context and consequences
 - Reference relevant plans
@@ -68,6 +72,7 @@ Research & Planning          →          Implementation
 **Purpose**: Define HOW to implement the plans
 
 **Contents**:
+
 - Technical specifications
 - File-by-file breakdowns
 - Concrete code patterns
@@ -75,6 +80,7 @@ Research & Planning          →          Implementation
 - Specific architectural decisions
 
 **Style**:
+
 - File paths and module structure
 - Function signatures and types
 - Step-by-step implementation guide
@@ -86,13 +92,13 @@ Research & Planning          →          Implementation
 
 ## Plan vs Implementation
 
-| Aspect | Plan (`.ai/plans/`) | Implementation (`.ai/implementation/`) |
-|--------|---------------------|----------------------------------------|
-| **Focus** | WHAT & WHY | HOW |
-| **Content** | Workflows, edge cases, requirements | Files, functions, types, code |
-| **Timing** | Before/during design | After plan approved, during coding |
-| **Updates** | Rarely changes once set | Iterates as implementation proceeds |
-| **Audience** | All stakeholders | Implementers (AI agents, developers) |
+| Aspect       | Plan (`.ai/plans/`)                 | Implementation (`.ai/implementation/`) |
+| ------------ | ----------------------------------- | -------------------------------------- |
+| **Focus**    | WHAT & WHY                          | HOW                                    |
+| **Content**  | Workflows, edge cases, requirements | Files, functions, types, code          |
+| **Timing**   | Before/during design                | After plan approved, during coding     |
+| **Updates**  | Rarely changes once set             | Iterates as implementation proceeds    |
+| **Audience** | All stakeholders                    | Implementers (AI agents, developers)   |
 
 ## Writing New Plans
 
@@ -111,33 +117,42 @@ When creating a plan in `.ai/plans/`:
 # Phase N: Plan Title
 
 ## Overview
+
 What are we building and why?
 
 ## Dependencies
+
 What needs to be done first?
 
 ## Key Requirements
+
 ### Functional Requirements
+
 - Feature A should do X
 - Feature B should handle Y
 
 ### Non-Functional Requirements
+
 - Performance criteria
 - Type safety requirements
 
 ## Success Criteria
+
 - [ ] Criterion 1
 - [ ] Criterion 2
 
 ## Edge Cases
+
 - What happens when...?
 - Error scenarios
 
 ## Open Questions
+
 1. Question 1?
 2. Question 2?
 
 ## Research References
+
 - Link to Nx code
 - Link to cli-forge patterns
 ```
@@ -161,21 +176,24 @@ When creating implementation docs in `.ai/implementation/`:
 ## Status: 🔄 IN PROGRESS / ✅ COMPLETE
 
 ## Dependencies
+
 - ✅ Plan N approved
 - ✅ Previous phase complete
 
 ## What We're Building
+
 Reference to plan and specific goals for this phase.
 
 ### Key Files
-
 ```
+
 packages/isolated-workers/src/
 ├── core/
-│   └── feature.ts      # Main implementation
+│ └── feature.ts # Main implementation
 └── types/
-    └── feature.ts      # Type definitions
-```
+└── feature.ts # Type definitions
+
+````
 
 ### Public API
 
@@ -185,7 +203,7 @@ export interface FeatureOptions {
 }
 
 export async function createFeature(options: FeatureOptions): Promise<Feature>;
-```
+````
 
 ## Implementation Steps
 
@@ -195,8 +213,10 @@ export async function createFeature(options: FeatureOptions): Promise<Feature>;
 4. Write tests
 
 ## Success Criteria
+
 - [ ] Step 1 complete
 - [ ] Step 2 complete
+
 ```
 
 ## Status Tracking
@@ -261,3 +281,4 @@ For questions about this workflow:
 - Review existing plans and implementations for patterns
 - Check `.ai/design-decisions/` for architectural context
 - Reference `../nx/` and `../cli-forge/` for source patterns
+```

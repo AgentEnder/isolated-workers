@@ -35,24 +35,24 @@ packages/isolated-workers/src/
  * Union of all message types (requests and responses).
  * Use this for middleware, transaction ID generators, and other
  * functions that handle any message type.
- * 
+ *
  * @example
  * type MyMessages = DefineMessages<{
  *   load: { payload: { config: string }; result: { loaded: true } };
  * }>;
- * 
+ *
  * function middleware(msg: AnyMessage<MyMessages>) {
  *   console.log('Handling:', msg.type);
  * }
  */
-export type AnyMessage<TDefs extends MessageDefs> = 
-  | AllMessages<TDefs> 
+export type AnyMessage<TDefs extends MessageDefs> =
+  | AllMessages<TDefs>
   | AllResults<TDefs>;
 
 /**
  * Middleware function type for message inspection/transformation.
  * Applied sequentially in the order provided.
- * 
+ *
  * @example
  * const logMiddleware: Middleware<MyMessages> = (msg, direction) => {
  *   console.log(`${direction}:`, msg.type);
@@ -61,20 +61,20 @@ export type AnyMessage<TDefs extends MessageDefs> =
  */
 export type Middleware<TDefs extends MessageDefs = MessageDefs> = (
   message: AnyMessage<TDefs>,
-  direction: 'incoming' | 'outgoing'
+  direction: 'incoming' | 'outgoing',
 ) => unknown | Promise<unknown>;
 
 /**
  * Transaction ID generator function type.
  * Receives a message and returns a unique transaction ID string.
- * 
+ *
  * @example
  * const customGen: TransactionIdGenerator<MyMessages> = (msg) => {
  *   return `${msg.type}-${Date.now()}`;
  * };
  */
 export type TransactionIdGenerator<TDefs extends MessageDefs = MessageDefs> = (
-  message: AnyMessage<TDefs>
+  message: AnyMessage<TDefs>,
 ) => string;
 ```
 
@@ -87,7 +87,7 @@ export type TransactionIdGenerator<TDefs extends MessageDefs = MessageDefs> = (
 ```typescript
 /**
  * Define a set of message types with their payloads and optional results.
- * 
+ *
  * @example
  * type MyMessages = DefineMessages<{
  *   load: { payload: { config: string }; result: { loaded: true } };
@@ -106,7 +106,7 @@ export type {
   DefineMessages,
   BaseMessage,
   MessageDef,
-  MessageDefs
+  MessageDefs,
 } from './messages';
 
 export type {
@@ -115,13 +115,13 @@ export type {
   WithResult,
   AllMessages,
   AllResults,
-  AnyMessage,                  // Add this export
-  Middleware,                  // Add this export
-  TransactionIdGenerator,      // Add this export
+  AnyMessage, // Add this export
+  Middleware, // Add this export
+  TransactionIdGenerator, // Add this export
   Handlers,
   PayloadOf,
   ResultPayloadOf,
-  MaybePromise
+  MaybePromise,
 } from './helpers';
 ```
 
@@ -143,14 +143,14 @@ type TestMessages = DefineMessages<{
 const loadMsg: AnyMessage<TestMessages> = {
   tx: '123',
   type: 'load',
-  payload: { config: 'test' }
+  payload: { config: 'test' },
 };
 
 // Test: AnyMessage should include result messages
 const loadResult: AnyMessage<TestMessages> = {
   tx: '123',
   type: 'loadResult',
-  payload: { loaded: true }
+  payload: { loaded: true },
 };
 
 // Test: Regular message access still works
@@ -177,7 +177,7 @@ handleAny(loadResult);
 /**
  * Abstract serializer class for custom message serialization.
  * Includes terminator sequence to delimit messages in the stream.
- * 
+ *
  * IMPORTANT: Must be a named class (not anonymous) for mismatch detection.
  */
 export abstract class Serializer {
@@ -185,12 +185,12 @@ export abstract class Serializer {
    * Serialize data to string or buffer
    */
   abstract serialize<T>(data: T): string | Buffer;
-  
+
   /**
    * Deserialize string or buffer back to data
    */
   abstract deserialize<T>(data: string | Buffer): T;
-  
+
   /**
    * Terminator sequence used to delimit messages in the stream.
    * Must be the same on both client and server.
@@ -205,11 +205,11 @@ export class JsonSerializer extends Serializer {
   serialize<T>(data: T): string {
     return JSON.stringify(data);
   }
-  
+
   deserialize<T>(data: string | Buffer): T {
     return JSON.parse(data.toString());
   }
-  
+
   terminator = '\n';
 }
 
@@ -235,11 +235,11 @@ export function getTerminatorBuffer(serializer: Serializer): Buffer {
 export function validateSerializer(serializer: Serializer): void {
   const expectedName = process.env.ISOLATED_WORKERS_SERIALIZER;
   const actualName = serializer.constructor.name;
-  
+
   if (expectedName && actualName !== expectedName) {
     throw new Error(
       `Serializer mismatch: host uses ${expectedName}, worker uses ${actualName}. ` +
-      `Ensure both client and server use the same serializer class.`
+        `Ensure both client and server use the same serializer class.`,
     );
   }
 }
@@ -261,7 +261,7 @@ async function spawnWorkerProcess(
     ...process.env,
     ...env,
     ISOLATED_WORKERS_SOCKET_PATH: socketPath,
-    ISOLATED_WORKERS_SERIALIZER: serializer.constructor.name  // Pass class name
+    ISOLATED_WORKERS_SERIALIZER: serializer.constructor.name, // Pass class name
   };
 
   // ... spawn process
@@ -275,7 +275,7 @@ async function spawnWorkerProcess(
 ```typescript
 export async function startWorkerServer<TDefs extends MessageDefs>(
   handlers: Handlers<TDefs>,
-  options?: WorkerServerOptions<TDefs>
+  options?: WorkerServerOptions<TDefs>,
 ): Promise<WorkerServer> {
   const {
     serializer = defaultSerializer,
@@ -300,7 +300,7 @@ export async function sendMessage<T>(
   socket: Socket,
   message: TypedMessage<T>,
   serializer: Serializer,
-  middleware?: MiddlewareFn[]
+  middleware?: MiddlewareFn[],
 ): Promise<void> {
   // Apply outgoing middleware
   let processedMessage: unknown = message;
@@ -310,12 +310,12 @@ export async function sendMessage<T>(
 
   const serialized = serializer.serialize(processedMessage);
   const terminator = getTerminatorBuffer(serializer);
-  
+
   return new Promise((resolve, reject) => {
-    const data = Buffer.isBuffer(serialized) 
+    const data = Buffer.isBuffer(serialized)
       ? Buffer.concat([serialized, terminator])
       : Buffer.concat([Buffer.from(serialized), terminator]);
-      
+
     socket.write(data, (err) => {
       if (err) reject(err);
       else resolve();
@@ -341,10 +341,10 @@ import type { Middleware, AnyMessage } from '../types';
 async function applyMiddleware<TDefs extends MessageDefs>(
   message: AnyMessage<TDefs>,
   direction: 'incoming' | 'outgoing',
-  middleware: Middleware<TDefs>[]
+  middleware: Middleware<TDefs>[],
 ): Promise<unknown> {
   let result: unknown = message;
-  
+
   for (const mw of middleware) {
     try {
       const output = await mw(result as AnyMessage<TDefs>, direction);
@@ -355,11 +355,11 @@ async function applyMiddleware<TDefs extends MessageDefs>(
     } catch (error) {
       // Middleware error - fail fast
       throw new Error(
-        `Middleware error (${direction}): ${error instanceof Error ? error.message : String(error)}`
+        `Middleware error (${direction}): ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
-  
+
   return result;
 }
 
@@ -381,33 +381,33 @@ import type { Middleware, TransactionIdGenerator } from '../types';
 export interface WorkerOptions<TDefs extends MessageDefs = MessageDefs> {
   /** Path to worker script */
   script: string;
-  
+
   /** Environment variables to pass to worker */
   env?: Record<string, string>;
-  
+
   /** Worker lifecycle options */
-  startupTimeout?: number;        // Time to wait for worker to start (default: 30000ms)
-  detached?: boolean;             // Detach worker process (default: false)
-  spawnOptions?: SpawnOptions;    // Additional child process options
-  
+  startupTimeout?: number; // Time to wait for worker to start (default: 30000ms)
+  detached?: boolean; // Detach worker process (default: false)
+  spawnOptions?: SpawnOptions; // Additional child process options
+
   /** Messaging options */
-  middleware?: Middleware<TDefs>[];  // Per-instance middleware pipeline
-  serializer?: Serializer;           // Custom serializer (default: JsonSerializer)
-  txIdGenerator?: TransactionIdGenerator<TDefs>;  // Custom TX ID generator
-  
+  middleware?: Middleware<TDefs>[]; // Per-instance middleware pipeline
+  serializer?: Serializer; // Custom serializer (default: JsonSerializer)
+  txIdGenerator?: TransactionIdGenerator<TDefs>; // Custom TX ID generator
+
   /** Connection options */
   connection?: {
-    attempts?: number;                            // Max reconnection attempts (default: 5)
-    delay?: number | ((attempt: number) => number);  // Delay in ms or function (default: 100)
-    maxDelay?: number;                            // Max delay cap (default: 5000ms)
+    attempts?: number; // Max reconnection attempts (default: 5)
+    delay?: number | ((attempt: number) => number); // Delay in ms or function (default: 100)
+    maxDelay?: number; // Max delay cap (default: 5000ms)
   };
-  
+
   /** Logging options */
-  logLevel?: LogLevel;            // Log level (default: 'error')
-  logger?: Logger;                // Custom logger instance
-  
+  logLevel?: LogLevel; // Log level (default: 'error')
+  logger?: Logger; // Custom logger instance
+
   /** Advanced options */
-  socketPath?: string;            // Override socket path (auto-generated if not provided)
+  socketPath?: string; // Override socket path (auto-generated if not provided)
 }
 ```
 
@@ -415,7 +415,7 @@ export interface WorkerOptions<TDefs extends MessageDefs = MessageDefs> {
 
 ```typescript
 export async function createWorker<TDefs extends MessageDefs>(
-  options: WorkerOptions<TDefs>
+  options: WorkerOptions<TDefs>,
 ): Promise<WorkerClient<TDefs>> {
   const {
     script,
@@ -429,15 +429,11 @@ export async function createWorker<TDefs extends MessageDefs>(
     connection: connectionConfig = {},
     logLevel = 'error',
     logger,
-    socketPath: customSocketPath
+    socketPath: customSocketPath,
   } = options;
 
   // Extract connection config
-  const {
-    attempts = 5,
-    delay = 100,
-    maxDelay = 5000
-  } = connectionConfig;
+  const { attempts = 5, delay = 100, maxDelay = 5000 } = connectionConfig;
 
   // Create logger
   const workerLogger = createMetaLogger(logger, logLevel);
@@ -453,7 +449,7 @@ export async function createWorker<TDefs extends MessageDefs>(
     reconnectAttempts: attempts,
     reconnectDelay: delay,
     reconnectMaxDelay: maxDelay,
-    logger: workerLogger
+    logger: workerLogger,
   });
 
   // ... rest of implementation ...
@@ -472,17 +468,17 @@ import type { Middleware, TransactionIdGenerator } from '../types';
  */
 export interface WorkerServerOptions<TDefs extends MessageDefs = MessageDefs> {
   /** Lifecycle options */
-  hostConnectTimeout?: number;    // Time to wait for host to connect (default: 30000ms, 0 = forever)
-  disconnectBehavior?: 'shutdown' | 'keep-alive';  // Behavior on disconnect (default: 'shutdown')
-  
+  hostConnectTimeout?: number; // Time to wait for host to connect (default: 30000ms, 0 = forever)
+  disconnectBehavior?: 'shutdown' | 'keep-alive'; // Behavior on disconnect (default: 'shutdown')
+
   /** Messaging options */
-  middleware?: Middleware<TDefs>[];              // Per-instance middleware pipeline
-  serializer?: Serializer;                        // Custom serializer (must match client!)
-  txIdGenerator?: TransactionIdGenerator<TDefs>;  // Custom TX ID generator
-  
+  middleware?: Middleware<TDefs>[]; // Per-instance middleware pipeline
+  serializer?: Serializer; // Custom serializer (must match client!)
+  txIdGenerator?: TransactionIdGenerator<TDefs>; // Custom TX ID generator
+
   /** Logging options */
-  logLevel?: LogLevel;            // Log level (default: 'error')
-  logger?: Logger;                // Custom logger instance
+  logLevel?: LogLevel; // Log level (default: 'error')
+  logger?: Logger; // Custom logger instance
 }
 ```
 
@@ -515,7 +511,7 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 0,
   info: 1,
   warn: 2,
-  error: 3
+  error: 3,
 };
 
 /**
@@ -527,7 +523,7 @@ class MetaLogger implements Logger {
 
   constructor(
     private baseLogger: Logger,
-    private level: LogLevel
+    private level: LogLevel,
   ) {
     this.minPriority = LOG_LEVEL_PRIORITY[level];
   }
@@ -573,7 +569,7 @@ export const defaultLogger: Logger = {
   debug: (...parts) => console.debug(...parts),
   info: (...parts) => console.info(...parts),
   warn: (...parts) => console.warn(...parts),
-  error: (...parts) => console.error(...parts)
+  error: (...parts) => console.error(...parts),
 };
 
 /**
@@ -581,7 +577,7 @@ export const defaultLogger: Logger = {
  */
 export function createMetaLogger(
   logger: Logger | undefined,
-  level: LogLevel
+  level: LogLevel,
 ): Logger {
   return new MetaLogger(logger ?? defaultLogger, level);
 }
@@ -605,12 +601,12 @@ async function spawnWorkerProcess(
   env: Record<string, string>,
   detached: boolean,
   spawnOptions: SpawnOptions,
-  logger: Logger
+  logger: Logger,
 ): Promise<ChildProcess> {
   const workerEnv = {
     ...process.env,
     ...env,
-    ISOLATED_WORKERS_SOCKET_PATH: socketPath
+    ISOLATED_WORKERS_SOCKET_PATH: socketPath,
   };
 
   logger.debug(`Spawning worker: ${script}`);
@@ -619,7 +615,7 @@ async function spawnWorkerProcess(
     ...spawnOptions,
     detached,
     env: workerEnv,
-    stdio: spawnOptions.stdio ?? 'inherit'
+    stdio: spawnOptions.stdio ?? 'inherit',
   });
 
   // If detached, unref the process so it doesn't block parent exit
@@ -639,7 +635,7 @@ async function spawnWorkerProcess(
 ```typescript
 export async function startWorkerServer<TDefs extends MessageDefs>(
   handlers: Handlers<TDefs>,
-  options?: WorkerServerOptions<TDefs>
+  options?: WorkerServerOptions<TDefs>,
 ): Promise<WorkerServer> {
   // ... extract options ...
 
@@ -655,7 +651,9 @@ export async function startWorkerServer<TDefs extends MessageDefs>(
   if (hostConnectTimeout > 0) {
     connectTimeoutHandle = setTimeout(() => {
       if (!connectionSocket && isRunning) {
-        serverLogger.error(`Host did not connect within ${hostConnectTimeout}ms, shutting down`);
+        serverLogger.error(
+          `Host did not connect within ${hostConnectTimeout}ms, shutting down`,
+        );
         stopServer();
       }
     }, hostConnectTimeout);
@@ -676,10 +674,14 @@ export async function startWorkerServer<TDefs extends MessageDefs>(
       connectionSocket = null;
 
       if (disconnectBehavior === 'shutdown') {
-        serverLogger.info('Shutting down server (disconnectBehavior: shutdown)');
+        serverLogger.info(
+          'Shutting down server (disconnectBehavior: shutdown)',
+        );
         stopServer();
       } else {
-        serverLogger.info('Keeping server alive (disconnectBehavior: keep-alive)');
+        serverLogger.info(
+          'Keeping server alive (disconnectBehavior: keep-alive)',
+        );
       }
     });
 
@@ -703,36 +705,37 @@ export interface WorkerClient<TMessages extends MessageDefs> {
    */
   send<K extends keyof TMessages>(
     type: K,
-    payload: PayloadOf<TMessages, K>
+    payload: PayloadOf<TMessages, K>,
   ): Promise<TMessages[K] extends { result: infer R } ? R : void>;
-  
+
   /**
    * Close connection and terminate worker process completely
    */
   close(): Promise<void>;
-  
+
   /**
    * Disconnect from worker but keep process alive (keep-alive mode only)
    */
   disconnect(): Promise<void>;
-  
+
   /**
    * Reconnect to existing worker (keep-alive mode only)
    */
   reconnect(): Promise<void>;
-  
+
   /** Worker process ID */
   pid: number;
-  
+
   /** Whether worker process is active */
   isActive: boolean;
-  
+
   /** Whether connection to worker is active */
   isConnected: boolean;
 }
 ```
 
 **Implementation notes**:
+
 - `disconnect()` closes socket but doesn't kill process
 - `reconnect()` creates new socket connection to existing process
 - Both methods check if server has `keep-alive` behavior
@@ -750,9 +753,9 @@ export interface ConnectionOptions<TDefs extends MessageDefs = MessageDefs> {
   middleware?: Middleware<TDefs>[];
   serializer?: Serializer;
   txIdGenerator?: TransactionIdGenerator<TDefs>;
-  reconnectAttempts?: number;                        // Default: 5
-  reconnectDelay?: number | ((attempt: number) => number);  // Default: 100ms
-  reconnectMaxDelay?: number;                        // Default: 5000ms
+  reconnectAttempts?: number; // Default: 5
+  reconnectDelay?: number | ((attempt: number) => number); // Default: 100ms
+  reconnectMaxDelay?: number; // Default: 5000ms
   logger?: Logger;
 }
 
@@ -763,31 +766,31 @@ export interface ConnectionOptions<TDefs extends MessageDefs = MessageDefs> {
 function calculateDelay(
   config: number | ((attempt: number) => number),
   attempt: number,
-  maxDelay: number
+  maxDelay: number,
 ): number {
   let delay: number;
-  
+
   if (typeof config === 'function') {
     // Custom delay function
     delay = config(attempt);
-    
+
     // Validate return value
     if (typeof delay !== 'number' || delay < 0 || !isFinite(delay)) {
       throw new Error(
-        `Delay function must return a positive number, got: ${delay}`
+        `Delay function must return a positive number, got: ${delay}`,
       );
     }
   } else {
     // Exponential backoff: baseDelay * 2^attempt
     delay = config * Math.pow(2, attempt);
   }
-  
+
   // Apply max delay cap
   delay = Math.min(delay, maxDelay);
-  
+
   // Add jitter (0-100ms) to prevent thundering herd
   const jitter = Math.random() * 100;
-  
+
   return delay + jitter;
 }
 
@@ -796,7 +799,7 @@ async function connectWithRetry(
   maxAttempts: number,
   delayConfig: number | ((attempt: number) => number),
   maxDelay: number,
-  logger: Logger
+  logger: Logger,
 ): Promise<Socket> {
   let attempt = 0;
 
@@ -806,10 +809,10 @@ async function connectWithRetry(
       return await createSocketConnection(socketPath);
     } catch (error) {
       attempt++;
-      
+
       if (attempt >= maxAttempts) {
         throw new Error(
-          `Failed to connect after ${maxAttempts} attempts: ${error instanceof Error ? error.message : String(error)}`
+          `Failed to connect after ${maxAttempts} attempts: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
 
@@ -847,17 +850,17 @@ export const defaultTxIdGenerator: TransactionIdGenerator = (_message) => {
 export function createRequest<TDefs extends MessageDefs, K extends keyof TDefs>(
   type: K,
   payload: PayloadOf<TDefs, K>,
-  txIdGenerator: TransactionIdGenerator<TDefs> = defaultTxIdGenerator
+  txIdGenerator: TransactionIdGenerator<TDefs> = defaultTxIdGenerator,
 ): MessageOf<TDefs, K> {
   const message = {
     type,
     payload,
-    tx: '' // Placeholder
+    tx: '', // Placeholder
   } as MessageOf<TDefs, K>;
-  
+
   // Generate TX ID from the message
   message.tx = txIdGenerator(message);
-  
+
   return message;
 }
 ```
@@ -871,12 +874,12 @@ export function createRequest<TDefs extends MessageDefs, K extends keyof TDefs>(
 ```typescript
 /**
  * Send a message to the worker and wait for the response.
- * 
+ *
  * IMPORTANT: Pending messages keep the host process alive via setTimeout
  * references. This is intentional - the process should not exit while work
  * is in flight. To exit immediately, call worker.close() to clear pending
  * messages.
- * 
+ *
  * Note: Detached workers don't block parent exit (process is unref'd), but
  * pending message timeouts DO block exit. This ensures work completes even
  * for detached workers.
@@ -886,21 +889,21 @@ async send<K extends keyof TMessages>(
   payload: PayloadOf<TMessages, K>
 ): Promise<ResultPayloadOf<TMessages, K>> {
   const message = createRequest(type, payload, this.txIdGenerator);
-  
+
   return new Promise((resolve, reject) => {
     // Set timeout for pending request - this IS ref'd (keeps process alive)
     const timeoutHandle = setTimeout(() => {
       this.pendingRequests.delete(message.tx);
       reject(new Error(`Request timeout after ${this.timeout}ms`));
     }, this.timeout);
-    
+
     // Store pending request with timeout handle
     this.pendingRequests.set(message.tx, {
       resolve,
       reject,
       timeoutHandle
     });
-    
+
     // Send message
     this.connection.send(message).catch(reject);
   });
@@ -917,13 +920,14 @@ async close(): Promise<void> {
     pending.reject(new Error('Worker closed'));
   }
   this.pendingRequests.clear();
-  
+
   // ... close connection and kill process
 }
 ```
 
 **Key behaviors**:
-- Pending message timeouts use `setTimeout` without `unref()` 
+
+- Pending message timeouts use `setTimeout` without `unref()`
 - This intentionally keeps the process alive while work is pending
 - `close()` clears all pending messages (clears timeouts) to allow exit
 - Detached workers: process is unref'd, but timeouts are not
@@ -936,6 +940,7 @@ async close(): Promise<void> {
 **File: `packages/isolated-workers/src/core/__tests__/middleware.test.ts`**
 
 Test per-instance middleware:
+
 - Sequential application (left-to-right)
 - Middleware can transform messages
 - Middleware errors propagate
@@ -945,6 +950,7 @@ Test per-instance middleware:
 **File: `packages/isolated-workers/src/utils/__tests__/logger.test.ts`**
 
 Test MetaLogger:
+
 - Log level filtering works correctly
 - Logger errors are suppressed
 - Custom loggers are called
@@ -953,6 +959,7 @@ Test MetaLogger:
 **File: `packages/isolated-workers/src/utils/__tests__/serializer.test.ts`**
 
 Test serializer with terminators:
+
 - String terminators work
 - Buffer terminators work
 - Custom serializers can be provided
@@ -962,6 +969,7 @@ Test serializer with terminators:
 **File: `packages/isolated-workers/src/__tests__/detached-worker.test.ts`**
 
 Test detached workers:
+
 - Worker doesn't block parent exit
 - Worker continues running when detached
 - Unref is called correctly
@@ -969,6 +977,7 @@ Test detached workers:
 **File: `packages/isolated-workers/src/__tests__/reconnection.test.ts`**
 
 Test reconnection with custom settings:
+
 - Retry attempts configurable
 - Delay configurable
 - Max delay cap works
@@ -979,6 +988,7 @@ Test reconnection with custom settings:
 **File: `packages/isolated-workers/src/types/__tests__/any-message.type-test.ts`**
 
 Test AnyMessage type:
+
 - Helper type works correctly
 - Includes all request and response types
 - Type helpers don't need `Omit` (cleaner implementation)
@@ -989,6 +999,7 @@ Test AnyMessage type:
 ### For Library Consumers
 
 **Before (global middleware):**
+
 ```typescript
 import { registerMiddleware } from 'isolated-workers';
 
@@ -999,6 +1010,7 @@ registerMiddleware((ctx) => {
 ```
 
 **After (per-instance middleware):**
+
 ```typescript
 const worker = await createWorker({
   script: './worker.js',
@@ -1006,30 +1018,33 @@ const worker = await createWorker({
     (message, direction) => {
       console.log(direction, message);
       return message;
-    }
-  ]
+    },
+  ],
 });
 ```
 
 **Before (debug flag):**
+
 ```typescript
 const worker = await createWorker({
   script: './worker.js',
-  debug: true
+  debug: true,
 });
 ```
 
 **After (log level):**
+
 ```typescript
 const worker = await createWorker({
   script: './worker.js',
-  logLevel: 'debug'
+  logLevel: 'debug',
 });
 ```
 
 ## Summary
 
 This implementation provides:
+
 1. Enhanced type system with `AnyMessage` for better DX
 2. Per-instance middleware arrays (breaking change from global)
 3. Serializer with bundled terminator

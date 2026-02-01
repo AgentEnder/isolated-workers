@@ -26,18 +26,16 @@ Enhance the worker configuration system to provide comprehensive control over wo
 **Current State**: Only one global middleware can be registered at a time.
 
 **Desired State**:
+
 ```typescript
 const worker = await createWorker<MyMessages>({
   script: './worker.js',
-  middleware: [
-    loggingMiddleware,
-    metricsMiddleware,
-    validationMiddleware
-  ]
+  middleware: [loggingMiddleware, metricsMiddleware, validationMiddleware],
 });
 ```
 
 **Success Criteria**:
+
 - Middleware applied sequentially (left-to-right)
 - Each middleware can inspect/transform messages
 - Middleware errors propagate and fail the message send/receive
@@ -50,25 +48,27 @@ const worker = await createWorker<MyMessages>({
 **Current State**: Hardcoded JSON serialization with `\n` terminator.
 
 **Desired State**:
+
 ```typescript
 const msgpackSerializer: Serializer = {
   serialize: (data) => msgpack.encode(data),
   deserialize: (data) => msgpack.decode(data),
-  terminator: Buffer.from([0x00, 0x00])  // Null bytes
+  terminator: Buffer.from([0x00, 0x00]), // Null bytes
 };
 
 const worker = await createWorker({
   script: './worker.js',
-  serializer: msgpackSerializer
+  serializer: msgpackSerializer,
 });
 
 // Server side
 await startWorkerServer(handlers, {
-  serializer: msgpackSerializer  // Must match!
+  serializer: msgpackSerializer, // Must match!
 });
 ```
 
 **Success Criteria**:
+
 - Serializer configured on both client and server
 - Terminator bundled with serializer (prevents mismatch)
 - Works with both string and Buffer terminators
@@ -81,14 +81,16 @@ await startWorkerServer(handlers, {
 **Current State**: Workers keep parent process alive.
 
 **Desired State**:
+
 ```typescript
 const worker = await createWorker({
   script: './worker.js',
-  detached: true  // Worker won't block parent exit
+  detached: true, // Worker won't block parent exit
 });
 ```
 
 **Success Criteria**:
+
 - Worker process is detached (`detached: true` in spawn options)
 - Worker process is unref'd (removed from event loop reference count)
 - Parent can exit without waiting for worker
@@ -101,6 +103,7 @@ const worker = await createWorker({
 **Current State**: Hardcoded retry logic.
 
 **Desired State**:
+
 ```typescript
 // Critical worker - aggressive retries with custom backoff
 const criticalWorker = await createWorker({
@@ -108,8 +111,8 @@ const criticalWorker = await createWorker({
   connection: {
     attempts: 20,
     delay: (attempt) => Math.min(50 * Math.pow(2, attempt), 2000),
-    maxDelay: 2000
-  }
+    maxDelay: 2000,
+  },
 });
 
 // Optional worker - minimal retries with linear backoff
@@ -117,12 +120,13 @@ const optionalWorker = await createWorker({
   script: './optional.js',
   connection: {
     attempts: 2,
-    delay: (attempt) => 1000 * attempt  // 1s, 2s
-  }
+    delay: (attempt) => 1000 * attempt, // 1s, 2s
+  },
 });
 ```
 
 **Success Criteria**:
+
 - Connection options nested under `connection` property
 - Configurable retry attempts (default: 5)
 - Delay can be number (exponential backoff) or function (custom curve)
@@ -136,22 +140,24 @@ const optionalWorker = await createWorker({
 **Current State**: Built-in console logger with binary debug flag.
 
 **Desired State**:
+
 ```typescript
 const pinoLogger: Logger = {
   debug: (...parts) => pino.debug(parts.join(' ')),
   info: (...parts) => pino.info(parts.join(' ')),
   warn: (...parts) => pino.warn(parts.join(' ')),
-  error: (...parts) => pino.error(parts.join(' '))
+  error: (...parts) => pino.error(parts.join(' ')),
 };
 
 const worker = await createWorker({
   script: './worker.js',
   logger: pinoLogger,
-  logLevel: 'info'  // Only info, warn, error (no debug)
+  logLevel: 'info', // Only info, warn, error (no debug)
 });
 ```
 
 **Success Criteria**:
+
 - Custom logger interface (debug/info/warn/error methods)
 - Log level filtering (debug < info < warn < error)
 - MetaLogger wraps custom logger to handle filtering
@@ -165,22 +171,23 @@ const worker = await createWorker({
 **Current State**: Server always shuts down on disconnect (Nx pattern).
 
 **Desired State**:
+
 ```typescript
 // Single-use worker (Nx pattern)
 await startWorkerServer(handlers, {
-  disconnectBehavior: 'shutdown',  // Default
-  hostConnectTimeout: 30000  // Wait 30s for host to connect
+  disconnectBehavior: 'shutdown', // Default
+  hostConnectTimeout: 30000, // Wait 30s for host to connect
 });
 
 // Long-running service with manual reconnection
 await startWorkerServer(handlers, {
-  disconnectBehavior: 'keep-alive',  // Wait for reconnection
-  hostConnectTimeout: 0  // Wait forever for initial connection
+  disconnectBehavior: 'keep-alive', // Wait for reconnection
+  hostConnectTimeout: 0, // Wait forever for initial connection
 });
 
 // Host can control connection lifecycle
 const worker = await createWorker({
-  script: './worker.js'
+  script: './worker.js',
 });
 
 // Later, explicitly disconnect but keep worker alive
@@ -196,6 +203,7 @@ await worker.close();
 ```
 
 **Success Criteria**:
+
 - `disconnectBehavior: 'shutdown'` stops server when host disconnects
 - `disconnectBehavior: 'keep-alive'` keeps server running
 - `hostConnectTimeout` configures initial connection wait (0 = forever)
@@ -212,12 +220,13 @@ await worker.close();
 **Current State**: Must manually create unions of all message types and function signatures.
 
 **Desired State**:
+
 ```typescript
-import { 
-  DefineMessages, 
-  AnyMessage, 
-  Middleware, 
-  TransactionIdGenerator 
+import {
+  DefineMessages,
+  AnyMessage,
+  Middleware,
+  TransactionIdGenerator,
 } from 'isolated-workers';
 
 type MyMessages = DefineMessages<{
@@ -238,11 +247,12 @@ const myTxIdGen: TransactionIdGenerator<MyMessages> = (msg) => {
 const worker = await createWorker<MyMessages>({
   script: './worker.js',
   middleware: [myMiddleware],
-  txIdGenerator: myTxIdGen
+  txIdGenerator: myTxIdGen,
 });
 ```
 
 **Success Criteria**:
+
 - `AnyMessage<TDefs>` helper type exported from public API
 - `Middleware<TDefs>` helper type exported for middleware functions
 - `TransactionIdGenerator<TDefs>` helper type exported for TX ID generators
@@ -256,6 +266,7 @@ const worker = await createWorker<MyMessages>({
 **Current State**: Serializer mismatches cause cryptic deserialization errors.
 
 **Desired State**:
+
 ```typescript
 import { Serializer } from 'isolated-workers';
 import msgpack from 'msgpack-lite';
@@ -265,11 +276,11 @@ class MsgPackSerializer extends Serializer {
   serialize<T>(data: T): Buffer {
     return msgpack.encode(data);
   }
-  
+
   deserialize<T>(data: Buffer): T {
     return msgpack.decode(data);
   }
-  
+
   terminator = Buffer.from([0x00, 0x00]);
 }
 
@@ -278,12 +289,12 @@ const serializer = new MsgPackSerializer();
 // Client
 const worker = await createWorker({
   script: './worker.js',
-  serializer
+  serializer,
 });
 
 // Server (in worker.js)
 await startWorkerServer(handlers, {
-  serializer: new MsgPackSerializer()  // Class name passed via env, validated on startup
+  serializer: new MsgPackSerializer(), // Class name passed via env, validated on startup
 });
 
 // If server uses different serializer class:
@@ -291,6 +302,7 @@ await startWorkerServer(handlers, {
 ```
 
 **Success Criteria**:
+
 - `Serializer` is an abstract class (not interface)
 - Serializer includes `terminator` property
 - Constructor name passed to worker via `ISOLATED_WORKERS_SERIALIZER` env var
@@ -305,9 +317,10 @@ await startWorkerServer(handlers, {
 **Current State**: Unclear whether process will wait for pending messages.
 
 **Desired State**:
+
 ```typescript
 const worker = await createWorker({
-  script: './worker.js'
+  script: './worker.js',
 });
 
 // Send message with 60s timeout
@@ -317,12 +330,13 @@ const promise = worker.send('longTask', { data: 'test' });
 // This is intentional: don't exit with work in flight
 
 // If you need to exit immediately:
-await worker.close();  // Clears pending messages, terminates worker
+await worker.close(); // Clears pending messages, terminates worker
 
 // promise will reject with "Worker closed"
 ```
 
 **Success Criteria**:
+
 - Pending messages keep host process alive (setTimeout not unref'd)
 - Process waits for all pending messages to complete or timeout
 - `close()` clears all pending messages and allows exit
@@ -336,6 +350,7 @@ await worker.close();  // Clears pending messages, terminates worker
 **Scenario**: Middleware validation fails and throws an error.
 
 **Expected Behavior**:
+
 - Message send/receive fails immediately
 - Error propagates to caller
 - Subsequent middleware in chain not executed
@@ -346,6 +361,7 @@ await worker.close();  // Clears pending messages, terminates worker
 **Scenario**: Two different serializer classes have the same name.
 
 **Expected Behavior**:
+
 - Class name check detects mismatch (false positive)
 - Error message indicates class name collision
 - Documentation recommends unique class names
@@ -356,6 +372,7 @@ await worker.close();  // Clears pending messages, terminates worker
 **Scenario**: User calls `startWorkerServer` without providing serializer, but worker uses custom serializer.
 
 **Expected Behavior**:
+
 - Server uses default JSON serializer
 - Deserialization fails with clear error message
 - Error indicates serializer mismatch
@@ -365,6 +382,7 @@ await worker.close();  // Clears pending messages, terminates worker
 **Scenario**: User provides serializer instance to client, different instance of same class to server.
 
 **Expected Behavior**:
+
 - Class name matches (`constructor.name`)
 - Validation passes
 - Both instances work correctly (assuming same implementation)
@@ -375,6 +393,7 @@ await worker.close();  // Clears pending messages, terminates worker
 **Scenario**: User's delay function returns negative number or NaN.
 
 **Expected Behavior**:
+
 - Validate return value
 - Throw error with clear message: "delay function must return positive number"
 - Document that function must return milliseconds >= 0
@@ -384,6 +403,7 @@ await worker.close();  // Clears pending messages, terminates worker
 **Scenario**: Parent wants to exit but has detached worker with pending requests.
 
 **Expected Behavior**:
+
 - Worker process is detached and unref'd (doesn't block parent)
 - Pending message timeouts ARE ref'd (block parent exit)
 - Parent waits for pending messages to complete or timeout
@@ -395,6 +415,7 @@ await worker.close();  // Clears pending messages, terminates worker
 **Scenario**: Connection drops while request is in-flight, then reconnects.
 
 **Expected Behavior**:
+
 - Pending request times out (existing behavior)
 - Reconnection succeeds
 - New requests work on new connection
@@ -405,6 +426,7 @@ await worker.close();  // Clears pending messages, terminates worker
 **Scenario**: Custom logger implementation throws an error.
 
 **Expected Behavior**:
+
 - Logging error caught and suppressed
 - Original operation continues (logging shouldn't break functionality)
 - Fallback to console.error for the logging error itself
@@ -414,6 +436,7 @@ await worker.close();  // Clears pending messages, terminates worker
 **Scenario**: Worker server starts but host never connects (e.g., parent crashed).
 
 **Expected Behavior**:
+
 - `hostConnectTimeout` expires (default 30s)
 - Server shuts down gracefully
 - Process exits with clean shutdown
@@ -424,6 +447,7 @@ await worker.close();  // Clears pending messages, terminates worker
 **Scenario**: User calls `worker.disconnect()` but server has `disconnectBehavior: 'shutdown'`.
 
 **Expected Behavior**:
+
 - Server shuts down when connection closes
 - Worker process terminates
 - `worker.reconnect()` fails with clear error: "Worker process terminated"
@@ -434,6 +458,7 @@ await worker.close();  // Clears pending messages, terminates worker
 **Scenario**: User needs to handle any message type in middleware or custom logic.
 
 **Expected Behavior**:
+
 - `AnyMessage<TDefs>` provides union of all messages (requests and responses)
 - Works seamlessly with type inference
 - No runtime implications (type-only helper)
@@ -442,9 +467,10 @@ await worker.close();  // Clears pending messages, terminates worker
 ## Success Criteria
 
 ### Type Safety
+
 - [ ] `WorkerOptions<TDefs>` and `WorkerServerOptions<TDefs>` are generic over `MessageDefs`
 - [ ] `AnyMessage<TDefs>` helper type exported from public API
-- [ ] `Middleware<TDefs>` helper type exported from public API  
+- [ ] `Middleware<TDefs>` helper type exported from public API
 - [ ] `TransactionIdGenerator<TDefs>` helper type exported from public API
 - [ ] `AnyMessage<TDefs>` returns union of `AllMessages<TDefs> | AllResults<TDefs>`
 - [ ] Type helpers remain clean (no `Omit` for synthetic properties)
@@ -453,6 +479,7 @@ await worker.close();  // Clears pending messages, terminates worker
 - [ ] No `any` types in public API
 
 ### Middleware
+
 - [ ] Middleware is array of functions per worker/server instance
 - [ ] Applied sequentially left-to-right
 - [ ] Middleware errors propagate immediately
@@ -460,6 +487,7 @@ await worker.close();  // Clears pending messages, terminates worker
 - [ ] No global middleware state
 
 ### Serializer
+
 - [ ] `Serializer` is an abstract class (not interface)
 - [ ] Serializer includes `terminator` property
 - [ ] Configurable on both client and server
@@ -470,19 +498,21 @@ await worker.close();  // Clears pending messages, terminates worker
 - [ ] Clear error message on class name mismatch
 
 ### Worker Lifecycle
+
 - [ ] `detached` option sets spawn option and calls `unref()`
 - [ ] `startupTimeout` configurable (default 30s)
 - [ ] `spawnOptions` passed through to `child_process.spawn`
 - [ ] Server `hostConnectTimeout` configurable (0 = forever)
 - [ ] Server `disconnectBehavior` ('shutdown' | 'keep-alive')
 - [ ] Worker client exposes `disconnect()` method
-- [ ] Worker client exposes `reconnect()` method  
+- [ ] Worker client exposes `reconnect()` method
 - [ ] Worker client has `isConnected` property
 - [ ] `disconnect()`/`reconnect()` only work with `keep-alive` mode
 - [ ] Pending messages keep host process alive (timeouts are ref'd)
 - [ ] `close()` clears pending messages and allows exit
 
 ### Reconnection
+
 - [ ] Connection options nested under `connection` property
 - [ ] `connection.attempts` configurable (default 5)
 - [ ] `connection.delay` accepts number or function `(attempt: number) => number`
@@ -492,6 +522,7 @@ await worker.close();  // Clears pending messages, terminates worker
 - [ ] Delay function return value validated (must be >= 0)
 
 ### Logging
+
 - [ ] `Logger` interface with debug/info/warn/error methods
 - [ ] `logLevel` option ('debug' | 'info' | 'warn' | 'error')
 - [ ] `MetaLogger` wraps custom logger and filters by level
@@ -499,17 +530,20 @@ await worker.close();  // Clears pending messages, terminates worker
 - [ ] Default console-based logger
 
 ### Transaction IDs
+
 - [ ] `txIdGenerator` configurable function
 - [ ] Receives full message (request or response)
 - [ ] Default continues to use `crypto.randomUUID()`
 
 ### Documentation
+
 - [ ] All new options documented in README
 - [ ] Examples for common configuration scenarios
 - [ ] Migration guide for breaking changes (global middleware)
 - [ ] Type documentation for `AnyMessage` usage
 
 ### Testing
+
 - [ ] Unit tests for per-instance middleware
 - [ ] Type tests for `AnyMessage` property
 - [ ] Unit tests for `MetaLogger` log level filtering
@@ -520,6 +554,7 @@ await worker.close();  // Clears pending messages, terminates worker
 ## Implementation Phases
 
 ### Phase 1: Type System Enhancements
+
 - Add `AnyMessage<TDefs>` helper type to `helpers.ts`
 - Add `Middleware<TDefs>` helper type
 - Add `TransactionIdGenerator<TDefs>` helper type
@@ -528,6 +563,7 @@ await worker.close();  // Clears pending messages, terminates worker
 - Export all helper types from public API
 
 ### Phase 2: Serializer Enhancement
+
 - Convert `Serializer` from interface to abstract class
 - Add `terminator` property to `Serializer`
 - Update default serializer to extend class
@@ -536,6 +572,7 @@ await worker.close();  // Clears pending messages, terminates worker
 - Update connection/messaging to use serializer's terminator
 
 ### Phase 3: Per-Instance Middleware
+
 - Change middleware from global singleton to per-instance arrays
 - Update `WorkerOptions` and `WorkerServerOptions` to accept `middleware: Middleware<TDefs>[]`
 - Update message send/receive to apply middleware sequentially
@@ -543,12 +580,14 @@ await worker.close();  // Clears pending messages, terminates worker
 - Add middleware error handling
 
 ### Phase 4: Logger and Log Levels
+
 - Change `debug` boolean option to `logLevel` enum
 - Add `logger` option to both interfaces
 - Implement `MetaLogger` wrapper for level filtering
 - Update all internal logging to use MetaLogger
 
 ### Phase 5: Worker Lifecycle Options
+
 - Add `detached`, `spawnOptions`, `startupTimeout` to `WorkerOptions`
 - Add `hostConnectTimeout`, `disconnectBehavior` to `WorkerServerOptions`
 - Implement detached mode (spawn option + unref)
@@ -559,6 +598,7 @@ await worker.close();  // Clears pending messages, terminates worker
 - Document pending message ref behavior
 
 ### Phase 6: Reconnection Configuration
+
 - Nest connection options under `connection` property in `WorkerOptions`
 - Add `connection.attempts`, `connection.delay`, `connection.maxDelay`
 - Support both number and function for `delay`
@@ -567,10 +607,12 @@ await worker.close();  // Clears pending messages, terminates worker
 - Implement max delay cap for both number and function delays
 
 ### Phase 7: Transaction ID Generator
+
 - Add `txIdGenerator: TransactionIdGenerator<TDefs>` to both options interfaces
 - Update message creation to use custom generator if provided
 
 ### Phase 8: Testing and Documentation
+
 - Write unit and integration tests for all new features
 - Update examples to demonstrate new configuration options
 - Write migration guide for breaking changes
@@ -583,7 +625,7 @@ await worker.close();  // Clears pending messages, terminates worker
 
 ### Breaking Changes
 
-1. **Global Middleware Removed**: 
+1. **Global Middleware Removed**:
    - Old: `registerMiddleware(fn)` (global)
    - New: `{ middleware: [fn1, fn2] }` (per-instance)
 
@@ -602,6 +644,7 @@ await worker.close();  // Clears pending messages, terminates worker
 ### Backward Compatibility
 
 Where possible, maintain backward compatibility:
+
 - Default values preserve existing behavior
 - New options are all optional
 - Type system changes are additive (intersection type)
