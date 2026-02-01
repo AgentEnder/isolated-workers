@@ -31,10 +31,13 @@ export async function onCreateGlobalContext(
     {
       title: 'Examples',
       path: '/examples',
-      children: examples.map((ex) => ({
-        title: ex.title,
-        path: `/examples/${ex.id}`,
-      })),
+      // Only show non-hidden examples in navigation
+      children: examples
+        .filter((ex) => !ex.hidden)
+        .map((ex) => ({
+          title: ex.title,
+          path: `/examples/${ex.id}`,
+        })),
     },
     {
       title: 'API Reference',

@@ -10,5 +10,6 @@ interface Data {
 
 export async function data(_pageContext: PageContextServer): Promise<Data> {
   const examples = await scanExamples();
-  return { examples };
+  // Filter out hidden examples from the listing page
+  return { examples: examples.filter((ex) => !ex.hidden) };
 }

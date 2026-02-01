@@ -50,13 +50,18 @@ function filePathToUrlPath(filePath: string, docsRoot: string): string {
   // Remove .md extension
   let urlPath = relative.replace(/\.md$/, '');
 
-  // Handle index files
-  if (urlPath.endsWith('/index') || urlPath === 'index') {
-    urlPath = urlPath.replace(/\/?index$/, '/');
+  // Handle index files (no trailing slash to match Vike routes):
+  // - 'index' (root) -> '/docs'
+  // - 'guides/index' -> '/docs/guides'
+  if (urlPath === 'index') {
+    return '/docs';
   }
 
-  // Ensure leading slash and /docs prefix
-  return '/docs/' + urlPath.replace(/^\/+/, '');
+  // Match 'path/to/index' and remove it
+  urlPath = urlPath.replace(/\/index$/, '');
+
+  // Ensure /docs prefix
+  return '/docs/' + urlPath;
 }
 
 /**

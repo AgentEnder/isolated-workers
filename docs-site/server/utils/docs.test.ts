@@ -46,8 +46,8 @@ Welcome!`,
 
     const docs = await scanDocs('/docs');
 
-    expect(docs['/docs/']).toBeDefined();
-    expect(docs['/docs/'].title).toBe('Documentation');
+    expect(docs['/docs']).toBeDefined();
+    expect(docs['/docs'].title).toBe('Documentation');
 
     expect(docs['/docs/guides/error-handling']).toBeDefined();
     expect(docs['/docs/guides/error-handling'].title).toBe(
@@ -79,7 +79,7 @@ Content`,
     });
 
     const docs = await scanDocs('/docs');
-    expect(docs['/docs/guides/']).toBeDefined();
+    expect(docs['/docs/guides']).toBeDefined();
     expect(docs['/docs/guides/index']).toBeUndefined();
   });
 });

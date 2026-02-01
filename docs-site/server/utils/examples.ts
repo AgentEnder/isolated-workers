@@ -21,6 +21,12 @@ export interface ExampleMetadata {
     title: string;
     assertions: Array<{ contains: string }>;
   }>;
+  /**
+   * If true, this example is hidden from navigation but can still be
+   * referenced via {% example %} tags in docs. Use for examples that
+   * are meant to be embedded in documentation rather than standalone.
+   */
+  hidden?: boolean;
 }
 
 /**
@@ -80,6 +86,7 @@ export async function scanExamples(): Promise<ExampleMetadata[]> {
             entryPoint: parsed.entryPoint,
             fileMap: parsed.fileMap,
             commands: parsed.commands,
+            hidden: parsed.hidden ?? false,
           });
         }
       } catch {

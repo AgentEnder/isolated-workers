@@ -58,7 +58,7 @@ export default function PageLayout({
     if (href === '/') {
       return urlPathname === '/';
     }
-    return urlPathname.startsWith(href);
+    return urlPathname === href;
   };
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
