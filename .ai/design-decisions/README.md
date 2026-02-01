@@ -4,12 +4,16 @@ This directory tracks key architectural and technical decisions made during the 
 
 ## Decision Records
 
-| ID  | Title                       | Status      | Date       |
-| --- | --------------------------- | ----------- | ---------- |
-| 001 | Monorepo and Build System   | ✅ Accepted | 2026-01-29 |
-| 002 | Documentation Strategy      | ✅ Accepted | 2026-01-29 |
-| 003 | Architecture and Components | ✅ Accepted | 2026-01-29 |
-| 004 | Type Safety and Testing     | ✅ Accepted | 2026-01-29 |
+| ID  | Title                            | Status      | Date       |
+| --- | -------------------------------- | ----------- | ---------- |
+| 001 | Monorepo and Build System        | ✅ Accepted | 2026-01-29 |
+| 002 | Documentation Strategy           | ✅ Accepted | 2026-01-29 |
+| 003 | Architecture and Components      | ✅ Accepted | 2026-01-29 |
+| 004 | Type Safety and Testing          | ✅ Accepted | 2026-01-29 |
+| 005 | Message Definition System        | ✅ Accepted | 2026-01-29 |
+| 006 | Core Worker Implementation       | ✅ Accepted | 2026-01-30 |
+| 007 | Enhanced Configuration System    | ✅ Accepted | 2026-01-30 |
+| 008 | Markdown Docs and Code Hunks     | ✅ Accepted | 2026-02-01 |
 
 ## Decision Template
 

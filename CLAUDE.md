@@ -139,6 +139,31 @@ This project extracts patterns from Nx's isolated plugin architecture:
 
 This project uses a structured approach for AI agent collaboration. See [`.ai/README.md`](./.ai/README.md) for full details.
 
+### ⚠️ MANDATORY: Implementation Workflow Checklist
+
+**Before writing ANY code, complete these steps:**
+
+1. [ ] **Create/update plan** in `.ai/plans/YYYY-MM-DD-feature-name.md`
+2. [ ] **Update plan index** in `.ai/plans/README.md` with new entry and status
+3. [ ] **Create ADR** in `.ai/design-decisions/` for each significant choice:
+   - New library/dependency additions
+   - Syntax or API design decisions
+   - Architecture pattern choices
+   - Trade-off decisions between alternatives
+4. [ ] **Create implementation doc** in `.ai/implementation/YYYY-MM-DD-feature-name/`
+
+**During implementation:**
+
+5. [ ] **Update plan status** to "🔄 In Progress" in `.ai/plans/README.md`
+
+**After implementation:**
+
+6. [ ] **Mark plan completed** (✅) in `.ai/plans/README.md`
+7. [ ] **Verify ADRs** capture all significant decisions made during implementation
+8. [ ] **Update implementation doc** with any deviations from original plan
+
+> **This checklist is not optional.** External skills (like superpowers) provide workflows, but this project's documentation structure must still be followed.
+
 ### Quick Reference
 
 **Three Layers of Documentation:**
@@ -146,6 +171,17 @@ This project uses a structured approach for AI agent collaboration. See [`.ai/RE
 1. **Plans** (`.ai/plans/`): **WHAT & WHY** — Consumer workflows, edge cases, success criteria
 2. **Design Decisions** (`.ai/design-decisions/`): **WHY** — ADRs documenting key choices
 3. **Implementation** (`.ai/implementation/`): **HOW** — Technical specs, file structure, code
+
+### When to Create an ADR
+
+Create an ADR in `.ai/design-decisions/` when you:
+
+- Add a new dependency (e.g., "Why gray-matter for frontmatter parsing?")
+- Choose between syntax options (e.g., "Why Liquid tags over Handlebars?")
+- Make architectural decisions (e.g., "Why build-time validation over runtime?")
+- Reject an alternative approach (document what was considered and why)
+
+ADR filename format: `###-short-description.md` (e.g., `008-liquid-tag-syntax.md`)
 
 ### Working with Plans
 

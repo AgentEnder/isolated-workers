@@ -4,15 +4,16 @@ This directory contains the phased implementation plans for the isolated-workers
 
 ## Plan Index
 
-| #   | Plan                                                             | Status       | Description                                         |
-| --- | ---------------------------------------------------------------- | ------------ | --------------------------------------------------- |
-| 1   | [Initial Research](./01-initial-research.md)                     | ✅ Completed | Requirements gathering and tech stack decisions     |
-| 2   | [Architecture Design](./02-architecture.md)                      | ✅ Completed | System architecture and component design            |
-| 3   | [Package Structure](./03-package-structure.md)                   | ✅ Completed | Nx monorepo setup and package configuration         |
-| 4   | [Type Safety Infrastructure](./04-type-safety-infrastructure.md) | ✅ Completed | Type tests and assertion utilities                  |
-| 5   | [Core Implementation](./05-core-implementation.md)               | ✅ Completed | Worker spawner, connection manager, messaging layer |
-| 6   | [Testing, Examples & Docs](./06-testing-and-docs.md)             | ⏳ Pending   | Unit/type/E2E tests, runnable examples, docs site   |
-| 7   | [Enhanced Configuration](./07-enhanced-configuration.md)         | 📝 Draft     | Comprehensive configuration options and middleware  |
+| #   | Plan                                                                                    | Status       | Description                                         |
+| --- | --------------------------------------------------------------------------------------- | ------------ | --------------------------------------------------- |
+| 1   | [Initial Research](./01-initial-research.md)                                            | ✅ Completed | Requirements gathering and tech stack decisions     |
+| 2   | [Architecture Design](./02-architecture.md)                                             | ✅ Completed | System architecture and component design            |
+| 3   | [Package Structure](./03-package-structure.md)                                          | ✅ Completed | Nx monorepo setup and package configuration         |
+| 4   | [Type Safety Infrastructure](./04-type-safety-infrastructure.md)                        | ✅ Completed | Type tests and assertion utilities                  |
+| 5   | [Core Implementation](./05-core-implementation.md)                                      | ✅ Completed | Worker spawner, connection manager, messaging layer |
+| 6   | [Testing, Examples & Docs](./06-testing-and-docs.md)                                    | ⏳ Pending   | Unit/type/E2E tests, runnable examples, docs site   |
+| 7   | [Enhanced Configuration](./07-enhanced-configuration.md)                                | 📝 Draft     | Comprehensive configuration options and middleware  |
+| 8   | [Markdown Docs & Code Hunks](./2026-02-01-markdown-docs-and-code-hunks-design.md)       | ✅ Completed | Markdown docs system with code region extraction    |
 
 ## Status Legend
 
@@ -23,9 +24,9 @@ This directory contains the phased implementation plans for the isolated-workers
 
 ## Current Focus
 
-**Active Plan**: 07 - Enhanced Configuration System
+**Active Plan**: None (last completed: 08 - Markdown Docs & Code Hunks)
 
-**Status**: Design and planning phase complete, ready for implementation
+**Status**: Plan 8 completed, Plan 7 (Enhanced Configuration) ready for implementation
 
 **Next Up**: Implement enhanced configuration options per Phase 7 plan
 
