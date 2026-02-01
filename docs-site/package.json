@@ -8,6 +8,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "gray-matter": "^4.0.3",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "rehype-highlight": "^7.0.2",
@@ -25,7 +26,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "vitest": "catalog:",
     "@tailwindcss/vite": "^4.1.18",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
@@ -35,11 +35,13 @@
     "eslint": "^9.39.2",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^17.1.0",
+    "memfs": "^4.56.10",
     "pagefind": "^1.4.0",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.1",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vitest": "catalog:"
   },
   "type": "module"
 }
