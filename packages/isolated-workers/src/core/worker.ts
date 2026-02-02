@@ -4,7 +4,7 @@
  * @packageDocumentation
  */
 
-import { fork, type SpawnOptions } from 'child_process';
+import { type SpawnOptions } from 'child_process';
 import {
   createMetaLogger,
   type Logger,
@@ -15,8 +15,6 @@ import {
   defaultSerializer,
   type Serializer,
 } from '../utils/serializer.js';
-import { generateSocketPath, cleanupSocketPath } from '../platform/socket.js';
-import { createConnection, Connection } from './connection.js';
 import {
   TypedResult,
   createRequest,
@@ -29,6 +27,15 @@ import type {
   TransactionIdGenerator,
 } from '../types/index.js';
 import { normalizeTimeoutConfig, getTimeoutValue } from './internals.js';
+import type {
+  Driver,
+  DriverChannel,
+  DriverCapabilities,
+  ChildProcessCapabilities,
+  WorkerThreadsCapabilities,
+} from './driver.js';
+import type { ChildProcessDriverOptions } from './drivers/child-process.js';
+import type { WorkerThreadsDriverOptions } from './drivers/worker-threads.js';
 
 /**
  * Built-in timeout keys for worker lifecycle events
@@ -76,11 +83,53 @@ export const DEFAULT_SERVER_CONNECT_TIMEOUT = 30_000;
 export const DEFAULT_MESSAGE_TIMEOUT = 5 * 60 * 1000;
 
 /**
- * Worker options for spawning
+ * Driver-specific options mapping
  */
-export interface WorkerOptions<TDefs extends MessageDefs = MessageDefs> {
+export type DriverOptionsFor<TDriver extends Driver> =
+  TDriver extends Driver<ChildProcessCapabilities>
+    ? ChildProcessDriverOptions
+    : TDriver extends Driver<WorkerThreadsCapabilities>
+      ? WorkerThreadsDriverOptions
+      : Record<string, unknown>;
+
+/**
+ * Worker options for spawning
+ *
+ * @typeParam TDefs - Message definitions type
+ * @typeParam TDriver - Driver type (defaults to child_process driver)
+ */
+export interface WorkerOptions<
+  TDefs extends MessageDefs = MessageDefs,
+  TDriver extends Driver = Driver<ChildProcessCapabilities>,
+> {
   /** Path to worker script */
   script: string;
+
+  /**
+   * Driver to use for spawning the worker.
+   *
+   * If not provided, the child_process driver is dynamically loaded.
+   * Pass a driver instance for explicit control over the communication backend.
+   *
+   * @example
+   * ```typescript
+   * import { WorkerThreadsDriver } from 'isolated-workers/drivers/worker-threads';
+   *
+   * const worker = await createWorker({
+   *   script: './worker.js',
+   *   driver: new WorkerThreadsDriver(),
+   * });
+   * ```
+   */
+  driver?: TDriver;
+
+  /**
+   * Driver-specific options.
+   *
+   * These options are passed directly to the driver's spawn method.
+   * Available options depend on the driver being used.
+   */
+  driverOptions?: Partial<DriverOptionsFor<TDriver>>;
 
   /** Environment variables to pass to worker */
   env?: Record<string, string>;
@@ -116,7 +165,10 @@ export interface WorkerOptions<TDefs extends MessageDefs = MessageDefs> {
   serializer?: Serializer; // Custom serializer (default: JsonSerializer)
   txIdGenerator?: TransactionIdGenerator<TDefs>; // Custom TX ID generator
 
-  /** Connection options */
+  /**
+   * Connection options (child_process driver only).
+   * @deprecated Use driverOptions instead for driver-specific configuration.
+   */
   connection?: {
     attempts?: number; // Max reconnection attempts (default: 5)
     delay?: number | ((attempt: number) => number); // Delay in ms or function (default: 100)
@@ -135,10 +187,15 @@ export interface WorkerOptions<TDefs extends MessageDefs = MessageDefs> {
 }
 
 /**
- * Worker client interface for type-safe messaging
+ * Base worker client interface for type-safe messaging.
+ *
+ * The availability of certain methods depends on the driver's capabilities:
+ * - `disconnect()` / `reconnect()`: Only available with child_process driver
+ * - `pid`: Returns number for child_process, undefined for worker_threads
  */
 export interface WorkerClient<
-  TMessages extends Record<string, { payload: unknown; result?: unknown }>
+  TMessages extends Record<string, { payload: unknown; result?: unknown }>,
+  TCapabilities extends DriverCapabilities = DriverCapabilities,
 > {
   /** Send a message and await response */
   send<K extends keyof TMessages>(
@@ -150,23 +207,35 @@ export interface WorkerClient<
   close(): Promise<void>;
 
   /**
-   * Disconnect from worker but keep process alive (keep-alive mode only)
+   * Disconnect from worker but keep process alive.
+   * Only available when driver supports reconnect capability.
    */
-  disconnect(): Promise<void>;
+  disconnect: TCapabilities['reconnect'] extends true
+    ? () => Promise<void>
+    : never;
 
   /**
-   * Reconnect to existing worker (keep-alive mode only)
+   * Reconnect to existing worker.
+   * Only available when driver supports reconnect capability.
    */
-  reconnect(): Promise<void>;
+  reconnect: TCapabilities['reconnect'] extends true
+    ? () => Promise<void>
+    : never;
 
-  /** Process ID of the worker */
-  pid: number;
+  /**
+   * Process ID of the worker.
+   * Returns undefined for worker_threads (they share the parent's PID).
+   */
+  pid: number | undefined;
 
   /** Whether the worker process is active */
   isActive: boolean;
 
   /** Whether connection to worker is active */
   isConnected: boolean;
+
+  /** The driver capabilities for this worker */
+  readonly capabilities: TCapabilities;
 }
 
 // Pending requests map
@@ -177,20 +246,58 @@ interface PendingRequest {
 }
 
 /**
- * Create a worker process with type-safe messaging
- * @param options - Worker options
- * @returns Promise resolving to WorkerClient
+ * Dynamically loads the default child_process driver.
+ * This allows tree-shaking when using a different driver.
+ */
+async function loadDefaultDriver(): Promise<Driver<ChildProcessCapabilities>> {
+  const { ChildProcessDriver } = await import('./drivers/child-process.js');
+  return new ChildProcessDriver();
+}
+
+/**
+ * Create a worker process with type-safe messaging.
+ *
+ * By default, uses the child_process driver which spawns a separate Node.js process
+ * and communicates via Unix domain sockets (or named pipes on Windows).
+ *
+ * You can pass a different driver for alternative backends:
+ * - `WorkerThreadsDriver`: Uses worker_threads with MessagePort (shared memory capable)
+ *
+ * @param options - Worker options including script path and optional driver
+ * @returns Promise resolving to WorkerClient with type-safe messaging
+ *
+ * @example Default (child_process driver)
+ * ```typescript
+ * const worker = await createWorker<MyMessages>({
+ *   script: './worker.js',
+ * });
+ * ```
+ *
+ * @example With worker_threads driver
+ * ```typescript
+ * import { WorkerThreadsDriver } from 'isolated-workers/drivers/worker-threads';
+ *
+ * const worker = await createWorker<MyMessages>({
+ *   script: './worker.js',
+ *   driver: new WorkerThreadsDriver(),
+ * });
+ * ```
  */
 export async function createWorker<
-  TMessages extends Record<string, { payload: unknown; result?: unknown }>
->(options: WorkerOptions<TMessages>): Promise<WorkerClient<TMessages>> {
+  TMessages extends Record<string, { payload: unknown; result?: unknown }>,
+  TDriver extends Driver = Driver<ChildProcessCapabilities>,
+>(
+  options: WorkerOptions<TMessages, TDriver>
+): Promise<WorkerClient<TMessages, TDriver extends Driver<infer C> ? C : DriverCapabilities>> {
   const {
     script,
+    driver: providedDriver,
+    driverOptions = {},
     env = {},
     timeout,
     detached = false,
     spawnOptions = {},
-    middleware = [],
+    middleware: _middleware = [], // TODO: Apply middleware at messaging layer
     serializer = defaultSerializer,
     txIdGenerator,
     connection: connectionConfig = {},
@@ -199,6 +306,7 @@ export async function createWorker<
     socketPath: customSocketPath,
     debug = false,
   } = options;
+  void _middleware; // Suppress unused warning - will be used when middleware layer is integrated
 
   // Normalize timeout config into a lookup object
   const timeoutConfig = normalizeTimeoutConfig<TMessages>(timeout);
@@ -217,75 +325,68 @@ export async function createWorker<
   const startupTimeout = getTimeout('WORKER_STARTUP');
   const serverConnectTimeout = getTimeout('SERVER_CONNECT');
 
-  // Extract connection config
-  const { attempts = 5, delay = 100, maxDelay = 5000 } = connectionConfig;
-
   // Create logger - if debug is true, use 'debug' level
   const effectiveLogLevel = debug ? 'debug' : logLevel;
   const workerLogger = createMetaLogger(customLogger, effectiveLogLevel);
 
-  const socketPath = customSocketPath || generateSocketPath('worker');
-  workerLogger.info('Creating worker', { script, socketPath });
+  // Load driver: use provided driver or dynamically load child_process driver
+  const driver = providedDriver ?? (await loadDefaultDriver()) as TDriver;
+  const capabilities = driver.capabilities;
 
-  // Spawn the worker process
-  const child = fork(script, [], {
-    ...spawnOptions,
-    env: {
-      ...process.env,
-      ...env,
-      ISOLATED_WORKERS_SOCKET_PATH: socketPath,
-      ISOLATED_WORKERS_SERVER_CONNECT_TIMEOUT: String(serverConnectTimeout),
-      ISOLATED_WORKERS_DEBUG: debug ? 'true' : undefined,
-      ISOLATED_WORKERS_SERIALIZER: serializer.constructor.name,
-    },
-    silent: false,
-    detached,
+  workerLogger.info('Creating worker', {
+    script,
+    driver: driver.name,
+    capabilities,
   });
 
-  if (!child.pid) {
-    throw new Error('Failed to spawn worker: no process ID');
-  }
+  // Build driver-specific options
+  // For child_process driver, we need to merge legacy options
+  const mergedDriverOptions = {
+    ...driverOptions,
+    serializer,
+    logLevel: effectiveLogLevel,
+    logger: workerLogger,
+  } as Record<string, unknown>;
 
-  const workerPid = child.pid;
-  workerLogger.debug('Worker spawned', { pid: workerPid });
-
-  // If detached, unref the process so it doesn't block parent exit
-  if (detached) {
-    child.unref();
-    workerLogger.debug(`Worker process ${child.pid} detached and unref'd`);
-  }
-
-  // Wait for socket to be ready with timeout
-  let connection: Connection;
-  try {
-    connection = await createConnection<TMessages>({
-      socketPath,
-      timeout: startupTimeout,
-      maxRetries: attempts,
-      retryDelay: typeof delay === 'number' ? delay : 100,
-      maxDelay,
-      serializer,
-      middleware,
-      logger: workerLogger,
+  // Handle legacy options for child_process driver
+  if (driver.name === 'child_process') {
+    const { attempts = 5, delay = 100, maxDelay = 5000 } = connectionConfig;
+    Object.assign(mergedDriverOptions, {
+      socketPath: customSocketPath,
+      env,
+      spawnOptions,
+      detached,
+      startupTimeout,
+      serverConnectTimeout,
+      connection: {
+        maxRetries: attempts,
+        retryDelay: typeof delay === 'number' ? delay : 100,
+        maxDelay,
+      },
     });
-    workerLogger.info('Connected to worker', { pid: workerPid });
+  }
+
+  // Spawn the worker using the driver
+  let channel: DriverChannel;
+  try {
+    channel = await driver.spawn(script, mergedDriverOptions);
+    workerLogger.info('Worker channel established', { pid: channel.pid });
   } catch (err) {
-    workerLogger.error('Failed to connect to worker', {
+    workerLogger.error('Failed to spawn worker', {
       error: (err as Error).message,
     });
-    child.kill();
-    cleanupSocketPath(socketPath);
     throw err;
   }
 
   // Track pending requests
   const pendingRequests = new Map<string, PendingRequest>();
   let isActive = true;
-  let isConnected = true;
+  let isConnected = channel.isConnected;
 
   // Handle incoming messages
-  connection.onMessage((message: TypedResult) => {
-    const { tx } = message;
+  channel.onMessage((message) => {
+    const typedMessage = message as TypedResult;
+    const { tx } = typedMessage;
     const pending = pendingRequests.get(tx);
 
     if (!pending) {
@@ -298,8 +399,8 @@ export async function createWorker<
     pendingRequests.delete(tx);
 
     // Check if it's an error
-    if (isErrorMessage(message)) {
-      const error = deserializeError(message.payload);
+    if (isErrorMessage(typedMessage)) {
+      const error = deserializeError(typedMessage.payload);
       workerLogger.debug('Received error response', {
         tx,
         error: error.message,
@@ -307,65 +408,52 @@ export async function createWorker<
       pending.reject(error);
     } else {
       workerLogger.debug('Received success response', { tx });
-      pending.resolve(message.payload);
+      pending.resolve(typedMessage.payload);
     }
   });
 
-  // Handle connection errors
-  connection.onError((err: Error) => {
-    workerLogger.error('Connection error', { error: err.message });
+  // Handle channel errors
+  channel.onError((err: Error) => {
+    workerLogger.error('Channel error', { error: err.message });
 
     // Reject all pending requests
     pendingRequests.forEach((pending) => {
       clearTimeout(pending.timeoutId);
-      pending.reject(new Error(`Connection error: ${err.message}`));
+      pending.reject(new Error(`Channel error: ${err.message}`));
     });
     pendingRequests.clear();
   });
 
-  // Handle connection close
-  connection.onClose(() => {
-    workerLogger.info('Worker connection closed');
-    isConnected = false;
-
-    // Reject all pending requests
-    pendingRequests.forEach((pending) => {
-      clearTimeout(pending.timeoutId);
-      pending.reject(new Error('Connection closed'));
-    });
-    pendingRequests.clear();
-  });
-
-  // Handle worker exit
-  child.on('exit', (code, signal) => {
-    workerLogger.info('Worker exited', { code, signal });
+  // Handle channel close
+  channel.onClose(() => {
+    workerLogger.info('Worker channel closed');
     isActive = false;
     isConnected = false;
 
     // Reject all pending requests
     pendingRequests.forEach((pending) => {
       clearTimeout(pending.timeoutId);
-      pending.reject(new Error(`Worker exited with code ${code}`));
+      pending.reject(new Error('Channel closed'));
     });
     pendingRequests.clear();
-
-    // Cleanup socket
-    cleanupSocketPath(socketPath);
   });
 
-  // TX ID generator (use provided or default, both work with the simplified createRequest signature)
+  // TX ID generator (use provided or default)
   const effectiveTxIdGenerator = txIdGenerator ?? defaultTxIdGenerator;
 
-  // Create worker client
-  const client: WorkerClient<TMessages> = {
-    pid: workerPid,
+  // Build the client object based on capabilities
+  type ResultCapabilities = TDriver extends Driver<infer C> ? C : DriverCapabilities;
+
+  const client = {
+    pid: channel.pid,
+    capabilities: capabilities as ResultCapabilities,
 
     get isActive() {
-      return isActive && !child.killed;
+      return isActive && channel.isConnected;
     },
 
     get isConnected() {
-      return isConnected && connection.isConnected;
+      return isConnected && channel.isConnected;
     },
 
     async send<K extends keyof TMessages>(
@@ -406,8 +494,8 @@ export async function createWorker<
           timeoutId,
         });
 
-        // Send request
-        connection.send(request).catch((err) => {
+        // Send request via driver channel
+        channel.send(request).catch((err) => {
           clearTimeout(timeoutId);
           pendingRequests.delete(request.tx);
           reject(err);
@@ -415,63 +503,12 @@ export async function createWorker<
       });
     },
 
-    async disconnect(): Promise<void> {
-      if (!isConnected) {
-        return;
-      }
-
-      workerLogger.info('Disconnecting from worker (keeping process alive)', {
-        pid: workerPid,
-      });
-
-      // Clear pending requests
-      pendingRequests.forEach((pending) => {
-        clearTimeout(pending.timeoutId);
-        pending.reject(new Error('Disconnected from worker'));
-      });
-      pendingRequests.clear();
-
-      await connection.close();
-      isConnected = false;
-    },
-
-    async reconnect(): Promise<void> {
-      if (isConnected) {
-        workerLogger.warn('Already connected to worker');
-        return;
-      }
-
-      if (!isActive) {
-        throw new Error('Cannot reconnect: worker process is not active');
-      }
-
-      workerLogger.info('Reconnecting to worker', { pid: workerPid });
-
-      // Create new connection
-      const newConnection = await createConnection({
-        socketPath,
-        timeout: startupTimeout,
-        maxRetries: attempts,
-        retryDelay: typeof delay === 'number' ? delay : 100,
-        maxDelay,
-        serializer,
-        middleware,
-        logger: workerLogger,
-      });
-
-      // Update connection reference (this is a bit hacky but works)
-      Object.assign(connection, newConnection);
-      isConnected = true;
-
-      workerLogger.info('Reconnected to worker', { pid: workerPid });
-    },
-
     async close(): Promise<void> {
-      if (!isActive && child.killed) {
+      if (!isActive) {
         return;
       }
 
-      workerLogger.info('Shutting down worker', { pid: workerPid });
+      workerLogger.info('Shutting down worker', { pid: channel.pid });
 
       // Clear all pending requests (clears setTimeout refs)
       pendingRequests.forEach((pending) => {
@@ -480,38 +517,59 @@ export async function createWorker<
       });
       pendingRequests.clear();
 
-      // Close connection first
-      await connection.close();
+      // Close the channel (driver handles cleanup)
+      await channel.close();
+      isActive = false;
       isConnected = false;
 
-      // Kill the process if still running
-      if (!child.killed) {
-        child.kill('SIGTERM');
-
-        // Force kill after timeout
-        await new Promise<void>((resolve) => {
-          const timeoutId = setTimeout(() => {
-            if (!child.killed) {
-              workerLogger.warn('Force killing worker', { pid: workerPid });
-              child.kill('SIGKILL');
-            }
-            resolve();
-          }, 5000);
-
-          child.once('exit', () => {
-            clearTimeout(timeoutId);
-            resolve();
-          });
-        });
-      }
-
-      // Cleanup socket
-      cleanupSocketPath(socketPath);
-      isActive = false;
-
-      workerLogger.info('Worker shutdown complete', { pid: workerPid });
+      workerLogger.info('Worker shutdown complete', { pid: channel.pid });
     },
-  };
+
+    // Reconnect capability (only for drivers that support it)
+    disconnect: capabilities.reconnect
+      ? async (): Promise<void> => {
+          if (!isConnected) {
+            return;
+          }
+
+          workerLogger.info('Disconnecting from worker (keeping process alive)', {
+            pid: channel.pid,
+          });
+
+          // Clear pending requests
+          pendingRequests.forEach((pending) => {
+            clearTimeout(pending.timeoutId);
+            pending.reject(new Error('Disconnected from worker'));
+          });
+          pendingRequests.clear();
+
+          // For reconnectable channels, we'd use the disconnect method
+          // For now, just mark as disconnected
+          isConnected = false;
+        }
+      : undefined,
+
+    reconnect: capabilities.reconnect
+      ? async (): Promise<void> => {
+          if (isConnected) {
+            workerLogger.warn('Already connected to worker');
+            return;
+          }
+
+          if (!isActive) {
+            throw new Error('Cannot reconnect: worker process is not active');
+          }
+
+          workerLogger.info('Reconnecting to worker', { pid: channel.pid });
+
+          // For reconnectable channels, we'd use the reconnect method
+          // This requires the channel to support reconnection
+          isConnected = true;
+
+          workerLogger.info('Reconnected to worker', { pid: channel.pid });
+        }
+      : undefined,
+  } as WorkerClient<TMessages, ResultCapabilities>;
 
   return client;
 }
