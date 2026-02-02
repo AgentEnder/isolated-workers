@@ -10,6 +10,31 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./drivers": {
+      "import": "./dist/core/drivers/index.js",
+      "types": "./dist/core/drivers/index.d.ts",
+      "default": "./dist/core/drivers/index.js"
+    },
+    "./drivers/child-process": {
+      "import": "./dist/core/drivers/child-process.js",
+      "types": "./dist/core/drivers/child-process.d.ts",
+      "default": "./dist/core/drivers/child-process.js"
+    },
+    "./drivers/child-process-server": {
+      "import": "./dist/core/drivers/child-process-server.js",
+      "types": "./dist/core/drivers/child-process-server.d.ts",
+      "default": "./dist/core/drivers/child-process-server.js"
+    },
+    "./drivers/worker-threads": {
+      "import": "./dist/core/drivers/worker-threads.js",
+      "types": "./dist/core/drivers/worker-threads.d.ts",
+      "default": "./dist/core/drivers/worker-threads.js"
+    },
+    "./drivers/worker-threads-server": {
+      "import": "./dist/core/drivers/worker-threads-server.js",
+      "types": "./dist/core/drivers/worker-threads-server.d.ts",
+      "default": "./dist/core/drivers/worker-threads-server.js"
     }
   },
   "scripts": {
