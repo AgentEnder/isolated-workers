@@ -1,11 +1,69 @@
 import { GlobalContextServer } from 'vike/types';
-import { scanExamples } from '../server/utils/examples';
 import {
-  scanDocs,
   buildDocsNavigation,
   getDocsDir,
+  scanDocs,
 } from '../server/utils/docs';
+import { scanExamples } from '../server/utils/examples';
+import { loadApiDocs, buildApiNavigation } from '../server/utils/typedoc';
 import { NavigationItem } from '../vike-types';
+
+function sortNavigationItems(items: NavigationItem[]): NavigationItem[] {
+  for (const item of items) {
+    if (item.children) {
+      item.children = sortNavigationItems(item.children);
+    }
+  }
+  return items.sort((a, b) => {
+    const orderA = a.order ?? 999;
+    const orderB = b.order ?? 999;
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+    return a.title.localeCompare(b.title);
+  });
+}
+
+function combineNavigationItems(items: NavigationItem[]): NavigationItem[] {
+  const combinedMap = new Map<string, NavigationItem>();
+
+  for (const item of items) {
+    if (!item.title) {
+      throw new Error('Navigation item is missing a title');
+    }
+    if (combinedMap.has(item.title)) {
+      const existingItem = combinedMap.get(item.title)!;
+      if (item.children) {
+        existingItem.children = existingItem.children || [];
+        existingItem.children.push(...item.children);
+        existingItem.children = combineNavigationItems(existingItem.children);
+      }
+
+      if (
+        existingItem.order &&
+        item.order &&
+        existingItem.order !== item.order
+      ) {
+        throw new Error(
+          `Conflicting order values for navigation item "${item.title}": ${existingItem.order} vs ${item.order}`
+        );
+      }
+
+      if (existingItem.path && item.path && existingItem.path !== item.path) {
+        throw new Error(
+          `Conflicting path values for navigation item "${item.title}": ${existingItem.path} vs ${item.path}`
+        );
+      }
+
+      existingItem.order ??= item.order;
+      existingItem.path ??= item.path;
+    } else {
+      combinedMap.set(item.title, { ...item });
+    }
+  }
+
+  return Array.from(combinedMap.values());
+}
 
 export async function onCreateGlobalContext(
   context: Partial<GlobalContextServer>
@@ -14,19 +72,29 @@ export async function onCreateGlobalContext(
   const docsDir = await getDocsDir();
   const docs = await scanDocs(docsDir);
   const docsNavigation = buildDocsNavigation(docs);
+  const api = await loadApiDocs();
 
-  const navigation: NavigationItem[] = [
+  const navigation: NavigationItem[] = combineNavigationItems([
     // Dynamic docs navigation (from frontmatter)
     ...docsNavigation,
     // Static sections
     {
       title: 'Getting Started',
-      path: '/getting-started',
-      children: [
-        { title: 'Installation', path: '/getting-started/installation' },
-        { title: 'Quick Start', path: '/getting-started/quick-start' },
-        { title: 'First Worker', path: '/getting-started/first-worker' },
-      ],
+      children: [],
+      path: '/docs/getting-started',
+      order: 0,
+    },
+    {
+      title: 'Concepts',
+      children: [],
+      path: '/docs/concepts',
+      order: 10,
+    },
+    {
+      title: 'Guides',
+      children: [],
+      path: '/docs/guides',
+      order: 20,
     },
     {
       title: 'Examples',
@@ -38,20 +106,14 @@ export async function onCreateGlobalContext(
           title: ex.title,
           path: `/examples/${ex.id}`,
         })),
+      order: 100,
     },
-    {
-      title: 'API Reference',
-      path: '/api',
-      children: [
-        { title: 'createWorker', path: '/api/create-worker' },
-        { title: 'startWorkerServer', path: '/api/start-worker-server' },
-        { title: 'Handlers Type', path: '/api/handlers' },
-        { title: 'DefineMessages', path: '/api/define-messages' },
-      ],
-    },
-  ];
+    // Dynamic API navigation from TypeDoc
+    buildApiNavigation(api),
+  ]);
 
   context.examples = Object.fromEntries(examples.map((ex) => [ex.id, ex]));
   context.docs = docs;
-  context.navigation = navigation;
+  context.api = api;
+  context.navigation = sortNavigationItems(navigation);
 }
