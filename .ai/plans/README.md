@@ -14,6 +14,7 @@ This directory contains the phased implementation plans for the isolated-workers
 | 6   | [Testing, Examples & Docs](./06-testing-and-docs.md)                                    | ⏳ Pending   | Unit/type/E2E tests, runnable examples, docs site   |
 | 7   | [Enhanced Configuration](./07-enhanced-configuration.md)                                | 📝 Draft     | Comprehensive configuration options and middleware  |
 | 8   | [Markdown Docs & Code Hunks](./2026-02-01-markdown-docs-and-code-hunks-design.md)       | ✅ Completed | Markdown docs system with code region extraction    |
+| 9   | [Driver Abstraction](./09-driver-abstraction.md)                                        | ✅ Completed | Driver pattern for child_process/worker_threads     |
 
 ## Status Legend
 
@@ -24,11 +25,19 @@ This directory contains the phased implementation plans for the isolated-workers
 
 ## Current Focus
 
-**Active Plan**: None (last completed: 08 - Markdown Docs & Code Hunks)
+**Recently Completed**: 09 - Driver Abstraction
 
-**Status**: Plan 8 completed, Plan 7 (Enhanced Configuration) ready for implementation
+**Status**: ✅ Implementation complete
 
-**Next Up**: Implement enhanced configuration options per Phase 7 plan
+**Summary**: Driver abstraction pattern implemented with:
+- Core driver interfaces and types
+- ChildProcessDriver (socket-based IPC)
+- WorkerThreadsDriver (MessagePort-based IPC)
+- Auto-detection in startWorkerServer
+- Type-safe capability narrowing
+- Package entry points for tree-shaking
+
+**Next Up**: Phase 6 polish (testing, examples, docs) or Phase 7 (enhanced configuration)
 
 ## Plan Dependencies
 
@@ -44,10 +53,11 @@ This directory contains the phased implementation plans for the isolated-workers
             ↓
       06-testing-examples-docs
             ↓
-      07-enhanced-configuration
+      ├→ 07-enhanced-configuration
+      └→ 09-driver-abstraction
 ```
 
-**Note:** Phase 6 combines testing and documentation because examples serve as both E2E tests and documentation content. Phase 7 builds on the core implementation to add comprehensive configuration options.
+**Note:** Phase 6 combines testing and documentation because examples serve as both E2E tests and documentation content. Phase 7 builds on the core implementation to add comprehensive configuration options. Phase 9 introduces the driver abstraction pattern for child_process/worker_threads support.
 
 ## Creating New Plans
 
