@@ -1,10 +1,13 @@
 /**
  * Worker server for handling incoming messages
  *
+ * This module provides a high-level interface for workers to receive and
+ * respond to messages from the host process. It automatically detects which
+ * driver spawned the worker and routes to the appropriate server implementation.
+ *
  * @packageDocumentation
  */
 
-import { Socket, Server } from 'net';
 import {
   createMetaLogger,
   type Logger,
@@ -16,8 +19,7 @@ import {
   validateSerializer,
   type Serializer,
 } from '../utils/serializer.js';
-import { TypedMessage, TypedResult, createResponse } from './messaging.js';
-import { getSocketAdapter, cleanupSocketPath } from '../platform/socket.js';
+import { TypedMessage, createResponse } from './messaging.js';
 import type {
   MessageDefs,
   Handlers,
@@ -30,6 +32,18 @@ import {
   parseEnvTimeout,
   DEFAULT_SERVER_CONNECT_TIMEOUT,
 } from './internals.js';
+import { getStartupData } from './drivers/startup.js';
+import {
+  createChildProcessServer,
+  isChildProcessWorker,
+  type ServerChannel,
+  type ResponseFunction,
+} from './drivers/child-process-server.js';
+import {
+  createWorkerThreadsServer,
+  isWorkerThreadsWorker,
+} from './drivers/worker-threads-server.js';
+import type { DriverMessage } from './driver.js';
 
 /**
  * Handler function type for worker messages
@@ -82,6 +96,32 @@ export interface WorkerServer {
 }
 
 /**
+ * Detect which driver spawned this worker and return the driver name.
+ *
+ * @returns The driver name ('child_process' or 'worker_threads') or null if detection fails
+ */
+function detectDriver(): 'child_process' | 'worker_threads' | null {
+  // Check startup data first (most reliable)
+  const startupData = getStartupData();
+  if (startupData?.driver === 'child_process') {
+    return 'child_process';
+  }
+  if (startupData?.driver === 'worker_threads') {
+    return 'worker_threads';
+  }
+
+  // Fallback to environment detection
+  if (isWorkerThreadsWorker()) {
+    return 'worker_threads';
+  }
+  if (isChildProcessWorker()) {
+    return 'child_process';
+  }
+
+  return null;
+}
+
+/**
  * Start a worker server that listens for messages (type-safe version)
  * @param handlers - Map of typed message handlers
  * @param options - Server options
@@ -104,7 +144,13 @@ export async function startWorkerServer(
 ): Promise<WorkerServer>;
 
 /**
- * Start a worker server that listens for messages
+ * Start a worker server that listens for messages.
+ *
+ * This function automatically detects which driver spawned the worker and
+ * routes to the appropriate server implementation:
+ * - child_process: Uses Unix domain sockets for IPC
+ * - worker_threads: Uses MessagePort for IPC
+ *
  * @param handlers - Map of message handlers
  * @param options - Server options
  * @returns Promise resolving to WorkerServer
@@ -116,30 +162,14 @@ export async function startWorkerServer<TDefs extends MessageDefs>(
   const {
     socketPath: customSocketPath,
     hostConnectTimeout: customHostConnectTimeout,
-    disconnectBehavior = 'shutdown',
+    disconnectBehavior: _disconnectBehavior = 'shutdown', // TODO: Implement disconnect behavior at channel level
     middleware = [],
     serializer = defaultSerializer,
     logLevel = 'error',
     logger: customLogger,
     debug = false,
   } = options;
-
-  // Resolve host connect timeout: option > env var > default
-  const hostConnectTimeout =
-    customHostConnectTimeout ??
-    parseEnvTimeout(
-      process.env.ISOLATED_WORKERS_SERVER_CONNECT_TIMEOUT,
-      DEFAULT_SERVER_CONNECT_TIMEOUT
-    );
-
-  const socketPath =
-    customSocketPath || process.env.ISOLATED_WORKERS_SOCKET_PATH;
-
-  if (!socketPath) {
-    throw new Error(
-      'No socket path provided. Set ISOLATED_WORKERS_SOCKET_PATH env var or pass socketPath option.'
-    );
-  }
+  void _disconnectBehavior; // Suppress unused warning - will be used when disconnect behavior is implemented
 
   // Create logger - if debug is true, use 'debug' level
   const effectiveLogLevel = debug ? 'debug' : logLevel;
@@ -148,295 +178,163 @@ export async function startWorkerServer<TDefs extends MessageDefs>(
   // Validate serializer matches host
   validateSerializer(serializer);
 
-  serverLogger.info('Starting worker server', { socketPath });
+  // Detect which driver spawned this worker
+  const driverType = detectDriver();
 
-  const adapter = getSocketAdapter();
-  const server: Server = adapter.createServer(socketPath);
-  let isRunning = true;
-  let activeSocket: Socket | null = null;
-
-  // Host connection timeout
-  let connectTimeoutHandle: NodeJS.Timeout | null = null;
-  if (hostConnectTimeout > 0) {
-    connectTimeoutHandle = setTimeout(() => {
-      if (!activeSocket && isRunning) {
-        serverLogger.error(
-          `Host did not connect within ${hostConnectTimeout}ms, shutting down`
-        );
-        stopServer();
-      }
-    }, hostConnectTimeout);
+  if (!driverType) {
+    throw new Error(
+      'Could not detect driver type. Ensure worker was spawned via createWorker() ' +
+      'or set ISOLATED_WORKERS_SOCKET_PATH env var for child_process compatibility.'
+    );
   }
 
-  // Get terminator for message framing
-  const terminatorStr =
-    typeof serializer.terminator === 'string'
-      ? serializer.terminator
-      : serializer.terminator.toString();
+  serverLogger.info('Starting worker server', { driver: driverType });
 
-  // Handle incoming connections
-  server.on('connection', (socket: Socket) => {
-    // Clear connection timeout - host connected
-    if (connectTimeoutHandle) {
-      clearTimeout(connectTimeoutHandle);
-      connectTimeoutHandle = null;
-    }
+  // Create the appropriate server based on driver type
+  let serverChannel: ServerChannel;
 
-    serverLogger.debug('Client connected');
-    activeSocket = socket;
-    let buffer = '';
+  if (driverType === 'worker_threads') {
+    // Worker threads server
+    serverChannel = createWorkerThreadsServer({
+      serializer,
+      logLevel: effectiveLogLevel,
+      logger: serverLogger,
+    });
+    // Worker threads server uses start() not async creation
+    (serverChannel as ReturnType<typeof createWorkerThreadsServer>).start();
+  } else {
+    // Child process server (default)
+    const hostConnectTimeout =
+      customHostConnectTimeout ??
+      parseEnvTimeout(
+        process.env.ISOLATED_WORKERS_SERVER_CONNECT_TIMEOUT,
+        DEFAULT_SERVER_CONNECT_TIMEOUT
+      );
 
-    socket.on('data', async (data: Buffer) => {
-      buffer += data.toString('utf-8');
+    serverChannel = await createChildProcessServer({
+      socketPath: customSocketPath,
+      hostConnectTimeout,
+      serializer,
+      logLevel: effectiveLogLevel,
+      logger: serverLogger,
+    });
+  }
 
-      // Process complete messages (terminator-delimited)
-      let delimiterIndex: number;
-      while ((delimiterIndex = buffer.indexOf(terminatorStr)) !== -1) {
-        const line = buffer.slice(0, delimiterIndex);
-        buffer = buffer.slice(delimiterIndex + terminatorStr.length);
+  let isRunning = serverChannel.isRunning;
 
-        if (line.trim()) {
-          try {
-            const raw = serializer.deserialize<TypedMessage>(line);
+  // Set up message handling via the server channel
+  serverChannel.onMessage(async (message: DriverMessage, respond: ResponseFunction) => {
+    const typedMessage = message as TypedMessage;
 
-            // Apply incoming middleware if any
-            const message =
-              middleware.length > 0
-                ? await applyMiddleware(
-                    raw as AnyMessage<TDefs>,
-                    'incoming',
-                    middleware
-                  )
-                : raw;
+    try {
+      // Apply incoming middleware if any
+      const processedMessage =
+        middleware.length > 0
+          ? await applyMiddleware(
+              typedMessage as AnyMessage<TDefs>,
+              'incoming',
+              middleware
+            )
+          : typedMessage;
 
-            serverLogger.debug('Received message', {
-              type: (message as TypedMessage).type,
-              tx: (message as TypedMessage).tx,
-            });
+      serverLogger.debug('Received message', {
+        type: processedMessage.type,
+        tx: processedMessage.tx,
+      });
 
-            // Find and execute handler
-            const handler = (handlers as WorkerHandlers)[
-              (message as TypedMessage).type
-            ];
-            if (!handler) {
-              serverLogger.warn('No handler for message type', {
-                type: (message as TypedMessage).type,
-              });
-              await sendErrorResponse(
-                socket,
-                (message as TypedMessage).tx,
-                (message as TypedMessage).type,
-                new Error(
-                  `Unknown message type: ${(message as TypedMessage).type}`
-                ),
-                serializer,
-                middleware,
-                serverLogger,
-                terminatorStr
-              );
-              continue;
-            }
+      // Find and execute handler
+      const handler = (handlers as WorkerHandlers)[processedMessage.type];
+      if (!handler) {
+        serverLogger.warn('No handler for message type', {
+          type: processedMessage.type,
+        });
+        const errorResponse = {
+          tx: processedMessage.tx,
+          type: `${processedMessage.type}Error`,
+          payload: serializeError(new Error(`Unknown message type: ${processedMessage.type}`)),
+        };
+        await respond(errorResponse);
+        return;
+      }
 
-            try {
-              const result = await handler((message as TypedMessage).payload);
+      try {
+        const result = await handler(processedMessage.payload);
 
-              // Send success response
-              const response = createResponse(
-                (message as TypedMessage).tx,
-                (message as TypedMessage).type,
-                result
-              );
-              await sendResponse(
-                socket,
-                response,
-                serializer,
-                middleware,
-                serverLogger,
-                terminatorStr
-              );
-            } catch (err) {
-              serverLogger.error('Handler error', {
-                type: (message as TypedMessage).type,
-                tx: (message as TypedMessage).tx,
-                error: (err as Error).message,
-              });
-              await sendErrorResponse(
-                socket,
-                (message as TypedMessage).tx,
-                (message as TypedMessage).type,
-                err as Error,
-                serializer,
-                middleware,
-                serverLogger,
-                terminatorStr
-              );
-            }
-          } catch (err) {
-            serverLogger.error('Failed to process message', {
-              error: (err as Error).message,
-              line: line.slice(0, 100),
-            });
-          }
+        // Send success response
+        let response = createResponse(
+          processedMessage.tx,
+          processedMessage.type,
+          result
+        );
+
+        // Apply outgoing middleware if any
+        if (middleware.length > 0) {
+          response = await applyMiddleware(
+            response as AnyMessage<TDefs>,
+            'outgoing',
+            middleware
+          );
         }
-      }
-    });
 
-    socket.on('close', () => {
-      serverLogger.debug('Client disconnected');
-      if (activeSocket === socket) {
-        activeSocket = null;
-      }
+        await respond(response as DriverMessage);
+      } catch (err) {
+        serverLogger.error('Handler error', {
+          type: processedMessage.type,
+          tx: processedMessage.tx,
+          error: (err as Error).message,
+        });
 
-      if (disconnectBehavior === 'shutdown') {
-        serverLogger.info(
-          'Shutting down server (disconnectBehavior: shutdown)'
-        );
-        stopServer();
-      } else {
-        serverLogger.info(
-          'Keeping server alive (disconnectBehavior: keep-alive)'
-        );
-      }
-    });
+        let errorResponse: DriverMessage = {
+          tx: processedMessage.tx,
+          type: `${processedMessage.type}Error`,
+          payload: serializeError(err as Error),
+        };
 
-    socket.on('error', (err: Error) => {
-      serverLogger.error('Socket error', { error: err.message });
-    });
+        // Apply outgoing middleware if any
+        if (middleware.length > 0) {
+          errorResponse = (await applyMiddleware(
+            errorResponse as AnyMessage<TDefs>,
+            'outgoing',
+            middleware
+          )) as DriverMessage;
+        }
+
+        await respond(errorResponse);
+      }
+    } catch (err) {
+      serverLogger.error('Failed to process message', {
+        error: (err as Error).message,
+      });
+    }
   });
 
-  // Start listening
-  await new Promise<void>((resolve, reject) => {
-    server.listen(socketPath, () => {
-      serverLogger.info('Worker server listening', { socketPath });
-      resolve();
-    });
-
-    server.on('error', (err: Error) => {
-      serverLogger.error('Server error', { error: err.message });
-      reject(err);
-    });
+  // Set up error handling
+  serverChannel.onError((err: Error) => {
+    serverLogger.error('Server channel error', { error: err.message });
   });
 
   // Shutdown function
   const stopServer = async () => {
     serverLogger.info('Shutting down worker server');
     isRunning = false;
-
-    if (connectTimeoutHandle) {
-      clearTimeout(connectTimeoutHandle);
-    }
-
-    if (activeSocket) {
-      activeSocket.end();
-    }
-
-    server.close(() => {
-      serverLogger.info('Worker server stopped');
-      cleanupSocketPath(socketPath);
-    });
+    await serverChannel.stop();
+    serverLogger.info('Worker server stopped');
   };
 
   // Handle process signals for graceful shutdown
-  process.on('SIGTERM', stopServer);
-  process.on('SIGINT', stopServer);
+  const signalHandler = () => {
+    void stopServer();
+  };
+  process.on('SIGTERM', signalHandler);
+  process.on('SIGINT', signalHandler);
 
   return {
     get isRunning() {
-      return isRunning;
+      return isRunning && serverChannel.isRunning;
     },
 
     async stop(): Promise<void> {
       return stopServer();
     },
   };
-}
-
-/**
- * Send a response message
- */
-async function sendResponse<TDefs extends MessageDefs>(
-  socket: Socket,
-  response: TypedResult,
-  serializer: Serializer,
-  middleware: Middleware<TDefs>[],
-  logger: Logger,
-  terminatorStr: string
-): Promise<void> {
-  logger.debug('Sending response', { tx: response.tx });
-
-  // Apply outgoing middleware if any
-  const processed =
-    middleware.length > 0
-      ? await applyMiddleware(
-          response as AnyMessage<TDefs>,
-          'outgoing',
-          middleware
-        )
-      : response;
-
-  const serialized = serializer.serialize(processed);
-  const dataStr =
-    typeof serialized === 'string'
-      ? serialized + terminatorStr
-      : serialized.toString() + terminatorStr;
-
-  await new Promise<void>((resolve, reject) => {
-    socket.write(dataStr, (err) => {
-      if (err) {
-        logger.error('Failed to send response', { error: err.message });
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
-}
-
-/**
- * Send an error response
- */
-async function sendErrorResponse<TDefs extends MessageDefs>(
-  socket: Socket,
-  tx: string,
-  type: string,
-  error: Error,
-  serializer: Serializer,
-  middleware: Middleware<TDefs>[],
-  logger: Logger,
-  terminatorStr: string
-): Promise<void> {
-  const errorMessage = {
-    tx,
-    type: `${type}Error`,
-    payload: serializeError(error),
-  };
-
-  logger.debug('Sending error response', { tx, error: error.message });
-
-  // Apply outgoing middleware if any
-  const processed =
-    middleware.length > 0
-      ? await applyMiddleware(
-          errorMessage as AnyMessage<TDefs>,
-          'outgoing',
-          middleware
-        )
-      : errorMessage;
-
-  const serialized = serializer.serialize(processed);
-  const dataStr =
-    typeof serialized === 'string'
-      ? serialized + terminatorStr
-      : serialized.toString() + terminatorStr;
-
-  await new Promise<void>((resolve, reject) => {
-    socket.write(dataStr, (err) => {
-      if (err) {
-        logger.error('Failed to send error response', { error: err.message });
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
 }
