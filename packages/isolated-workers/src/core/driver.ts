@@ -138,3 +138,130 @@ export interface DetachCapability {
   /** Whether the worker is detached */
   readonly detached: boolean;
 }
+
+/**
+ * Options for creating a server channel
+ */
+export interface ServerOptions {
+  /** Custom serializer (must match host!) */
+  serializer?: import('../utils/serializer.js').Serializer;
+  /** Log level */
+  logLevel?: import('../utils/logger.js').LogLevel;
+  /** Custom logger */
+  logger?: import('../utils/logger.js').Logger;
+}
+
+/**
+ * Server channel interface for worker-side communication.
+ */
+export interface ServerChannel {
+  /** Register a message handler */
+  onMessage(
+    handler: (
+      message: DriverMessage,
+      respond: (response: DriverMessage) => Promise<void>
+    ) => void
+  ): void;
+  /** Register an error handler */
+  onError(handler: (error: Error) => void): void;
+  /** Stop the server and cleanup */
+  stop(): Promise<void>;
+  /** Whether the server is running */
+  readonly isRunning: boolean;
+  /** Socket path the server is listening on (empty for worker_threads) */
+  readonly socketPath: string;
+}
+
+/**
+ * Base startup data passed from host to worker
+ */
+export interface StartupData {
+  driver: string;
+  socketPath?: string;
+  serializer?: string;
+  serverConnectTimeout?: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Type helpers for capability inference
+ */
+type HasDisconnect = { disconnect(): Promise<void> };
+type HasReconnect = { reconnect(): Promise<void> };
+type HasDetached = { readonly detached: boolean };
+type HasTransferSharedMemory = {
+  transferSharedMemory(buffer: SharedArrayBuffer): void;
+};
+
+/**
+ * Infer capabilities from driver shape
+ */
+export type InferCapabilities<T> = {
+  reconnect: T extends HasDisconnect & HasReconnect ? true : false;
+  detach: T extends HasDetached ? true : false;
+  sharedMemory: T extends HasTransferSharedMemory ? true : false;
+};
+
+/**
+ * Configuration object for defining a worker driver
+ */
+export interface DriverConfig<
+  TOptions = unknown,
+  TStartupData extends StartupData = StartupData
+> {
+  /** Driver identifier */
+  name: string;
+
+  /** Spawn a worker (host side) */
+  spawn(script: string, options: TOptions): Promise<DriverChannel>;
+
+  /** Get startup data (server side) - throws if not available */
+  getStartupData(): TStartupData;
+
+  /** Create server channel (server side) */
+  createServer(options: ServerOptions): ServerChannel | Promise<ServerChannel>;
+}
+
+/**
+ * Define a worker driver with automatic capability inference.
+ *
+ * Capabilities are inferred from the presence of optional methods:
+ * - `disconnect()` + `reconnect()` → reconnect: true
+ * - `detached` property → detach: true
+ * - `transferSharedMemory()` → sharedMemory: true
+ *
+ * @example
+ * ```typescript
+ * export const MyDriver = defineWorkerDriver({
+ *   name: 'my_driver',
+ *   spawn: async (script, options) => { ... },
+ *   getStartupData: () => { ... },
+ *   createServer: async (options) => { ... },
+ *   // Optional capability methods
+ *   disconnect: async () => { ... },
+ *   reconnect: async () => { ... },
+ * });
+ * ```
+ */
+export function defineWorkerDriver<
+  T extends DriverConfig<TOptions, TStartupData>,
+  TOptions = unknown,
+  TStartupData extends StartupData = StartupData
+>(
+  config: T
+): T & {
+  readonly capabilities: InferCapabilities<T>;
+} {
+  const capabilities = {
+    reconnect: ('disconnect' in config &&
+      'reconnect' in config) as InferCapabilities<T>['reconnect'],
+    detach: ('detached' in config) as InferCapabilities<T>['detach'],
+    sharedMemory: ('transferSharedMemory' in
+      config) as InferCapabilities<T>['sharedMemory'],
+  } as InferCapabilities<T>;
+
+  return {
+    ...config,
+    capabilities,
+  };
+}
