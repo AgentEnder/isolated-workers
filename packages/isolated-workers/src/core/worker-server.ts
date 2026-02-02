@@ -8,42 +8,39 @@
  * @packageDocumentation
  */
 
+import type {
+  AnyMessage,
+  Handlers,
+  MessageDefs,
+  Middleware,
+  TransactionIdGenerator,
+} from '../types/index.js';
 import {
   createMetaLogger,
   type Logger,
   type LogLevel,
 } from '../utils/index.js';
 import {
-  serializeError,
   defaultSerializer,
+  serializeError,
   validateSerializer,
   type Serializer,
 } from '../utils/serializer.js';
-import { TypedMessage, createResponse } from './messaging.js';
-import type {
-  MessageDefs,
-  Handlers,
-  Middleware,
-  TransactionIdGenerator,
-  AnyMessage,
-} from '../types/index.js';
-import {
-  applyMiddleware,
-  parseEnvTimeout,
-  DEFAULT_SERVER_CONNECT_TIMEOUT,
-} from './internals.js';
-import { getStartupData } from './drivers/startup.js';
+import type { DriverMessage, ServerChannel } from './driver.js';
 import {
   createChildProcessServer,
-  isChildProcessWorker,
-  type ServerChannel,
-  type ResponseFunction,
-} from './drivers/child-process-server.js';
-import {
   createWorkerThreadsServer,
+  getStartupData,
+  isChildProcessWorker,
   isWorkerThreadsWorker,
-} from './drivers/worker-threads-server.js';
-import type { DriverMessage } from './driver.js';
+  type ChildProcessResponseFunction as ResponseFunction,
+} from './drivers/index.js';
+import {
+  applyMiddleware,
+  DEFAULT_SERVER_CONNECT_TIMEOUT,
+  parseEnvTimeout,
+} from './internals.js';
+import { createResponse, TypedMessage } from './messaging.js';
 
 /**
  * Handler function type for worker messages
@@ -80,9 +77,6 @@ export interface WorkerServerOptions<TDefs extends MessageDefs = MessageDefs> {
   /** Logging options */
   logLevel?: LogLevel; // Log level (default: 'error')
   logger?: Logger; // Custom logger instance
-
-  /** @deprecated Use logLevel instead */
-  debug?: boolean;
 }
 
 /**
@@ -167,13 +161,11 @@ export async function startWorkerServer<TDefs extends MessageDefs>(
     serializer = defaultSerializer,
     logLevel = 'error',
     logger: customLogger,
-    debug = false,
   } = options;
   void _disconnectBehavior; // Suppress unused warning - will be used when disconnect behavior is implemented
 
   // Create logger - if debug is true, use 'debug' level
-  const effectiveLogLevel = debug ? 'debug' : logLevel;
-  const serverLogger = createMetaLogger(customLogger, effectiveLogLevel);
+  const serverLogger = createMetaLogger(customLogger, logLevel);
 
   // Validate serializer matches host
   validateSerializer(serializer);
@@ -184,7 +176,7 @@ export async function startWorkerServer<TDefs extends MessageDefs>(
   if (!driverType) {
     throw new Error(
       'Could not detect driver type. Ensure worker was spawned via createWorker() ' +
-      'or set ISOLATED_WORKERS_SOCKET_PATH env var for child_process compatibility.'
+        'or set ISOLATED_WORKERS_SOCKET_PATH env var for child_process compatibility.'
     );
   }
 
@@ -197,7 +189,7 @@ export async function startWorkerServer<TDefs extends MessageDefs>(
     // Worker threads server
     serverChannel = createWorkerThreadsServer({
       serializer,
-      logLevel: effectiveLogLevel,
+      logLevel,
       logger: serverLogger,
     });
     // Worker threads server uses start() not async creation
@@ -215,7 +207,7 @@ export async function startWorkerServer<TDefs extends MessageDefs>(
       socketPath: customSocketPath,
       hostConnectTimeout,
       serializer,
-      logLevel: effectiveLogLevel,
+      logLevel,
       logger: serverLogger,
     });
   }
@@ -223,90 +215,94 @@ export async function startWorkerServer<TDefs extends MessageDefs>(
   let isRunning = serverChannel.isRunning;
 
   // Set up message handling via the server channel
-  serverChannel.onMessage(async (message: DriverMessage, respond: ResponseFunction) => {
-    const typedMessage = message as TypedMessage;
-
-    try {
-      // Apply incoming middleware if any
-      const processedMessage =
-        middleware.length > 0
-          ? await applyMiddleware(
-              typedMessage as AnyMessage<TDefs>,
-              'incoming',
-              middleware
-            )
-          : typedMessage;
-
-      serverLogger.debug('Received message', {
-        type: processedMessage.type,
-        tx: processedMessage.tx,
-      });
-
-      // Find and execute handler
-      const handler = (handlers as WorkerHandlers)[processedMessage.type];
-      if (!handler) {
-        serverLogger.warn('No handler for message type', {
-          type: processedMessage.type,
-        });
-        const errorResponse = {
-          tx: processedMessage.tx,
-          type: `${processedMessage.type}Error`,
-          payload: serializeError(new Error(`Unknown message type: ${processedMessage.type}`)),
-        };
-        await respond(errorResponse);
-        return;
-      }
+  serverChannel.onMessage(
+    async (message: DriverMessage, respond: ResponseFunction) => {
+      const typedMessage = message as TypedMessage;
 
       try {
-        const result = await handler(processedMessage.payload);
+        // Apply incoming middleware if any
+        const processedMessage =
+          middleware.length > 0
+            ? await applyMiddleware(
+                typedMessage as AnyMessage<TDefs>,
+                'incoming',
+                middleware
+              )
+            : typedMessage;
 
-        // Send success response
-        let response = createResponse(
-          processedMessage.tx,
-          processedMessage.type,
-          result
-        );
-
-        // Apply outgoing middleware if any
-        if (middleware.length > 0) {
-          response = await applyMiddleware(
-            response as AnyMessage<TDefs>,
-            'outgoing',
-            middleware
-          );
-        }
-
-        await respond(response as DriverMessage);
-      } catch (err) {
-        serverLogger.error('Handler error', {
+        serverLogger.debug('Received message', {
           type: processedMessage.type,
           tx: processedMessage.tx,
-          error: (err as Error).message,
         });
 
-        let errorResponse: DriverMessage = {
-          tx: processedMessage.tx,
-          type: `${processedMessage.type}Error`,
-          payload: serializeError(err as Error),
-        };
-
-        // Apply outgoing middleware if any
-        if (middleware.length > 0) {
-          errorResponse = (await applyMiddleware(
-            errorResponse as AnyMessage<TDefs>,
-            'outgoing',
-            middleware
-          )) as DriverMessage;
+        // Find and execute handler
+        const handler = (handlers as WorkerHandlers)[processedMessage.type];
+        if (!handler) {
+          serverLogger.warn('No handler for message type', {
+            type: processedMessage.type,
+          });
+          const errorResponse = {
+            tx: processedMessage.tx,
+            type: `${processedMessage.type}Error`,
+            payload: serializeError(
+              new Error(`Unknown message type: ${processedMessage.type}`)
+            ),
+          };
+          await respond(errorResponse);
+          return;
         }
 
-        await respond(errorResponse);
+        try {
+          const result = await handler(processedMessage.payload);
+
+          // Send success response
+          let response = createResponse(
+            processedMessage.tx,
+            processedMessage.type,
+            result
+          );
+
+          // Apply outgoing middleware if any
+          if (middleware.length > 0) {
+            response = await applyMiddleware(
+              response as AnyMessage<TDefs>,
+              'outgoing',
+              middleware
+            );
+          }
+
+          await respond(response as DriverMessage);
+        } catch (err) {
+          serverLogger.error('Handler error', {
+            type: processedMessage.type,
+            tx: processedMessage.tx,
+            error: (err as Error).message,
+          });
+
+          let errorResponse: DriverMessage = {
+            tx: processedMessage.tx,
+            type: `${processedMessage.type}Error`,
+            payload: serializeError(err as Error),
+          };
+
+          // Apply outgoing middleware if any
+          if (middleware.length > 0) {
+            errorResponse = (await applyMiddleware(
+              errorResponse as AnyMessage<TDefs>,
+              'outgoing',
+              middleware
+            )) as DriverMessage;
+          }
+
+          await respond(errorResponse);
+        }
+      } catch (err) {
+        serverLogger.error('Failed to process message', {
+          error: (err as Error).message,
+        });
       }
-    } catch (err) {
-      serverLogger.error('Failed to process message', {
-        error: (err as Error).message,
-      });
     }
-  });
+  );
 
   // Set up error handling
   serverChannel.onError((err: Error) => {

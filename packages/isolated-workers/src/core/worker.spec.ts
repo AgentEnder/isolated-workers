@@ -17,8 +17,8 @@ import type {
   ChildProcessCapabilities,
   WorkerThreadsCapabilities,
 } from './driver.js';
-import type { ChildProcessDriverOptions } from './drivers/child-process.js';
-import type { WorkerThreadsDriverOptions } from './drivers/worker-threads.js';
+import type { ChildProcessDriverOptions } from './drivers/child-process/index.js';
+import type { WorkerThreadsDriverOptions } from './drivers/worker-threads/index.js';
 
 describe('createWorker', () => {
   describe('type tests', () => {

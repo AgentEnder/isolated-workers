@@ -5,37 +5,37 @@
  */
 
 import { type SpawnOptions } from 'child_process';
+import type {
+  MessageDefs,
+  Middleware,
+  TransactionIdGenerator,
+} from '../types/index.js';
 import {
   createMetaLogger,
   type Logger,
   type LogLevel,
 } from '../utils/logger.js';
 import {
-  deserializeError,
   defaultSerializer,
+  deserializeError,
   type Serializer,
 } from '../utils/serializer.js';
-import {
-  TypedResult,
-  createRequest,
-  isErrorMessage,
-  defaultTxIdGenerator,
-} from './messaging.js';
 import type {
-  MessageDefs,
-  Middleware,
-  TransactionIdGenerator,
-} from '../types/index.js';
-import { normalizeTimeoutConfig, getTimeoutValue } from './internals.js';
-import type {
-  Driver,
-  DriverChannel,
-  DriverCapabilities,
   ChildProcessCapabilities,
+  Driver,
+  DriverCapabilities,
+  DriverChannel,
   WorkerThreadsCapabilities,
 } from './driver.js';
-import type { ChildProcessDriverOptions } from './drivers/child-process.js';
-import type { WorkerThreadsDriverOptions } from './drivers/worker-threads.js';
+import type { ChildProcessDriverOptions } from './drivers/child-process/index.js';
+import type { WorkerThreadsDriverOptions } from './drivers/worker-threads/index.js';
+import { getTimeoutValue, normalizeTimeoutConfig } from './internals.js';
+import {
+  createRequest,
+  defaultTxIdGenerator,
+  isErrorMessage,
+  TypedResult,
+} from './messaging.js';
 
 /**
  * Built-in timeout keys for worker lifecycle events
@@ -89,8 +89,8 @@ export type DriverOptionsFor<TDriver extends Driver> =
   TDriver extends Driver<ChildProcessCapabilities>
     ? ChildProcessDriverOptions
     : TDriver extends Driver<WorkerThreadsCapabilities>
-      ? WorkerThreadsDriverOptions
-      : Record<string, unknown>;
+    ? WorkerThreadsDriverOptions
+    : Record<string, unknown>;
 
 /**
  * Worker options for spawning
@@ -100,7 +100,7 @@ export type DriverOptionsFor<TDriver extends Driver> =
  */
 export interface WorkerOptions<
   TDefs extends MessageDefs = MessageDefs,
-  TDriver extends Driver = Driver<ChildProcessCapabilities>,
+  TDriver extends Driver = Driver<ChildProcessCapabilities>
 > {
   /** Path to worker script */
   script: string;
@@ -194,8 +194,11 @@ export interface WorkerOptions<
  * - `pid`: Returns number for child_process, undefined for worker_threads
  */
 export interface WorkerClient<
-  TMessages extends Record<string, { payload: unknown; result?: unknown }>,
-  TCapabilities extends DriverCapabilities = DriverCapabilities,
+  TMessages extends Record<
+    string,
+    { payload: unknown; result?: unknown }
+  > = Record<string, { payload: unknown; result?: unknown }>,
+  TCapabilities extends DriverCapabilities = DriverCapabilities
 > {
   /** Send a message and await response */
   send<K extends keyof TMessages>(
@@ -250,8 +253,8 @@ interface PendingRequest {
  * This allows tree-shaking when using a different driver.
  */
 async function loadDefaultDriver(): Promise<Driver<ChildProcessCapabilities>> {
-  const { ChildProcessDriver } = await import('./drivers/child-process.js');
-  return new ChildProcessDriver();
+  const { ChildProcessDriver } = await import('./drivers/child-process/index.js');
+  return ChildProcessDriver as unknown as Driver<ChildProcessCapabilities>;
 }
 
 /**
@@ -285,10 +288,15 @@ async function loadDefaultDriver(): Promise<Driver<ChildProcessCapabilities>> {
  */
 export async function createWorker<
   TMessages extends Record<string, { payload: unknown; result?: unknown }>,
-  TDriver extends Driver = Driver<ChildProcessCapabilities>,
+  TDriver extends Driver = Driver<ChildProcessCapabilities>
 >(
   options: WorkerOptions<TMessages, TDriver>
-): Promise<WorkerClient<TMessages, TDriver extends Driver<infer C> ? C : DriverCapabilities>> {
+): Promise<
+  WorkerClient<
+    TMessages,
+    TDriver extends Driver<infer C> ? C : DriverCapabilities
+  >
+> {
   const {
     script,
     driver: providedDriver,
@@ -330,7 +338,7 @@ export async function createWorker<
   const workerLogger = createMetaLogger(customLogger, effectiveLogLevel);
 
   // Load driver: use provided driver or dynamically load child_process driver
-  const driver = providedDriver ?? (await loadDefaultDriver()) as TDriver;
+  const driver = providedDriver ?? ((await loadDefaultDriver()) as TDriver);
   const capabilities = driver.capabilities;
 
   workerLogger.info('Creating worker', {
@@ -442,7 +450,9 @@ export async function createWorker<
   const effectiveTxIdGenerator = txIdGenerator ?? defaultTxIdGenerator;
 
   // Build the client object based on capabilities
-  type ResultCapabilities = TDriver extends Driver<infer C> ? C : DriverCapabilities;
+  type ResultCapabilities = TDriver extends Driver<infer C>
+    ? C
+    : DriverCapabilities;
 
   const client = {
     pid: channel.pid,
@@ -532,9 +542,12 @@ export async function createWorker<
             return;
           }
 
-          workerLogger.info('Disconnecting from worker (keeping process alive)', {
-            pid: channel.pid,
-          });
+          workerLogger.info(
+            'Disconnecting from worker (keeping process alive)',
+            {
+              pid: channel.pid,
+            }
+          );
 
           // Clear pending requests
           pendingRequests.forEach((pending) => {
