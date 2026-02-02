@@ -1,0 +1,13 @@
+id: worker-threads-driver
+title: Worker Threads Driver
+description: |
+  Use the worker_threads driver for in-process workers with shared memory support.
+  Worker threads run in the same process as the host, enabling SharedArrayBuffer
+  and lower overhead compared to child processes.
+entryPoint: host.ts
+commands:
+  - command: npx tsx {filename}
+    title: Run worker threads example
+    assertions:
+      - contains: "Result:"
+      - contains: "Worker threads driver"
