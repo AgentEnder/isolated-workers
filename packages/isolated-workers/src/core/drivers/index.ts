@@ -4,6 +4,7 @@
  * @packageDocumentation
  */
 
+// Startup data utilities
 export {
   getStartupData,
   encodeStartupData,
@@ -23,3 +24,54 @@ export type {
   ReconnectCapability,
   DetachCapability,
 } from '../driver.js';
+
+// Child process driver
+export {
+  ChildProcessDriver,
+  ChildProcessChannel,
+  childProcessDriver,
+  type ChildProcessDriverOptions,
+} from './child-process.js';
+
+export {
+  ChildProcessServer,
+  createChildProcessServer,
+  isChildProcessWorker,
+  DEFAULT_SERVER_CONNECT_TIMEOUT,
+  type ChildProcessServerOptions,
+  type ServerChannel,
+  type ResponseFunction,
+} from './child-process-server.js';
+
+// Worker threads driver
+export {
+  WorkerThreadsDriver,
+  WorkerThreadsChannel,
+  workerThreadsDriver,
+  isWorkerThreadsDriverAvailable,
+  type WorkerThreadsDriverOptions,
+  type WorkerThreadsResourceLimits,
+} from './worker-threads.js';
+
+export {
+  WorkerThreadsServer,
+  createWorkerThreadsServer,
+  isWorkerThreadsWorker,
+  getWorkerData,
+  type WorkerThreadsServerOptions,
+} from './worker-threads-server.js';
+
+/**
+ * Load the default driver (child_process) via dynamic import.
+ *
+ * This is the recommended way to get the default driver when
+ * you want to minimize initial bundle size.
+ *
+ * @returns Promise resolving to the child_process driver instance
+ */
+export async function loadDefaultDriver(): Promise<
+  import('./child-process.js').ChildProcessDriver
+> {
+  const { ChildProcessDriver } = await import('./child-process.js');
+  return new ChildProcessDriver();
+}
