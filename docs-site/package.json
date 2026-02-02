@@ -38,6 +38,7 @@
     "memfs": "^4.56.10",
     "pagefind": "^1.4.0",
     "tailwindcss": "^4.1.18",
+    "typedoc": "^0.28.16",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.1",
     "vite": "^7.3.1",
