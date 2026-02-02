@@ -25,6 +25,16 @@ export {
   type WorkerOptions,
   type WorkerServer,
   type WorkerServerOptions,
+  type DriverOptionsFor,
+  // Driver types
+  type Driver,
+  type DriverChannel,
+  type DriverMessage,
+  type DriverCapabilities,
+  type ChildProcessCapabilities,
+  type WorkerThreadsCapabilities,
+  type ReconnectCapability,
+  type DetachCapability,
 } from './core/index.js';
 
 // Utilities

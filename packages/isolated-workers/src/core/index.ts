@@ -31,6 +31,7 @@ export {
   type TimeoutConfig,
   type WorkerOptions,
   type WorkerClient,
+  type DriverOptionsFor,
   DEFAULT_STARTUP_TIMEOUT,
   DEFAULT_SERVER_CONNECT_TIMEOUT,
   DEFAULT_MESSAGE_TIMEOUT,
@@ -45,3 +46,15 @@ export {
   type WorkerServer,
   startWorkerServer,
 } from './worker-server.js';
+
+// Driver types (re-exported from driver.ts)
+export type {
+  Driver,
+  DriverChannel,
+  DriverMessage,
+  DriverCapabilities,
+  ChildProcessCapabilities,
+  WorkerThreadsCapabilities,
+  ReconnectCapability,
+  DetachCapability,
+} from './driver.js';
