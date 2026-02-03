@@ -66,6 +66,7 @@ export default function Page() {
                 code={file.content}
                 language={file.language}
                 filename={file.filename}
+                preHighlightedHtml={file.highlightedHtml}
               />
             ))}
           </div>

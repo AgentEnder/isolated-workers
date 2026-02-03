@@ -1,8 +1,6 @@
-import { useMemo } from 'react';
 import { CodeBlock } from '../../../components/CodeBlock';
 import { Link } from '../../../components/Link';
 import { TypeReference } from '../../../components/TypeReference';
-import { formatSignature } from '../../../utils/format-signature';
 import { parseTypeString } from '../../../utils/type-link';
 import type { ApiExport } from '../../../server/utils/typedoc';
 import type { HighlightedExample } from '../+data';
@@ -11,10 +9,28 @@ interface ApiExportPageProps {
   mod: ApiExport;
   knownExports: Record<string, string>;
   highlightedExamples: HighlightedExample[];
+  highlightedSignature?: HighlightedExample;
+  descriptionHtml?: string;
 }
 
 function slugifyCategory(category: string): string {
   return category.toLowerCase().replace(/\s+/g, '-');
+}
+
+/**
+ * Get display label for the kind/type badge.
+ * Shows more user-friendly labels for certain types.
+ */
+function getKindLabel(kind: string, name: string): string {
+  // Drivers should show as "Driver" instead of "variable"
+  if (kind === 'variable' && name.endsWith('Driver')) {
+    return 'Driver';
+  }
+  // Server channels should show as "Class" instead of "variable"
+  if (kind === 'variable' && name.endsWith('Channel')) {
+    return 'Class';
+  }
+  return kind;
 }
 
 /**
@@ -54,12 +70,10 @@ export function ApiExportPage({
   mod,
   knownExports,
   highlightedExamples,
+  highlightedSignature,
+  descriptionHtml,
 }: ApiExportPageProps) {
   const categorySlug = mod.category ? slugifyCategory(mod.category) : null;
-  const formattedSignature = useMemo(
-    () => (mod.signature ? formatSignature(mod.signature) : null),
-    [mod.signature]
-  );
 
   return (
     <div>
@@ -87,7 +101,7 @@ export function ApiExportPage({
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-xs px-2 py-1 rounded bg-neon-cyan/20 text-neon-cyan uppercase font-semibold">
-            {mod.kind}
+            {getKindLabel(mod.kind, mod.name)}
           </span>
           {mod.comment?.deprecated && (
             <span className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 uppercase font-semibold">
@@ -98,26 +112,31 @@ export function ApiExportPage({
         <h1 className="text-4xl font-bold text-gray-100 font-mono">
           {mod.name}
         </h1>
-        {/* Add type reference link if typedoc data available */}
-        {mod.path && (
+        {/* Add type reference link if typedoc data available and not a driver */}
+        {mod.path && !mod.name.endsWith('Driver') && (
           <div className="ml-2">
             <TypeReference export={mod} />
           </div>
         )}
       </div>
 
-      {/* Signature */}
-      {formattedSignature && (
+      {/* Signature - skip for drivers as they're complex objects */}
+      {highlightedSignature && !mod.name.endsWith('Driver') && (
         <div className="mb-8">
-          <CodeBlock code={formattedSignature} language="typescript" />
+          <CodeBlock
+            code={highlightedSignature.code}
+            language="typescript"
+            preHighlightedHtml={highlightedSignature.html}
+          />
         </div>
       )}
 
       {/* Description */}
-      {mod.description && (
-        <div className="mb-8">
-          <p className="text-gray-300 text-lg">{mod.description}</p>
-        </div>
+      {descriptionHtml && (
+        <div
+          className="mb-8 prose prose-invert prose-neon max-w-none"
+          dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+        />
       )}
 
       {/* Deprecation Warning */}

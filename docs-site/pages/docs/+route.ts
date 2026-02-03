@@ -5,7 +5,12 @@ export function route(pageContext: PageContext) {
     ? true
     : pageContext.urlPathname === '/docs';
   if (match) {
-    return match;
+    return {
+      // ...pageContext,
+      routeParams: {
+        splat: pageContext.urlPathname.slice('/docs/'.length),
+      },
+    };
   }
   return false;
 }

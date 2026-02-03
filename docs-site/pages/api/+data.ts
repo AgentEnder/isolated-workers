@@ -1,6 +1,8 @@
 import type { PageContextServer } from 'vike/types';
-import type { ApiDocs, ApiExport } from '../../server/utils/typedoc';
 import { highlightCodeWithLinks } from '../../server/utils/highlight-code';
+import { processMarkdownWithTypedoc } from '../../server/utils/markdown';
+import type { ApiDocs, ApiExport } from '../../server/utils/typedoc';
+import { formatSignature } from '../../utils/format-signature';
 
 export interface ApiDataLanding {
   type: 'landing';
@@ -21,12 +23,13 @@ export interface ApiDataExport {
   knownExports: Record<string, string>;
   /** Pre-highlighted examples with type links */
   highlightedExamples: HighlightedExample[];
+  /** Pre-highlighted signature with type links */
+  highlightedSignature?: HighlightedExample;
+  /** Processed description HTML from markdown */
+  descriptionHtml?: string;
 }
 
-export type ApiData =
-  | ApiDataLanding
-  | ApiDataExport
-  | { type: 'not-found' };
+export type ApiData = ApiDataLanding | ApiDataExport | { type: 'not-found' };
 
 export async function data(pageContext: PageContextServer): Promise<ApiData> {
   const { api } = pageContext.globalContext;
@@ -62,13 +65,36 @@ export async function data(pageContext: PageContextServer): Promise<ApiData> {
   // (done server-side to avoid loading Shiki on the client)
   const examples = exp.comment?.examples || [];
   const highlightedExamples: HighlightedExample[] = await Promise.all(
-    examples.map((code) => highlightCodeWithLinks(code, 'typescript', knownExports))
+    examples.map((code) =>
+      highlightCodeWithLinks(code, 'typescript', knownExports)
+    )
   );
+
+  // Format and highlight signature with type links
+  let highlightedSignature: HighlightedExample | undefined;
+  if (exp.signature) {
+    const formattedSig = formatSignature(exp.signature);
+    highlightedSignature = await highlightCodeWithLinks(
+      formattedSig,
+      'typescript',
+      knownExports
+    );
+  }
+
+  // Process description as markdown
+  let descriptionHtml: string | undefined;
+  if (exp.description) {
+    descriptionHtml = await processMarkdownWithTypedoc(exp.description, {
+      apiDocs: api,
+    });
+  }
 
   return {
     type: 'export',
     export: exp,
     knownExports,
     highlightedExamples,
+    highlightedSignature,
+    descriptionHtml,
   };
 }

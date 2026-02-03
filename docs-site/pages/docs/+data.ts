@@ -6,12 +6,12 @@ import { type DocMetadata } from '../../server/utils/docs';
 import { getLanguageFromFilename } from '../../server/utils/highlighter';
 import { extractLiquidTag } from '../../server/utils/markdown';
 import { extractHunk, stripMarkers } from '../../server/utils/regions';
-import { loadApiDocs } from '../../server/utils/typedoc';
 import {
   type ContentSegment,
   createFileSegment,
   parseMarkdownToSegments,
 } from '../../server/utils/segments';
+import { loadApiDocs } from '../../server/utils/typedoc';
 
 export type { ContentSegment };
 
@@ -71,7 +71,7 @@ export async function data(pageContext: PageContextServer): Promise<DocsData> {
   const segments = await parseMarkdownToSegments(markdown, {
     extractCodeBlocks: true,
     liquidTags: { examples: examplesForLiquidTags },
-    codeLinks: { apiDocs },
+    apiDocs,
     nodeHandler: async (node) => {
       const placeholderCheck = extractLiquidTag(node);
       if (!placeholderCheck.isPlaceholder) {
@@ -148,7 +148,7 @@ export async function data(pageContext: PageContextServer): Promise<DocsData> {
           }
 
           const language = getLanguageFromFilename(tag.path);
-          return createFileSegment(tag.path, content, language);
+          return createFileSegment(tag.path, content, language, apiDocs);
         }
 
         default:

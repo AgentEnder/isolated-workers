@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path, { join } from 'node:path';
 import type { PageContextServer } from 'vike/types';
 import { type ExampleMetadata } from '../../../server/utils/examples';
+import { highlightCodeWithLinks } from '../../../server/utils/highlight-code';
 import { getLanguageFromFilename } from '../../../server/utils/highlighter';
 import { extractFilePlaceholder } from '../../../server/utils/markdown';
 import { extractHunk, stripMarkers } from '../../../server/utils/regions';
@@ -10,6 +11,7 @@ import {
   createFileSegment,
   parseMarkdownToSegments,
 } from '../../../server/utils/segments';
+import { loadApiDocs } from '../../../server/utils/typedoc';
 
 // Re-export ContentSegment for the Page component
 export type { ContentSegment };
@@ -18,6 +20,8 @@ interface CodeFile {
   filename: string;
   content: string;
   language: string;
+  /** Pre-highlighted HTML with API links applied */
+  highlightedHtml: string;
 }
 
 export interface ExampleData {
@@ -53,6 +57,18 @@ export async function data(
     rawContent = `# ${example.title}\n\n${example.description}`;
   }
 
+  // Track which files are rendered inline
+  const renderedFiles: string[] = [];
+
+  // Load API docs for code linking
+  const apiDocs = await loadApiDocs();
+
+  // Build API exports map for highlighting
+  const apiExportsMap: Record<string, string> = {};
+  for (const apiExport of apiDocs.allExports) {
+    apiExportsMap[apiExport.name] = apiExport.path;
+  }
+
   // Read example files
   const files: CodeFile[] = [];
   const commonFiles = [
@@ -67,18 +83,28 @@ export async function data(
     const filePath = path.join(example.path, filename);
     try {
       const fileContent = await fs.readFile(filePath, 'utf-8');
+      const language = getLanguageFromFilename(filename);
+
+      // Strip region markers for display
+      const displayContent = stripMarkers(fileContent);
+
+      // Pre-highlight with API links (using stripped content)
+      const highlighted = await highlightCodeWithLinks(
+        displayContent,
+        language,
+        apiExportsMap
+      );
+
       files.push({
         filename,
-        content: fileContent,
-        language: getLanguageFromFilename(filename),
+        content: displayContent,
+        language,
+        highlightedHtml: highlighted.html,
       });
     } catch {
       // File doesn't exist, skip it
     }
   }
-
-  // Track which files are rendered inline
-  const renderedFiles: string[] = [];
 
   const segments = await parseMarkdownToSegments(rawContent, {
     // Examples don't extract inline code blocks - they use file references
@@ -116,8 +142,9 @@ export async function data(
         : file.filename;
 
       renderedFiles.push(file.filename);
-      return createFileSegment(displayName, content, file.language);
+      return createFileSegment(displayName, content, file.language, apiDocs);
     },
+    apiDocs,
   });
 
   return {

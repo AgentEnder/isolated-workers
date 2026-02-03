@@ -35,6 +35,8 @@ export default function Page() {
           mod={data.export}
           knownExports={data.knownExports}
           highlightedExamples={data.highlightedExamples}
+          highlightedSignature={data.highlightedSignature}
+          descriptionHtml={data.descriptionHtml}
         />
       );
   }
