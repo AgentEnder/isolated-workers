@@ -47,16 +47,25 @@ export function CodeBlock({
   showLineNumbers = false,
   preHighlightedHtml,
 }: CodeBlockProps) {
-  const [highlightedCode, setHighlightedCode] = useState<string | null>(
-    preHighlightedHtml || null
-  );
+  // Track client-side highlighted code separately from pre-highlighted HTML
+  const [clientHighlightedCode, setClientHighlightedCode] = useState<
+    string | null
+  >(null);
   const [isCopied, setIsCopied] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const normalizedLang = mapLanguage(language);
 
+  // Use pre-highlighted HTML directly when available, otherwise use client-highlighted
+  const highlightedCode = preHighlightedHtml || clientHighlightedCode;
+
   // Client-side highlighting only if no pre-highlighted HTML provided
   useEffect(() => {
-    if (preHighlightedHtml || !code) {
+    if (preHighlightedHtml) {
+      // Clear client highlighting when server provides HTML
+      setClientHighlightedCode(null);
+      return;
+    }
+    if (!code) {
       return;
     }
 
@@ -96,12 +105,12 @@ export function CodeBlock({
         });
 
         if (!cancelled) {
-          setHighlightedCode(html);
+          setClientHighlightedCode(html);
         }
       } catch {
         // Fallback: just escape the HTML
         if (!cancelled) {
-          setHighlightedCode(
+          setClientHighlightedCode(
             `<pre class="shiki"><code>${code
               .replace(/&/g, '&amp;')
               .replace(/</g, '&lt;')
