@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Root as MdastRoot, RootContent } from 'mdast';
 import rehypeRaw from 'rehype-raw';
 import rehypeStringify from 'rehype-stringify';
@@ -6,19 +7,29 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { parseLiquidTag, type LiquidTag } from './liquid-tags';
+import {
+  remarkLiquidTags,
+  type RemarkLiquidTagsOptions,
+} from './remark-liquid-tags';
+import {
+  remarkCodeLinks,
+  type RemarkCodeLinksOptions,
+} from './remark-code-links';
 
-/**
- * Parse markdown string into an AST
- */
+export type { RemarkLiquidTagsOptions, RemarkCodeLinksOptions };
+
+export interface ProcessMarkdownChunkOptions {
+  liquidTags?: RemarkLiquidTagsOptions;
+  codeLinks?: RemarkCodeLinksOptions;
+}
+
 export function parseMarkdown(markdown: string): MdastRoot {
   return unified().use(remarkParse).use(remarkGfm).parse(markdown);
 }
 
-/**
- * Process a markdown AST chunk into HTML
- */
 export async function processMarkdownChunk(
-  nodes: RootContent[]
+  nodes: RootContent[],
+  options: ProcessMarkdownChunkOptions = {}
 ): Promise<string> {
   if (nodes.length === 0) return '';
 
@@ -27,25 +38,29 @@ export async function processMarkdownChunk(
     children: nodes,
   };
 
-  const processor = unified()
+  const processor: any = unified();
+
+  if (options.liquidTags) {
+    processor.use(remarkLiquidTags, options.liquidTags);
+  }
+
+  if (options.codeLinks) {
+    processor.use(remarkCodeLinks, options.codeLinks);
+  }
+
+  processor
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeStringify, { allowDangerousHtml: true });
 
   const result = await processor.run(root);
-  return processor.stringify(result);
+  return String(processor.stringify(result));
 }
 
-/**
- * Result of checking if a node is a liquid tag placeholder
- */
 export type LiquidTagCheck =
   | { isPlaceholder: true; tag: LiquidTag }
   | { isPlaceholder: false };
 
-/**
- * Check if a paragraph node contains only a liquid tag placeholder
- */
 export function extractLiquidTag(node: RootContent): LiquidTagCheck {
   if (node.type !== 'paragraph' || node.children.length !== 1) {
     return { isPlaceholder: false };
@@ -64,18 +79,13 @@ export function extractLiquidTag(node: RootContent): LiquidTagCheck {
   return { isPlaceholder: false };
 }
 
-/**
- * Result of checking for file placeholder (supports legacy syntax)
- */
 export type FilePlaceholderCheck =
   | { isPlaceholder: true; filename: string; hunk?: string }
   | { isPlaceholder: false };
 
-/**
- * Check if a paragraph node contains a file placeholder.
- * Supports both legacy {{file:...}} and new {% file ... %} syntax.
- */
-export function extractFilePlaceholder(node: RootContent): FilePlaceholderCheck {
+export function extractFilePlaceholder(
+  node: RootContent
+): FilePlaceholderCheck {
   if (node.type !== 'paragraph' || node.children.length !== 1) {
     return { isPlaceholder: false };
   }
@@ -87,13 +97,11 @@ export function extractFilePlaceholder(node: RootContent): FilePlaceholderCheck 
 
   const text = child.value.trim();
 
-  // Try new Liquid syntax first: {% file path %} or {% file path#hunk %}
   const tag = parseLiquidTag(text);
   if (tag && tag.type === 'file') {
     return { isPlaceholder: true, filename: tag.path, hunk: tag.hunk };
   }
 
-  // Fall back to legacy {{file:...}} syntax for backwards compatibility
   const legacyMatch = text.match(/^\{\{file:([^}]+)\}\}$/);
   if (legacyMatch) {
     const [filename, hunk] = legacyMatch[1].trim().split('#');
@@ -101,4 +109,12 @@ export function extractFilePlaceholder(node: RootContent): FilePlaceholderCheck 
   }
 
   return { isPlaceholder: false };
+}
+
+export async function processMarkdownWithTypedoc(
+  markdown: string,
+  options: ProcessMarkdownChunkOptions = {}
+): Promise<string> {
+  const root = parseMarkdown(markdown);
+  return processMarkdownChunk(root.children, options);
 }

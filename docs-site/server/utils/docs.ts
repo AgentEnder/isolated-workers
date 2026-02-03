@@ -4,7 +4,7 @@ import path from 'node:path';
 
 export interface NavigationItem {
   title: string;
-  path: string;
+  path?: string;
   children?: NavigationItem[];
 }
 
@@ -137,15 +137,24 @@ export function buildDocsNavigation(
   const navigation: NavigationItem[] = [];
 
   for (const [sectionName, items] of Object.entries(sections).sort()) {
-    items.sort((a, b) => a.order - b.order);
+    // Create URL-friendly section path (kebab-case)
+    const sectionPath =
+      '/docs/' + sectionName.toLowerCase().replace(/\s+/g, '-');
+
+    // Filter out items whose path matches the section path (index pages)
+    // These are represented by the clickable section header instead
+    const children = items
+      .filter((item) => item.path !== sectionPath)
+      .sort((a, b) => a.order - b.order)
+      .map((item) => ({
+        title: item.title,
+        path: item.path,
+        order: item.order,
+      }));
 
     navigation.push({
       title: sectionName,
-      path: items[0]?.path || '#',
-      children: items.map((item) => ({
-        title: item.title,
-        path: item.path,
-      })),
+      children,
     });
   }
 
