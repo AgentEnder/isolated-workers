@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { applyBaseUrl } from '../utils/base-url';
 
 interface SearchResult {
   id: string;
@@ -59,7 +60,7 @@ export function PagefindSearch() {
     const loadPagefind = async () => {
       try {
         // Dynamic import with vite-ignore to load from built output
-        const pagefindUrl = '/pagefind/pagefind.js';
+        const pagefindUrl = applyBaseUrl('/pagefind/pagefind.js');
         const pagefind = await import(/* @vite-ignore */ pagefindUrl);
         window.pagefind = pagefind as PagefindModule;
         setPagefindReady(true);

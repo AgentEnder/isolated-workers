@@ -10,7 +10,8 @@
   },
   "homepage": "https://craigory.dev/isolated-workers",
   "repository": {
-    "url": "https://github.com/agentender/isolated-workers"
+    "url": "https://github.com/AgentEnder/isolated-workers",
+    "type": "git"
   },
   "license": "MIT",
   "type": "module",

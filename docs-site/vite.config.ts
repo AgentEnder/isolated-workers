@@ -11,4 +11,5 @@ export default defineConfig({
       external: ['/pagefind/pagefind.js'],
     },
   },
+  base: process.env.BASE_URL || '/isolated-workers',
 });

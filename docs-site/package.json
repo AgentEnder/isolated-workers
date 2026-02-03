@@ -8,10 +8,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@types/unist": "catalog:",
     "gray-matter": "^4.0.3",
-    "hast-util-from-html": "^2.0.3",
-    "hast-util-to-html": "^9.0.5",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "rehype-highlight": "^7.0.2",
@@ -34,14 +31,17 @@
     "@types/mdast": "^4.0.4",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
+    "@types/unist": "catalog:",
     "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^9.39.2",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^17.1.0",
+    "hast-util-from-html": "catalog:",
+    "hast-util-to-html": "catalog:",
     "memfs": "^4.56.10",
     "pagefind": "^1.4.0",
     "tailwindcss": "^4.1.18",
-    "typedoc": "catalog:",
+    "typedoc": "^0.28.16",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.1",
     "vite": "^7.3.1",
@@ -55,18 +55,16 @@
           "^extract-docs"
         ]
       },
-      "dev": {
-        "dependsOn": [
-          "^dev",
-          "^extract-docs"
-        ]
-      },
       "preview": {
         "dependsOn": [
+          "^build",
           "^extract-docs"
         ]
       }
-    }
+    },
+    "implicitDependencies": [
+      "examples"
+    ]
   },
   "type": "module"
 }
