@@ -510,6 +510,38 @@ body {
   --shiki-token-link: #00f0ff;
 }
 
+/* Code links within syntax-highlighted code */
+.shiki a.code-link {
+  color: #00f0ff !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgba(0, 240, 255, 0.5) !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 2px !important;
+  transition: all 0.2s ease !important;
+  position: relative;
+  z-index: 1;
+}
+
+.shiki a.code-link:hover {
+  color: #00ff9d !important;
+  text-decoration-color: rgba(0, 255, 157, 0.8) !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.3) !important;
+}
+
+/* Make links clickable and clearly interactive */
+.shiki a.code-link {
+  cursor: pointer;
+  outline: none;
+  border-radius: 2px;
+  padding: 1px 3px;
+  margin: -1px -3px;
+}
+
+.shiki a.code-link:focus-visible {
+  outline: 2px solid rgba(0, 240, 255, 0.5);
+  outline-offset: 2px;
+}
+
 /* Prose overrides for markdown content */
 .prose-retro {
   --tw-prose-body: #d1d5db;

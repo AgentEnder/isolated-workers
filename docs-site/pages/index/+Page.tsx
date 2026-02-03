@@ -6,14 +6,28 @@ export default function Page() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative pt-20 pb-32 px-6">
+      <section className="relative py-5 xl:py-15 px-6">
         <div className="max-w-5xl mx-auto text-center">
-          {/* Hero heading with gradient and glow */}
-          <h1 className="text-6xl md:text-7xl font-bold mb-6 tracking-tight">
-            <span className="bg-linear-to-r from-neon-cyan via-neon-purple to-neon-mint bg-clip-text text-transparent animate-gradient-x bg-[length:200%_auto] neon-flicker-slow">
-              Type-Safe Workers
-            </span>
+          {/* Logo */}
+          <div className="flex justify-center mb-8">
+            <img
+              src="/assets/logo.svg"
+              alt="Isolated Workers Logo"
+              className="w-24 h-24 md:w-32 md:h-32"
+            />
+          </div>
+
+          {/* Hero heading - Package name */}
+          <h1 className="text-6xl md:text-7xl font-bold mb-4 tracking-tight text-gray-100 heading-glow">
+            Isolated Workers
           </h1>
+
+          {/* Subtitle - Type safety emphasis */}
+          <p className="text-2xl md:text-3xl font-semibold mb-6">
+            <span className="bg-linear-to-r from-neon-cyan via-neon-purple to-neon-mint bg-clip-text text-transparent animate-gradient-x bg-size-[200%_auto] neon-flicker-slow">
+              Type-Safe Worker Processes
+            </span>
+          </p>
 
           {/* Tagline */}
           <p className="text-xl md:text-2xl text-gray-400 mb-8 max-w-3xl mx-auto leading-relaxed">
@@ -27,7 +41,7 @@ export default function Page() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
             <Link
-              href="/getting-started"
+              href="/docs/getting-started"
               className="
                 px-8 py-3 rounded-lg font-semibold
                 bg-linear-to-r from-neon-cyan to-neon-purple

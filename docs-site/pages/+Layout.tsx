@@ -95,27 +95,32 @@ export default function PageLayout({
               {/* Sidebar wrapper - provides spacing and contains sticky sidebar */}
 
               <aside className="hidden lg:block shrink-0 p-4 sticky top-0 self-start w-72 rounded-2xl glass-enhanced border-glow">
-                <NavContent
-                  navigation={navigation}
-                  activeCheck={isActive}
-                  onItemClick={() => isMobile && setSidebarOpen(false)}
-                />
+                <div className="h-[calc(100vh-6rem)] overflow-y-auto">
+                  <NavContent
+                    navigation={navigation}
+                    activeCheck={isActive}
+                    onItemClick={() => isMobile && setSidebarOpen(false)}
+                  />
+                </div>
               </aside>
 
               {/* Mobile sidebar - fixed position, slides in */}
               <aside
                 className={`
-                  lg:hidden left-0 bottom-0 w-72
-                  glass-enhanced border-glow fixed! rounded-r-2xl
+                  lg:hidden left-4 bottom-4 top-24 w-72
+                  glass-enhanced border-glow fixed! rounded-2xl
                   z-40 transition-transform duration-300 ease-in-out
                   ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                  overflow-clip
                 `}
               >
-                <NavContent
-                  navigation={navigation}
-                  activeCheck={isActive}
-                  onItemClick={() => isMobile && setSidebarOpen(false)}
-                />
+                <div className="h-[calc(100vh-5rem)] overflow-y-auto">
+                  <NavContent
+                    navigation={navigation}
+                    activeCheck={isActive}
+                    onItemClick={() => isMobile && setSidebarOpen(false)}
+                  />
+                </div>
               </aside>
 
               {/* Main Content */}
@@ -165,8 +170,8 @@ function TopBar({ logoUrl, onMenuClick, isMobile }: TopBarProps) {
 
         {/* Desktop Nav Links */}
         <nav className="hidden md:flex items-center gap-6">
-          <NavLink href="/getting-started">Getting Started</NavLink>
-          <NavLink href="/guides">Guides</NavLink>
+          <NavLink href="/docs/getting-started">Getting Started</NavLink>
+          <NavLink href="/docs/guides">Guides</NavLink>
           <NavLink href="/examples">Examples</NavLink>
           <NavLink href="/api">API Reference</NavLink>
         </nav>
@@ -241,30 +246,88 @@ interface NavContentProps {
 }
 
 function NavContent({ navigation, activeCheck, onItemClick }: NavContentProps) {
-  return (
-    <nav className="p-4 h-full space-y-6">
-      {navigation.map((section, sectionIndex) => (
-        <div key={section.path}>
-          {/* Section divider (except for first section) */}
-          {sectionIndex > 0 && <div className="divider-glow mb-4" />}
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(
+    new Set()
+  );
 
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3 neon-flicker-slow neon-flicker-delay-2">
-            {section.title}
-          </h3>
-          <ul className="space-y-1 list-none">
-            {section.children?.map((item) => (
-              <li key={item.path}>
-                <NavItem
-                  href={item.path}
-                  title={item.title}
-                  active={activeCheck(item.path)}
+  const toggleSection = (title: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(title)) {
+        next.delete(title);
+      } else {
+        next.add(title);
+      }
+      return next;
+    });
+  };
+
+  return (
+    <nav className="p-4 h-full overflow-y-auto space-y-6">
+      {navigation.map((section, sectionIndex) => {
+        const isCollapsed = collapsedSections.has(section.title);
+        return (
+          <div key={section.title}>
+            {/* Section divider (except for first section) */}
+            {sectionIndex > 0 && <div className="divider-glow mb-4" />}
+
+            <div className="flex items-center justify-between mb-2 px-3">
+              {section.path ? (
+                <Link
+                  href={section.path}
                   onClick={onItemClick}
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+                  className="text-xs font-semibold text-gray-500 uppercase tracking-wider neon-flicker-slow neon-flicker-delay-2 hover:text-neon-cyan transition-colors duration-200"
+                >
+                  {section.title}
+                </Link>
+              ) : (
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider neon-flicker-slow neon-flicker-delay-2">
+                  {section.title}
+                </span>
+              )}
+              <button
+                onClick={(e) => toggleSection(section.title, e)}
+                className="shrink-0 ml-2 hover:text-neon-cyan transition-colors"
+              >
+                <svg
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    isCollapsed ? '-rotate-90' : ''
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {!isCollapsed && (
+              <ul className="space-y-1 list-none">
+                {section.children?.map(
+                  (item) =>
+                    item.path && (
+                      <li key={item.path}>
+                        <NavItem
+                          href={item.path}
+                          title={item.title}
+                          active={activeCheck(item.path)}
+                          onClick={onItemClick}
+                        />
+                      </li>
+                    )
+                )}
+              </ul>
+            )}
+          </div>
+        );
+      })}
     </nav>
   );
 }
