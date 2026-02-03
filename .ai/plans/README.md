@@ -15,6 +15,10 @@ This directory contains the phased implementation plans for the isolated-workers
 | 7   | [Enhanced Configuration](./07-enhanced-configuration.md)                                | 📝 Draft     | Comprehensive configuration options and middleware  |
 | 8   | [Markdown Docs & Code Hunks](./2026-02-01-markdown-docs-and-code-hunks-design.md)       | ✅ Completed | Markdown docs system with code region extraction    |
 | 9   | [Driver Abstraction](./09-driver-abstraction.md)                                        | ✅ Completed | Driver pattern for child_process/worker_threads     |
+| 10  | [TypeDoc API Reference](./10-typedoc-api-reference.md)                                  | ✅ Completed | Dynamic API docs from TypeDoc JSON                  |
+| 11  | [TypeDoc with Liquid Tags Integration](./11-typedoc-liquid-integration.md)                            | 📝 Draft     | Accurate type references via typedoc liquid tags  |
+| 12  | [Documentation Accuracy Fixes](./10-documentation-accuracy-fixes.md)                         | ✅ Completed | Fix all accuracy issues in /docs/ folder       |
+| 10  | [TypeDoc API Reference](./10-typedoc-api-reference.md)                                  | 🔄 In Progress | Dynamic API docs from TypeDoc JSON                  |
 
 ## Status Legend
 
@@ -37,24 +41,32 @@ This directory contains the phased implementation plans for the isolated-workers
 - Type-safe capability narrowing
 - Package entry points for tree-shaking
 
-**Next Up**: Phase 6 polish (testing, examples, docs) or Phase 7 (enhanced configuration)
+**Next Up**: Phase 10 - TypeDoc with Liquid Tags Integration
+
+**Status**: 📝 Draft
+
+**Summary**: Add liquid tag support for type-safe API references in markdown documentation
 
 ## Plan Dependencies
 
 ```
 01-initial-research
-      ↓
+       ↓
 02-architecture
-      ↓
+       ↓
 03-package-structure
-      ↓
-      ├→ 04-type-safety-infrastructure
-      └→ 05-core-implementation
-            ↓
-      06-testing-examples-docs
-            ↓
-      ├→ 07-enhanced-configuration
-      └→ 09-driver-abstraction
+       ↓
+       ├→ 04-type-safety-infrastructure
+       └→ 05-core-implementation
+             ↓
+       06-testing-examples-docs
+             ↓
+             ├→ 07-enhanced-configuration
+             └→ 09-driver-abstraction
+                   ↓
+                   10-typedoc-api-reference
+                   ↓
+                   11-typedoc-liquid-integration
 ```
 
 **Note:** Phase 6 combines testing and documentation because examples serve as both E2E tests and documentation content. Phase 7 builds on the core implementation to add comprehensive configuration options. Phase 9 introduces the driver abstraction pattern for child_process/worker_threads support.

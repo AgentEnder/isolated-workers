@@ -326,3 +326,9 @@ title: My Example
 description: What this demonstrates
 hidden: true  # Optional: hide from navigation
 ```
+
+##  Summary:
+- Docs live in `docs/` as Markdown files with frontmatter
+- Examples live in `examples/` with `meta.yml` and optional `content.md`
+- Instead of using inline code blocks, docs should **strongly** prefer embedding code from examples using Liquid tags
+- Use region markers to extract specific code sections
