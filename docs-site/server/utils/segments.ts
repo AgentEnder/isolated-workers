@@ -4,9 +4,9 @@ import { highlightCode } from './highlighter';
 import {
   parseMarkdown,
   processMarkdownChunk,
-  type RemarkCodeLinksOptions,
   type RemarkLiquidTagsOptions,
 } from './markdown';
+import { ApiDocs } from './typedoc';
 
 /**
  * A segment of content for rendering markdown with embedded special content.
@@ -58,7 +58,7 @@ export interface ParseMarkdownOptions {
   /**
    * Options for auto-linking API symbols in code blocks.
    */
-  codeLinks?: RemarkCodeLinksOptions;
+  apiDocs: ApiDocs;
 }
 
 /**
@@ -72,13 +72,13 @@ export interface ParseMarkdownOptions {
  */
 export async function parseMarkdownToSegments(
   markdown: string,
-  options: ParseMarkdownOptions = {}
+  options: ParseMarkdownOptions
 ): Promise<ContentSegment[]> {
   const {
     nodeHandler,
     extractCodeBlocks = true,
     liquidTags,
-    codeLinks,
+    apiDocs,
   } = options;
 
   const segments: ContentSegment[] = [];
@@ -92,7 +92,7 @@ export async function parseMarkdownToSegments(
     if (currentChunk.length > 0) {
       const html = await processMarkdownChunk(currentChunk, {
         liquidTags,
-        codeLinks,
+        apiDocs,
       });
       if (html.trim()) {
         segments.push({ type: 'html', html });
@@ -122,10 +122,14 @@ export async function parseMarkdownToSegments(
       let highlightedHtml = await highlightCode(content, language);
 
       // Apply code links if option is provided
-      if (codeLinks?.apiDocs) {
-        const symbolLinks = buildSymbolLinks(content, codeLinks.apiDocs);
-        if (symbolLinks.size > 0) {
-          highlightedHtml = linkHighlightedCode(highlightedHtml, symbolLinks);
+      if (apiDocs) {
+        const symbolLinks = buildSymbolLinks(content, apiDocs);
+        if (symbolLinks.length > 0) {
+          highlightedHtml = linkHighlightedCode(
+            highlightedHtml,
+            symbolLinks,
+            apiDocs
+          );
         }
       }
 
@@ -149,14 +153,28 @@ export async function parseMarkdownToSegments(
 }
 
 /**
- * Create a file segment with syntax highlighting
+ * Create a file segment with syntax highlighting and code links
  */
 export async function createFileSegment(
   filename: string,
   content: string,
-  language: string
+  language: string,
+  apiDocs?: ApiDocs
 ): Promise<ContentSegment> {
-  const highlightedHtml = await highlightCode(content, language);
+  let highlightedHtml = await highlightCode(content, language);
+
+  // Apply code links if option is provided
+  if (apiDocs) {
+    const symbolLinks = buildSymbolLinks(content, apiDocs);
+    if (symbolLinks.length > 0) {
+      highlightedHtml = linkHighlightedCode(
+        highlightedHtml,
+        symbolLinks,
+        apiDocs
+      );
+    }
+  }
+
   return {
     type: 'file',
     filename,

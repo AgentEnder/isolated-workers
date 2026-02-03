@@ -21,6 +21,7 @@ export async function getHighlighter() {
         'html',
         'css',
         'plaintext',
+        'markdown',
       ],
     });
   }

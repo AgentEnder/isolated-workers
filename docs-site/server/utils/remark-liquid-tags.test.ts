@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { processMarkdownChunk } from './markdown';
-import { parseMarkdown } from './markdown';
+import { parseMarkdown, processMarkdownChunk } from './markdown';
 import type { RemarkLiquidTagsOptions } from './remark-liquid-tags';
 
 const examples: RemarkLiquidTagsOptions['examples'] = {
@@ -10,7 +9,14 @@ const examples: RemarkLiquidTagsOptions['examples'] = {
 
 async function transform(markdown: string): Promise<string> {
   const tree = parseMarkdown(markdown);
-  return processMarkdownChunk(tree.children, { liquidTags: { examples } });
+  return processMarkdownChunk(tree.children, {
+    liquidTags: { examples },
+    apiDocs: {
+      allExports: [],
+      exports: {},
+      modules: {},
+    },
+  });
 }
 
 describe('remarkLiquidTags', () => {

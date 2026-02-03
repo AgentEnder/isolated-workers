@@ -1,4 +1,242 @@
+/**
+ * Code linking utilities using TypeScript AST for accurate symbol detection.
+ *
+ * This module parses TypeScript/JavaScript code to find symbols that should be
+ * linked to API documentation. It uses the TypeScript compiler API to accurately
+ * identify identifiers while excluding comments and string literals.
+ */
+
+import ts from 'typescript';
+import type { Element, Text, ElementContent } from 'hast';
+import { fromHtml } from 'hast-util-from-html';
+import { toHtml } from 'hast-util-to-html';
+import { visit } from 'unist-util-visit';
 import type { ApiDocs, ApiExport } from './typedoc';
+
+/**
+ * A symbol in the source code that should be linked to API documentation.
+ */
+export interface LinkableSymbol {
+  /** The symbol name (e.g., "createWorker") */
+  name: string;
+  /** Start position in the source code (0-indexed) */
+  start: number;
+  /** End position in the source code (exclusive) */
+  end: number;
+}
+
+/**
+ * Find all identifiers in TypeScript/JavaScript source that match API symbols.
+ *
+ * Uses the TypeScript compiler API to parse the source and walk the AST.
+ * This naturally excludes identifiers inside comments and string literals.
+ *
+ * @param source - The source code to parse
+ * @param apiSymbols - Set of symbol names to look for
+ * @returns Array of linkable symbols with their positions
+ */
+export function findLinkableSymbols(
+  source: string,
+  apiSymbols: Set<string>
+): LinkableSymbol[] {
+  const symbols: LinkableSymbol[] = [];
+
+  // Parse the source as TypeScript (works for JS too)
+  const sourceFile = ts.createSourceFile(
+    'source.ts',
+    source,
+    ts.ScriptTarget.Latest,
+    true, // setParentNodes - needed for walking
+    ts.ScriptKind.TSX // Handle JSX/TSX as well
+  );
+
+  /**
+   * Recursively walk the AST and collect matching identifiers
+   */
+  function visit(node: ts.Node): void {
+    // Check if this is an identifier that matches an API symbol
+    if (ts.isIdentifier(node)) {
+      const name = node.text;
+      if (apiSymbols.has(name)) {
+        // Get the position in the source
+        const start = node.getStart(sourceFile);
+        const end = node.getEnd();
+
+        symbols.push({ name, start, end });
+      }
+    }
+
+    // Recurse into children
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  // Sort by position for consistent ordering
+  symbols.sort((a, b) => a.start - b.start);
+
+  return symbols;
+}
+
+/**
+ * Find an API export by name
+ */
+export function findApiExport(
+  apiDocs: ApiDocs,
+  symbolName: string
+): ApiExport | null {
+  for (const apiExport of apiDocs.allExports) {
+    if (apiExport.name === symbolName) {
+      return apiExport;
+    }
+  }
+  return null;
+}
+
+/**
+ * Build a list of linkable symbols from source code matched against API docs.
+ *
+ * This is the main entry point for finding symbols to link.
+ *
+ * @param source - The source code to analyze
+ * @param apiDocs - The API documentation to match against
+ * @returns Array of linkable symbols with positions
+ */
+export function buildSymbolLinks(
+  source: string,
+  apiDocs: ApiDocs
+): LinkableSymbol[] {
+  // Build set of API symbol names for fast lookup
+  const apiSymbols = new Set(apiDocs.allExports.map((e) => e.name));
+
+  // Find all matching symbols using AST
+  return findLinkableSymbols(source, apiSymbols);
+}
+
+/**
+ * Inject links into Shiki-highlighted HTML for the given symbols.
+ *
+ * This walks the HAST (HTML AST) and finds text nodes that contain
+ * the symbol names, then wraps them in anchor elements.
+ *
+ * @param html - Shiki-highlighted HTML string
+ * @param symbols - Symbols to link (with positions in original source)
+ * @param apiDocs - API docs for generating link URLs
+ * @returns HTML string with links injected
+ */
+export function linkHighlightedCode(
+  html: string,
+  symbols: LinkableSymbol[],
+  apiDocs: ApiDocs
+): string {
+  if (symbols.length === 0) {
+    return html;
+  }
+
+  // Build a map of symbol name -> API export for quick lookup
+  const symbolToExport = new Map<string, ApiExport>();
+  for (const sym of symbols) {
+    if (!symbolToExport.has(sym.name)) {
+      const apiExport = findApiExport(apiDocs, sym.name);
+      if (apiExport) {
+        symbolToExport.set(sym.name, apiExport);
+      }
+    }
+  }
+
+  if (symbolToExport.size === 0) {
+    return html;
+  }
+
+  // Parse HTML to HAST
+  const tree = fromHtml(html, { fragment: true });
+
+  // Track which symbol names we need to link
+  const symbolNames = new Set(symbolToExport.keys());
+
+  // Walk the tree and process text nodes
+  visit(tree, 'text', (node: Text, index, parent) => {
+    if (!parent || index === undefined) return;
+
+    // Skip if parent is already an anchor
+    if ((parent as Element).tagName === 'a') return;
+
+    const text = node.value;
+    const newNodes: (Text | Element)[] = [];
+    let lastIndex = 0;
+    let modified = false;
+
+    // Find all occurrences of linkable symbols in this text
+    for (const symbolName of symbolNames) {
+      const apiExport = symbolToExport.get(symbolName)!;
+
+      // Find all occurrences of this symbol with word boundaries
+      let searchIndex = 0;
+      while (searchIndex < text.length) {
+        const foundIndex = text.indexOf(symbolName, searchIndex);
+        if (foundIndex === -1) break;
+
+        // Check word boundaries
+        const beforeChar = foundIndex > 0 ? text[foundIndex - 1] : '';
+        const afterChar = text[foundIndex + symbolName.length] || '';
+
+        const isWordBoundaryBefore =
+          !beforeChar || /[\s\{\[\(,;:<>]/.test(beforeChar);
+        const isWordBoundaryAfter =
+          !afterChar || /[\s\}\]\),;:<>]/.test(afterChar);
+
+        if (isWordBoundaryBefore && isWordBoundaryAfter) {
+          // Add text before this symbol
+          if (foundIndex > lastIndex) {
+            newNodes.push({
+              type: 'text',
+              value: text.slice(lastIndex, foundIndex),
+            });
+          }
+
+          // Add the link
+          newNodes.push({
+            type: 'element',
+            tagName: 'a',
+            properties: {
+              href: apiExport.path,
+              className: ['code-link'],
+              title: `View ${apiExport.name} documentation`,
+            },
+            children: [{ type: 'text', value: symbolName }],
+          });
+
+          lastIndex = foundIndex + symbolName.length;
+          modified = true;
+        }
+
+        searchIndex = foundIndex + 1;
+      }
+    }
+
+    // If we made modifications, update the parent's children
+    if (modified) {
+      // Add remaining text
+      if (lastIndex < text.length) {
+        newNodes.push({
+          type: 'text',
+          value: text.slice(lastIndex),
+        });
+      }
+
+      // Replace this node with the new nodes
+      const parentElement = parent as Element;
+      parentElement.children.splice(index, 1, ...(newNodes as ElementContent[]));
+    }
+  });
+
+  // Serialize back to HTML
+  return toHtml(tree);
+}
+
+// =============================================================================
+// Legacy exports for backward compatibility
+// =============================================================================
 
 export interface ImportedSymbol {
   name: string;
@@ -11,272 +249,80 @@ export interface ImportInfo {
   symbols: ImportedSymbol[];
 }
 
-const IMPORT_PATTERNS = [
-  // Named imports: import { a, b } from 'source'
-  /import\s+(?:type\s+)?\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]/g,
-  // Default import: import a from 'source'
-  /import\s+(\w+)\s+from\s+['"]([^'"]+)['"]/g,
-  // Mixed: import a, { b, c } from 'source'
-  /import\s+(\w+)(?:,\s*\{([^}]+)\})?\s+from\s+['"]([^'"]+)['"]/g,
-] as const;
-
-function cleanSymbolName(symbol: string): string {
-  return symbol
-    .trim()
-    .replace(/\/\/.*$/, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .trim();
-}
-
-function extractSymbolsFromImports(importsText: string): ImportedSymbol[] {
-  const symbols: ImportedSymbol[] = [];
-  const parts = importsText
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s);
-
-  for (const part of parts) {
-    const cleaned = cleanSymbolName(part);
-    if (!cleaned) continue;
-
-    const isTypeImport = part.trim().startsWith('type ');
-    const name = isTypeImport
-      ? cleaned.replace(/^type\s+/, '').trim()
-      : cleaned;
-
-    if (name) {
-      symbols.push({ name, source: '', isTypeImport });
-    }
-  }
-
-  return symbols;
-}
-
+/**
+ * @deprecated Use buildSymbolLinks instead
+ */
 export function extractImports(code: string): ImportInfo[] {
   const imports: ImportInfo[] = [];
 
-  for (const pattern of IMPORT_PATTERNS) {
-    let match: RegExpExecArray | null;
-    pattern.lastIndex = 0;
+  const sourceFile = ts.createSourceFile(
+    'source.ts',
+    code,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX
+  );
 
-    while ((match = pattern.exec(code)) !== null) {
-      const fullMatch = match[0];
-      const isTypeImport = fullMatch.includes('import type');
-
-      if (match[3]) {
-        const defaultImport = match[1];
-        const namedImports = match[2];
-        const source = match[3];
-
+  function visit(node: ts.Node): void {
+    if (ts.isImportDeclaration(node)) {
+      const moduleSpecifier = node.moduleSpecifier;
+      if (ts.isStringLiteral(moduleSpecifier)) {
+        const source = moduleSpecifier.text;
         const symbols: ImportedSymbol[] = [];
 
-        if (defaultImport) {
-          symbols.push({
-            name: defaultImport,
-            source,
-            isTypeImport,
-          });
-        }
+        const importClause = node.importClause;
+        if (importClause) {
+          // Default import
+          if (importClause.name) {
+            symbols.push({
+              name: importClause.name.text,
+              source,
+              isTypeImport: importClause.isTypeOnly,
+            });
+          }
 
-        if (namedImports) {
-          const namedSymbols = extractSymbolsFromImports(namedImports);
-          for (const s of namedSymbols) {
-            symbols.push({ ...s, source, isTypeImport });
+          // Named imports
+          const namedBindings = importClause.namedBindings;
+          if (namedBindings && ts.isNamedImports(namedBindings)) {
+            for (const element of namedBindings.elements) {
+              symbols.push({
+                name: element.name.text,
+                source,
+                isTypeImport: importClause.isTypeOnly || element.isTypeOnly,
+              });
+            }
           }
         }
 
-        imports.push({ source, symbols });
-      } else if (match[2]) {
-        const namedImports = match[1];
-        const source = match[2];
-
-        const symbols = extractSymbolsFromImports(namedImports);
-        for (const s of symbols) {
-          imports.push({
-            source,
-            symbols: [{ ...s, source, isTypeImport }],
-          });
+        if (symbols.length > 0) {
+          imports.push({ source, symbols });
         }
-      } else if (match[1]) {
-        const defaultImport = match[1];
-        const source = match[2];
-
-        imports.push({
-          source,
-          symbols: [{ name: defaultImport, source, isTypeImport }],
-        });
       }
     }
+
+    ts.forEachChild(node, visit);
   }
+
+  visit(sourceFile);
 
   return imports;
 }
 
-export function findApiExport(
-  apiDocs: ApiDocs,
-  symbolName: string,
-  _importSource?: string
-): ApiExport | null {
-  for (const apiExport of apiDocs.allExports) {
-    if (apiExport.name === symbolName) {
-      return apiExport;
-    }
-  }
-
-  return null;
-}
-
-function isIdentifierLike(text: string): boolean {
-  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(text);
-}
-
-interface SymbolReplacement {
-  start: number;
-  end: number;
-  replacement: string;
-}
-
-function findSymbolReplacementsInText(
-  text: string,
-  symbolLinks: Map<string, { path: string; name: string }>
-): SymbolReplacement[] {
-  const replacements: SymbolReplacement[] = [];
-
-  // Split by word boundaries and check each token
-  const tokens = text.split(/(\b|[a-zA-Z0-9_$]+|[^\w\s])/g);
-  let currentIndex = 0;
-
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-
-    // Only link identifiers (alphanumeric + underscore/dollar)
-    if (!isIdentifierLike(token)) {
-      currentIndex += token.length;
-      continue;
-    }
-
-    if (symbolLinks.has(token)) {
-      const link = symbolLinks.get(token)!;
-      replacements.push({
-        start: currentIndex,
-        end: currentIndex + token.length,
-        replacement: `<a href="${link.path}" class="code-link" title="View ${link.name} documentation">${link.name}</a>`,
-      });
-    }
-
-    currentIndex += token.length;
-  }
-
-  return replacements;
-}
-
-function applyReplacements(
-  text: string,
-  replacements: SymbolReplacement[]
-): string {
-  if (replacements.length === 0) {
-    return text;
-  }
-
-  let result = '';
-  let lastIndex = 0;
-
-  for (const replacement of replacements) {
-    result += text.slice(lastIndex, replacement.start);
-    result += replacement.replacement;
-    lastIndex = replacement.end;
-  }
-
-  result += text.slice(lastIndex);
-
-  return result;
-}
-
+/**
+ * @deprecated Use linkHighlightedCode instead
+ */
 export function linkSymbols(
   code: string,
   symbolLinks: Map<string, { path: string; name: string }>
 ): string {
-  if (symbolLinks.size === 0) {
-    return code;
-  }
+  // This is a simplified version for backward compatibility
+  let result = code;
 
-  const replacements = findSymbolReplacementsInText(code, symbolLinks);
-
-  if (replacements.length === 0) {
-    return code;
-  }
-
-  return applyReplacements(code, replacements);
-}
-
-export function buildSymbolLinks(
-  code: string,
-  apiDocs: ApiDocs
-): Map<string, { path: string; name: string }> {
-  const symbolLinks = new Map<string, { path: string; name: string }>();
-
-  // Build from all API exports - link any occurrence in code
-  const words = code
-    .split(/\s+/)
-    .flatMap((w) => w.split(/[\{\[\]();,:]/))
-    .filter((w) => w.length > 0 && isIdentifierLike(w));
-
-  for (const word of new Set(words)) {
-    const apiExport = findApiExport(apiDocs, word);
-    if (apiExport) {
-      symbolLinks.set(word, {
-        path: apiExport.path,
-        name: apiExport.name,
-      });
-    }
-  }
-
-  return symbolLinks;
-}
-
-export function linkHighlightedCode(
-  highlightedHtml: string,
-  symbolLinks: Map<string, { path: string; name: string }>
-): string {
-  if (symbolLinks.size === 0) {
-    return highlightedHtml;
-  }
-
-  let result = highlightedHtml;
-
-  for (const [symbol, link] of symbolLinks.entries()) {
-    const escapedSymbol = symbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-    // Match text inside span tags, accounting for closing </span> tags
-    const regex = new RegExp(
-      `(>([^<]*?))(${escapedSymbol})([^<]*?)(</?span)`,
-      'g'
-    );
-
+  for (const [symbol, link] of symbolLinks) {
+    const regex = new RegExp(`\\b${symbol}\\b`, 'g');
     result = result.replace(
       regex,
-      (match, beforeTag, symbolMatch, afterTag, nextSpan) => {
-        const beforeText = beforeTag;
-        const afterText = afterTag;
-
-        // Check word boundaries
-        const beforeChar = beforeText.slice(-1);
-        const afterChar = afterText[0];
-
-        const hasWordBoundaryBefore =
-          !beforeChar ||
-          /\s/.test(beforeChar) ||
-          /[\{\[\(,;:]/.test(beforeChar);
-
-        const hasWordBoundaryAfter =
-          !afterChar || /\s/.test(afterChar) || /[\}\]\),;:]/.test(afterChar);
-
-        if (hasWordBoundaryBefore && hasWordBoundaryAfter) {
-          return `>${beforeText}<a href="${link.path}" class="code-link" title="View ${link.name} documentation">${symbolMatch}</a>${afterText}${nextSpan}`;
-        }
-
-        return match;
-      }
+      `<a href="${link.path}" class="code-link" title="View ${link.name} documentation">${link.name}</a>`
     );
   }
 

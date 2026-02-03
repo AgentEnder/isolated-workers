@@ -1,4 +1,8 @@
-import { createHighlighter, type Highlighter, type BundledLanguage } from 'shiki';
+import {
+  createHighlighter,
+  type Highlighter,
+  type BundledLanguage,
+} from 'shiki';
 
 // Singleton highlighter for server-side use
 let highlighter: Highlighter | null = null;
@@ -45,6 +49,7 @@ function mapLanguage(lang: string): string {
 /**
  * Inject links into highlighted HTML for known type names.
  * Finds type names within span text content and wraps them with links.
+ * Skips text inside comments (identified by comment color in Shiki theme).
  */
 function injectTypeLinks(
   html: string,
@@ -62,22 +67,28 @@ function injectTypeLinks(
   );
 
   // Match type names as whole words (with word boundaries)
-  // This handles cases like "> createWorker</span>" where there may be
-  // whitespace before the name
-  const pattern = new RegExp(
-    `\\b(${escapedNames.join('|')})\\b`,
-    'g'
-  );
+  const pattern = new RegExp(`\\b(${escapedNames.join('|')})\\b`, 'g');
+
+  // Comment color in github-dark theme
+  const COMMENT_COLOR = '#6A737D';
 
   // Only replace within text content (between > and <)
-  // We process the HTML by finding text segments and replacing within them
-  return html.replace(/>([^<]+)</g, (_fullMatch, textContent: string) => {
-    const linkedText = textContent.replace(pattern, (typeName) => {
-      const href = knownExports[typeName];
-      return `<a href="${href}" class="code-link">${typeName}</a>`;
-    });
-    return `>${linkedText}<`;
-  });
+  // Check if the preceding span has comment color to skip comments
+  return html.replace(
+    /(<span[^>]*?>)([^<]+)(<\/span>)/g,
+    (fullMatch, openTag, textContent, closeTag) => {
+      // Skip if this is a comment span (has comment color)
+      if (openTag.includes(COMMENT_COLOR)) {
+        return fullMatch;
+      }
+
+      const linkedText = textContent.replace(pattern, (typeName: string) => {
+        const href = knownExports[typeName];
+        return `<a href="${href}" class="code-link">${typeName}</a>`;
+      });
+      return `${openTag}${linkedText}${closeTag}`;
+    }
+  );
 }
 
 export interface HighlightedCode {

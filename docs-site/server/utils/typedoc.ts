@@ -585,6 +585,15 @@ export function parseTypedocJson(json: TypeDocJson): ApiDocs {
     if (!moduleMap.has(moduleName)) {
       moduleMap.set(moduleName, []);
     }
+
+    // If this is a module (kind === 2), recursively process its children
+    if (reflection.kind === KIND.Module && reflection.children) {
+      for (const child of reflection.children) {
+        categorizeReflection(child);
+      }
+      return;
+    }
+
     moduleMap.get(moduleName)!.push(reflection);
   }
 
