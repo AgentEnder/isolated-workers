@@ -1,6 +1,9 @@
 ---
 title: Drivers
 description: Understanding the driver abstraction for different worker backends
+nav:
+  section: Concepts
+  order: 3
 ---
 
 # Drivers
@@ -14,11 +17,13 @@ Isolated Workers uses a **driver abstraction** to support different worker backe
 The `child_process` driver spawns a separate Node.js process and uses Unix domain sockets (or named pipes on Windows) for IPC.
 
 **Capabilities:**
+
 - `reconnect: true` - Can disconnect and reconnect to running workers
-- `detach: true` - Workers can outlive the parent process
+- `detach: true` - Workers can outlive the parent process (requires explicit configuration, default is false)
 - `sharedMemory: false` - No SharedArrayBuffer support
 
 **When to use:**
+
 - Process isolation is important
 - Workers may crash and shouldn't affect the host
 - Long-running workers that may be reconnected to
@@ -47,11 +52,13 @@ const worker = await createWorker({
 The `worker_threads` driver spawns workers in the same process using Node.js worker threads, communicating via MessagePort.
 
 **Capabilities:**
+
 - `reconnect: false` - No reconnection support
 - `detach: false` - Workers terminate with parent
 - `sharedMemory: true` - Supports SharedArrayBuffer
 
 **When to use:**
+
 - Lower overhead is important
 - Shared memory (SharedArrayBuffer) is needed
 - Workers don't need to outlive the parent
@@ -76,8 +83,8 @@ The `WorkerClient` type narrows based on driver capabilities:
 // With child_process driver (default)
 const cpWorker = await createWorker({ script: './worker.js' });
 cpWorker.disconnect(); // ✅ Available
-cpWorker.reconnect();  // ✅ Available
-cpWorker.pid;          // number
+cpWorker.reconnect(); // ✅ Available
+cpWorker.pid; // number
 
 // With worker_threads driver
 const wtWorker = await createWorker<Messages, WorkerThreadsDriver>({
@@ -85,8 +92,8 @@ const wtWorker = await createWorker<Messages, WorkerThreadsDriver>({
   driver: new WorkerThreadsDriver(),
 });
 wtWorker.disconnect(); // ❌ Type error! Not available
-wtWorker.reconnect();  // ❌ Type error! Not available
-wtWorker.pid;          // undefined (worker threads share parent's PID)
+wtWorker.reconnect(); // ❌ Type error! Not available
+wtWorker.pid; // undefined (worker threads share parent's PID)
 ```
 
 ## Worker-Side Detection
@@ -109,22 +116,26 @@ await startWorkerServer(handlers);
 
 ## Comparing Drivers
 
-| Feature | child_process | worker_threads |
-|---------|--------------|----------------|
-| Process isolation | ✅ Separate process | ❌ Same process |
-| Memory overhead | Higher (new V8 isolate) | Lower (shares memory) |
-| SharedArrayBuffer | ❌ | ✅ |
-| Reconnection | ✅ | ❌ |
-| Detached workers | ✅ | ❌ |
-| Crash isolation | ✅ Worker crash isolated | ❌ Can affect host |
-| Spawn time | Slower | Faster |
+| Feature           | child_process            | worker_threads        |
+| ----------------- | ------------------------ | --------------------- |
+| Process isolation | ✅ Separate process      | ❌ Same process       |
+| Memory overhead   | Higher (new V8 isolate)  | Lower (shares memory) |
+| SharedArrayBuffer | ❌                       | ✅                    |
+| Reconnection      | ✅                       | ❌                    |
+| Detached workers  | ✅                       | ❌                    |
+| Crash isolation   | ✅ Worker crash isolated | ❌ Can affect host    |
+| Spawn time        | Slower                   | Faster                |
 
 ## Custom Drivers
 
 You can implement custom drivers by implementing the `Driver` interface:
 
 ```typescript
-import type { Driver, DriverChannel, DriverCapabilities } from 'isolated-workers';
+import type {
+  Driver,
+  DriverChannel,
+  DriverCapabilities,
+} from 'isolated-workers';
 
 interface MyCapabilities extends DriverCapabilities {
   reconnect: false;
@@ -149,5 +160,5 @@ class MyCustomDriver implements Driver<MyCapabilities> {
 
 ## See Also
 
-- {% example id="worker-threads-driver" /%} - Using the worker_threads driver
-- {% example id="basic-ping" /%} - Basic example (uses default child_process driver)
+- {% example worker-threads-driver %} - Using the worker_threads driver
+- {% example basic-ping %} - Basic example (uses default child_process driver)

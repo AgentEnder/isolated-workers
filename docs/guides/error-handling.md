@@ -2,7 +2,8 @@
 title: Error Handling
 description: How errors propagate from workers to hosts
 nav:
-  order: 2
+  section: Guides
+  order: 1
 ---
 
 # Error Handling in isolated-workers
@@ -22,7 +23,7 @@ This means you can use standard try/catch patterns in your host code:
 
 ```typescript
 try {
-  const result = await worker.sendRequest({ type: 'divide', a: 10, b: 0 });
+  const result = await worker.send('divide', { a: 10, b: 0 });
 } catch (error) {
   console.error('Worker threw an error:', error.message);
 }
@@ -86,7 +87,7 @@ handlers: {
       throw new Error('Cannot divide by zero');
     }
     return a / b;
-  }
+  };
 }
 ```
 
@@ -95,14 +96,20 @@ handlers: {
 Currently, isolated-workers preserves:
 
 - Error message (`error.message`)
+- Error type name (`error.name`)
 - Error stack trace (`error.stack`)
+- Error code for Node.js errors (`error.code`)
 
-Custom error properties may not be preserved across the process boundary. If you need to pass structured error data, consider returning an error result instead of throwing:
+Custom error properties may not be preserved across the process boundary. If you need to pass structured error data, consider returning an error result instead of throwing (note: this example uses a different pattern than the division example above):
 
 ```typescript
 type DivideResult =
   | { success: true; value: number }
-  | { success: false; error: string; code: 'DIVISION_BY_ZERO' | 'INVALID_INPUT' };
+  | {
+      success: false;
+      error: string;
+      code: 'DIVISION_BY_ZERO' | 'INVALID_INPUT';
+    };
 ```
 
 ## See Also
