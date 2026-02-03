@@ -108,13 +108,14 @@ describe('User Handlers', () => {
       );
   });
 });
+  
+```
 
 ## Test File Organization
 
 Organize your test files by layer to maintain clarity and enable selective test execution:
 
-```
-
+```markdown
 src/
 ├── handlers/
 │ └── calculator.spec.ts # Unit tests - handler logic only
@@ -126,8 +127,7 @@ tests/
 └── test-utils/
 ├── mock-worker.ts
 └── ci-config.ts
-
-````
+```
 
 **Naming Conventions**:
 
@@ -146,7 +146,7 @@ tests/
     "test:e2e": "jest --config=jest.e2e.config.js"
   }
 }
-````
+```
 
 This organization allows:
 
