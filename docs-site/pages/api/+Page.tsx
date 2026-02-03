@@ -34,7 +34,7 @@ export default function Page() {
         <ApiExportPage
           mod={data.export}
           knownExports={data.knownExports}
-          processedExamples={data.processedExamples}
+          highlightedExamples={data.highlightedExamples}
         />
       );
   }

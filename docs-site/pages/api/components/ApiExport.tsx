@@ -4,14 +4,13 @@ import { Link } from '../../../components/Link';
 import { TypeReference } from '../../../components/TypeReference';
 import { formatSignature } from '../../../utils/format-signature';
 import { parseTypeString } from '../../../utils/type-link';
-import type { CodeSegment } from '../../../utils/code-segments';
 import type { ApiExport } from '../../../server/utils/typedoc';
-import type { ProcessedExample } from '../+data';
+import type { HighlightedExample } from '../+data';
 
 interface ApiExportPageProps {
   mod: ApiExport;
   knownExports: Record<string, string>;
-  processedExamples: ProcessedExample[];
+  highlightedExamples: HighlightedExample[];
 }
 
 function slugifyCategory(category: string): string {
@@ -51,37 +50,10 @@ function TypeLink({
   );
 }
 
-/**
- * Render code with type links.
- * Used for examples where we want syntax highlighting + links.
- */
-function LinkedCode({ segments }: { segments: CodeSegment[] }) {
-  return (
-    <pre className="bg-tertiary/50 rounded-lg p-4 overflow-x-auto">
-      <code className="text-sm font-mono">
-        {segments.map((segment, i) => {
-          if (segment.type === 'type-link' && segment.href) {
-            return (
-              <Link
-                key={i}
-                href={segment.href}
-                className="text-neon-cyan hover:underline"
-              >
-                {segment.text}
-              </Link>
-            );
-          }
-          return <span key={i}>{segment.text}</span>;
-        })}
-      </code>
-    </pre>
-  );
-}
-
 export function ApiExportPage({
   mod,
   knownExports,
-  processedExamples,
+  highlightedExamples,
 }: ApiExportPageProps) {
   const categorySlug = mod.category ? slugifyCategory(mod.category) : null;
   const formattedSignature = useMemo(
@@ -317,12 +289,17 @@ export function ApiExportPage({
       )}
 
       {/* Examples */}
-      {processedExamples.length > 0 && (
+      {highlightedExamples.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-100 mb-4">Examples</h2>
           <div className="space-y-4">
-            {processedExamples.map((example, i) => (
-              <LinkedCode key={i} segments={example.segments} />
+            {highlightedExamples.map((example, i) => (
+              <CodeBlock
+                key={i}
+                code={example.code}
+                language="typescript"
+                preHighlightedHtml={example.html}
+              />
             ))}
           </div>
         </div>

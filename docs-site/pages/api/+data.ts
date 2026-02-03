@@ -1,17 +1,17 @@
 import type { PageContextServer } from 'vike/types';
 import type { ApiDocs, ApiExport } from '../../server/utils/typedoc';
-import {
-  linkifyCode,
-  type CodeSegment,
-} from '../../utils/code-segments';
+import { highlightCodeWithLinks } from '../../server/utils/highlight-code';
 
 export interface ApiDataLanding {
   type: 'landing';
   api: ApiDocs;
 }
 
-export interface ProcessedExample {
-  segments: CodeSegment[];
+export interface HighlightedExample {
+  /** Pre-highlighted HTML with type links */
+  html: string;
+  /** Original code for copy functionality */
+  code: string;
 }
 
 export interface ApiDataExport {
@@ -19,8 +19,8 @@ export interface ApiDataExport {
   export: ApiExport;
   /** Map of export names to their paths for linking types */
   knownExports: Record<string, string>;
-  /** Pre-processed examples with type links */
-  processedExamples: ProcessedExample[];
+  /** Pre-highlighted examples with type links */
+  highlightedExamples: HighlightedExample[];
 }
 
 export type ApiData =
@@ -58,18 +58,17 @@ export async function data(pageContext: PageContextServer): Promise<ApiData> {
     knownExports[e.name] = e.path;
   }
 
-  // Pre-process examples with type links (done server-side to avoid
-  // loading heavy parsing libs on the client)
-  const processedExamples: ProcessedExample[] = (
-    exp.comment?.examples || []
-  ).map((code) => ({
-    segments: linkifyCode(code, knownExports),
-  }));
+  // Pre-highlight examples with Shiki and inject type links
+  // (done server-side to avoid loading Shiki on the client)
+  const examples = exp.comment?.examples || [];
+  const highlightedExamples: HighlightedExample[] = await Promise.all(
+    examples.map((code) => highlightCodeWithLinks(code, 'typescript', knownExports))
+  );
 
   return {
     type: 'export',
     export: exp,
     knownExports,
-    processedExamples,
+    highlightedExamples,
   };
 }
