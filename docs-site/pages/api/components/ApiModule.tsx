@@ -75,7 +75,11 @@ export function ApiModulePage({ module }: ApiModulePageProps) {
           return (
             <div key={kind}>
               <h2 className="text-lg font-semibold text-gray-200 mb-4 capitalize">
-                {kind === 'type' ? 'Types' : `${kind}s`}
+                {kind === 'type'
+                  ? 'Types'
+                  : kind === 'class'
+                    ? 'Classes'
+                    : `${kind}s`}
               </h2>
               <div className="space-y-2">
                 {exports.map((exp) => (
