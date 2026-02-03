@@ -31,7 +31,11 @@ export default function Page() {
       return <ApiLanding api={data.api} />;
     case 'export':
       return (
-        <ApiExportPage mod={data.export} knownExports={data.knownExports} />
+        <ApiExportPage
+          mod={data.export}
+          knownExports={data.knownExports}
+          processedExamples={data.processedExamples}
+        />
       );
   }
 }

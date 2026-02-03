@@ -4,11 +4,14 @@ import { Link } from '../../../components/Link';
 import { TypeReference } from '../../../components/TypeReference';
 import { formatSignature } from '../../../utils/format-signature';
 import { parseTypeString } from '../../../utils/type-link';
+import type { CodeSegment } from '../../../utils/code-segments';
 import type { ApiExport } from '../../../server/utils/typedoc';
+import type { ProcessedExample } from '../+data';
 
 interface ApiExportPageProps {
   mod: ApiExport;
   knownExports: Record<string, string>;
+  processedExamples: ProcessedExample[];
 }
 
 function slugifyCategory(category: string): string {
@@ -48,7 +51,38 @@ function TypeLink({
   );
 }
 
-export function ApiExportPage({ mod, knownExports }: ApiExportPageProps) {
+/**
+ * Render code with type links.
+ * Used for examples where we want syntax highlighting + links.
+ */
+function LinkedCode({ segments }: { segments: CodeSegment[] }) {
+  return (
+    <pre className="bg-tertiary/50 rounded-lg p-4 overflow-x-auto">
+      <code className="text-sm font-mono">
+        {segments.map((segment, i) => {
+          if (segment.type === 'type-link' && segment.href) {
+            return (
+              <Link
+                key={i}
+                href={segment.href}
+                className="text-neon-cyan hover:underline"
+              >
+                {segment.text}
+              </Link>
+            );
+          }
+          return <span key={i}>{segment.text}</span>;
+        })}
+      </code>
+    </pre>
+  );
+}
+
+export function ApiExportPage({
+  mod,
+  knownExports,
+  processedExamples,
+}: ApiExportPageProps) {
   const categorySlug = mod.category ? slugifyCategory(mod.category) : null;
   const formattedSignature = useMemo(
     () => (mod.signature ? formatSignature(mod.signature) : null),
@@ -283,12 +317,12 @@ export function ApiExportPage({ mod, knownExports }: ApiExportPageProps) {
       )}
 
       {/* Examples */}
-      {mod.comment?.examples && mod.comment.examples.length > 0 && (
+      {processedExamples.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-100 mb-4">Examples</h2>
           <div className="space-y-4">
-            {mod.comment.examples.map((example, i) => (
-              <CodeBlock key={i} code={example} language="typescript" />
+            {processedExamples.map((example, i) => (
+              <LinkedCode key={i} segments={example.segments} />
             ))}
           </div>
         </div>
