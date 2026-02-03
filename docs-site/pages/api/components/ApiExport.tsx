@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { CodeBlock } from '../../../components/CodeBlock';
 import { Link } from '../../../components/Link';
 import { TypeReference } from '../../../components/TypeReference';
+import { formatSignature } from '../../../utils/format-signature';
 import type { ApiExport } from '../../../server/utils/typedoc';
 
 interface ApiExportPageProps {
@@ -11,8 +13,12 @@ function slugifyCategory(category: string): string {
   return category.toLowerCase().replace(/\s+/g, '-');
 }
 
-export function ApiExportPage({ mod: mod }: ApiExportPageProps) {
+export function ApiExportPage({ mod }: ApiExportPageProps) {
   const categorySlug = mod.category ? slugifyCategory(mod.category) : null;
+  const formattedSignature = useMemo(
+    () => (mod.signature ? formatSignature(mod.signature) : null),
+    [mod.signature]
+  );
 
   return (
     <div>
@@ -60,9 +66,9 @@ export function ApiExportPage({ mod: mod }: ApiExportPageProps) {
       </div>
 
       {/* Signature */}
-      {mod.signature && (
+      {formattedSignature && (
         <div className="mb-8">
-          <CodeBlock code={mod.signature} language="typescript" />
+          <CodeBlock code={formattedSignature} language="typescript" />
         </div>
       )}
 
@@ -156,6 +162,68 @@ export function ApiExportPage({ mod: mod }: ApiExportPageProps) {
                 </p>
                 {prop.description && (
                   <p className="text-gray-300 text-sm">{prop.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Methods */}
+      {mod.methods && mod.methods.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-100 mb-4">Methods</h2>
+          <div className="space-y-6">
+            {mod.methods.map((method) => (
+              <div
+                key={method.name}
+                className="p-4 rounded-lg bg-tertiary/30 border border-tertiary/50"
+              >
+                <div className="mb-3">
+                  <code className="font-mono text-neon-cyan">
+                    {method.signature}
+                  </code>
+                </div>
+                {method.description && (
+                  <p className="text-gray-300 text-sm mb-3">
+                    {method.description}
+                  </p>
+                )}
+                {method.parameters && method.parameters.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-tertiary/50">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-2">
+                      Parameters
+                    </p>
+                    <div className="space-y-1">
+                      {method.parameters.map((param) => (
+                        <div key={param.name} className="flex gap-2 text-sm">
+                          <span className="font-mono text-neon-purple">
+                            {param.name}
+                            {param.optional && '?'}
+                          </span>
+                          <span className="text-gray-500">:</span>
+                          <span className="font-mono text-gray-400">
+                            {param.type}
+                          </span>
+                          {param.description && (
+                            <span className="text-gray-500">
+                              — {param.description}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {method.returnType && (
+                  <div className="mt-3 pt-3 border-t border-tertiary/50">
+                    <p className="text-xs text-gray-500 uppercase font-semibold mb-2">
+                      Returns
+                    </p>
+                    <span className="font-mono text-gray-400">
+                      {method.returnType}
+                    </span>
+                  </div>
                 )}
               </div>
             ))}
