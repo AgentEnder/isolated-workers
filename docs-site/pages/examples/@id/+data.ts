@@ -1,37 +1,24 @@
-import type { RootContent } from 'mdast';
 import fs from 'node:fs/promises';
 import path, { join } from 'node:path';
 import type { PageContextServer } from 'vike/types';
 import { type ExampleMetadata } from '../../../server/utils/examples';
-import {
-  highlightCode,
-  getLanguageFromFilename,
-} from '../../../server/utils/highlighter';
-import {
-  parseMarkdown,
-  processMarkdownChunk,
-  extractFilePlaceholder,
-} from '../../../server/utils/markdown';
+import { getLanguageFromFilename } from '../../../server/utils/highlighter';
+import { extractFilePlaceholder } from '../../../server/utils/markdown';
 import { extractHunk, stripMarkers } from '../../../server/utils/regions';
+import {
+  type ContentSegment,
+  createFileSegment,
+  parseMarkdownToSegments,
+} from '../../../server/utils/segments';
+
+// Re-export ContentSegment for the Page component
+export type { ContentSegment };
 
 interface CodeFile {
   filename: string;
   content: string;
   language: string;
 }
-
-/**
- * A segment of content - either rendered HTML or a file to display
- */
-export type ContentSegment =
-  | { type: 'html'; html: string }
-  | {
-      type: 'file';
-      filename: string;
-      language: string;
-      content: string;
-      highlightedHtml: string;
-    };
 
 export interface ExampleData {
   example: ExampleMetadata | null;
@@ -41,85 +28,6 @@ export interface ExampleData {
   files: CodeFile[];
   /** Set of filenames that were rendered inline via {{file:...}} */
   renderedFiles: string[];
-}
-
-/**
- * Parse markdown and split into segments at file placeholders.
- * Uses remark to parse, then walks the AST to find file markers.
- */
-async function parseMarkdownToSegments(
-  markdown: string,
-  files: CodeFile[],
-  example: ExampleMetadata
-): Promise<{ segments: ContentSegment[]; renderedFiles: string[] }> {
-  const segments: ContentSegment[] = [];
-  const renderedFiles: string[] = [];
-
-  const tree = parseMarkdown(markdown);
-  let currentChunk: RootContent[] = [];
-
-  for (const node of tree.children) {
-    const placeholderCheck = extractFilePlaceholder(node);
-
-    if (placeholderCheck.isPlaceholder) {
-      // Flush current HTML chunk if any
-      if (currentChunk.length > 0) {
-        const html = await processMarkdownChunk(currentChunk);
-        if (html.trim()) {
-          segments.push({ type: 'html', html });
-        }
-        currentChunk = [];
-      }
-
-      // Find the file and create a file segment
-      const file = files.find((f) => f.filename === placeholderCheck.filename);
-      if (file) {
-        // Extract hunk or strip markers from full file
-        let content: string;
-        if (placeholderCheck.hunk) {
-          try {
-            content = extractHunk(file.content, placeholderCheck.hunk);
-          } catch {
-            throw new Error(
-              `Region '${placeholderCheck.hunk}' not found in file "${placeholderCheck.filename}" in example "${example.id}".`
-            );
-          }
-        } else {
-          content = stripMarkers(file.content);
-        }
-
-        const highlightedHtml = await highlightCode(content, file.language);
-        const displayName = placeholderCheck.hunk
-          ? `${file.filename}#${placeholderCheck.hunk}`
-          : file.filename;
-
-        segments.push({
-          type: 'file',
-          filename: displayName,
-          language: file.language,
-          content,
-          highlightedHtml,
-        });
-        renderedFiles.push(file.filename);
-      } else {
-        throw new Error(
-          `Referenced file "${placeholderCheck.filename}" not found in example "${example.id}".`
-        );
-      }
-    } else {
-      currentChunk.push(node);
-    }
-  }
-
-  // Flush remaining chunk
-  if (currentChunk.length > 0) {
-    const html = await processMarkdownChunk(currentChunk);
-    if (html.trim()) {
-      segments.push({ type: 'html', html });
-    }
-  }
-
-  return { segments, renderedFiles };
 }
 
 export async function data(
@@ -169,12 +77,48 @@ export async function data(
     }
   }
 
-  // Parse markdown into segments
-  const { segments, renderedFiles } = await parseMarkdownToSegments(
-    rawContent,
-    files,
-    example
-  );
+  // Track which files are rendered inline
+  const renderedFiles: string[] = [];
+
+  const segments = await parseMarkdownToSegments(rawContent, {
+    // Examples don't extract inline code blocks - they use file references
+    extractCodeBlocks: false,
+    nodeHandler: async (node) => {
+      const placeholderCheck = extractFilePlaceholder(node);
+      if (!placeholderCheck.isPlaceholder) {
+        return null;
+      }
+
+      // Find the file
+      const file = files.find((f) => f.filename === placeholderCheck.filename);
+      if (!file) {
+        throw new Error(
+          `Referenced file "${placeholderCheck.filename}" not found in example "${example.id}".`
+        );
+      }
+
+      // Extract hunk or strip markers from full file
+      let content: string;
+      if (placeholderCheck.hunk) {
+        try {
+          content = extractHunk(file.content, placeholderCheck.hunk);
+        } catch {
+          throw new Error(
+            `Region '${placeholderCheck.hunk}' not found in file "${placeholderCheck.filename}" in example "${example.id}".`
+          );
+        }
+      } else {
+        content = stripMarkers(file.content);
+      }
+
+      const displayName = placeholderCheck.hunk
+        ? `${file.filename}#${placeholderCheck.hunk}`
+        : file.filename;
+
+      renderedFiles.push(file.filename);
+      return createFileSegment(displayName, content, file.language);
+    },
+  });
 
   return {
     example,

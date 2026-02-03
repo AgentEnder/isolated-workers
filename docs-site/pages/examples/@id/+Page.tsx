@@ -1,7 +1,8 @@
 import { useData } from 'vike-react/useData';
 import { CodeBlock } from '../../../components/CodeBlock';
 import { Link } from '../../../components/Link';
-import type { ExampleData, ContentSegment } from './+data';
+import { SegmentList } from '../../../components/SegmentRenderer';
+import type { ExampleData } from './+data';
 
 export default function Page() {
   const { example, segments, files, renderedFiles } = useData<ExampleData>();
@@ -49,9 +50,7 @@ export default function Page() {
 
       {/* Content segments */}
       <div className="prose prose-invert max-w-none space-y-8">
-        {segments.map((segment, index) => (
-          <SegmentRenderer key={index} segment={segment} />
-        ))}
+        <SegmentList segments={segments} />
       </div>
 
       {/* Additional Files Section - files not rendered inline */}
@@ -98,29 +97,5 @@ export default function Page() {
         </Link>
       </div>
     </div>
-  );
-}
-
-/**
- * Render a single content segment - either HTML text or a code file
- */
-function SegmentRenderer({ segment }: { segment: ContentSegment }) {
-  if (segment.type === 'html') {
-    return (
-      <div
-        className="docs-prose"
-        dangerouslySetInnerHTML={{ __html: segment.html }}
-      />
-    );
-  }
-
-  // File segment - render CodeBlock with pre-highlighted HTML
-  return (
-    <CodeBlock
-      code={segment.content}
-      language={segment.language}
-      filename={segment.filename}
-      preHighlightedHtml={segment.highlightedHtml}
-    />
   );
 }
