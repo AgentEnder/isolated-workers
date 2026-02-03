@@ -1,0 +1,180 @@
+# isolated-workers
+
+Type-safe worker process library for Node.js with full TypeScript inference.
+
+[![npm version](https://img.shields.io/npm/v/isolated-workers.svg)](https://www.npmjs.com/package/isolated-workers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## Features
+
+- **Type-safe messaging** - Full TypeScript inference for payloads and responses
+- **Process isolation** - True process boundaries for CPU-intensive tasks
+- **Multiple drivers** - Child processes (default) or worker threads
+- **Cross-platform** - Unix domain sockets and Windows named pipes
+- **Middleware support** - Logging, validation, timing, and custom pipelines
+- **Timeout configuration** - Per-message-type and global timeout settings
+- **Zero dependencies** - No runtime dependencies
+
+## Installation
+
+```bash
+npm install isolated-workers
+# or
+pnpm add isolated-workers
+# or
+yarn add isolated-workers
+```
+
+**Requirements**: Node.js 20.10+ and TypeScript 5.0+
+
+## Quick Start
+
+### 1. Define Your Message Contract
+
+{% example basic-ping:messages.ts %}
+
+### 2. Create the Worker
+
+{% example basic-ping:worker.ts %}
+
+### 3. Spawn and Communicate
+
+{% example basic-ping:host.ts %}
+
+## Advanced Example: Image Processing
+
+For a more complete example with per-operation timeouts and batch processing:
+
+### Message Definitions
+
+{% example image-processing:messages.ts#messages %}
+
+### Creating the Worker with Timeouts
+
+{% example image-processing:host.ts#create-worker %}
+
+### Sending Messages
+
+{% example image-processing:host.ts#process-single %}
+
+## Drivers
+
+isolated-workers supports two execution strategies:
+
+### Child Process (Default)
+
+True process isolation with separate memory space:
+
+{% example readme-snippets:drivers.ts#child-process-driver %}
+
+### Worker Threads
+
+In-process workers with shared memory support:
+
+{% example readme-snippets:drivers.ts#worker-threads-driver %}
+
+See {% example-link worker-threads-driver %} for a complete example.
+
+## Timeout Configuration
+
+Configure timeouts globally or per-message-type:
+
+{% example timeout-config:host.ts#timeout-config %}
+
+{% example timeout-config:host.ts#create-worker-with-timeout %}
+
+See {% example-link timeout-config %} for more details.
+
+## Middleware
+
+Add logging, validation, or custom processing:
+
+{% example middleware:host.ts#logging-middleware %}
+
+{% example middleware:host.ts#create-worker-with-middleware %}
+
+See {% example-link middleware %} for the complete middleware example.
+
+## Error Handling
+
+Errors thrown in workers are automatically propagated to the host:
+
+{% example error-handling:worker.ts %}
+
+{% example error-handling:host.ts %}
+
+See {% example-link error-handling %} for more patterns.
+
+## When to Use isolated-workers
+
+**Good fit:**
+- CPU-intensive tasks (image processing, data parsing, crypto)
+- Plugin systems requiring isolation
+- Sandboxed code execution
+- Long-running background jobs
+
+**Better alternatives:**
+- Simple async I/O → use Promises directly
+- Shared memory requirements → use `worker_threads` directly
+- Very high-frequency messaging → consider batching or SharedArrayBuffer
+
+## Documentation
+
+Full documentation and examples at [craigory.dev/isolated-workers](https://craigory.dev/isolated-workers)
+
+- [Getting Started](https://craigory.dev/isolated-workers/docs/getting-started/installation)
+- [Core Concepts](https://craigory.dev/isolated-workers/docs/concepts/core-concepts)
+- [API Reference](https://craigory.dev/isolated-workers/api)
+- [Examples](https://craigory.dev/isolated-workers/examples)
+
+## API Overview
+
+### Host Side
+
+```typescript
+// Create a worker
+const worker = await createWorker<Messages>(options);
+
+// Send messages
+const result = await worker.send('messageType', payload);
+
+// Check status
+worker.isActive;     // true if worker can accept messages
+worker.isConnected;  // true if connection established
+
+// Graceful shutdown
+await worker.close();
+```
+
+### Worker Side
+
+```typescript
+// Start the server with handlers
+const server = await startWorkerServer<Messages>(handlers, options);
+
+// Server automatically handles:
+// - Message deserialization
+// - Handler dispatch
+// - Response serialization
+// - Error propagation
+// - Graceful shutdown (SIGTERM)
+```
+
+### Type Helpers
+
+{% example readme-snippets:api-overview.ts#type-helpers %}
+
+## Examples
+
+- {% example-link basic-ping %} - Simple request/response
+- {% example-link error-handling %} - Error propagation patterns
+- {% example-link middleware %} - Message interception and logging
+- {% example-link timeout-config %} - Per-operation timeouts
+- {% example-link worker-lifecycle %} - Status checking and state persistence
+- {% example-link custom-serializer %} - Binary format support
+- {% example-link image-processing %} - Production-ready worker pattern
+- {% example-link worker-threads-driver %} - Worker threads with shared memory
+
+## License
+
+MIT © [Craigory Coppola](https://craigory.dev)

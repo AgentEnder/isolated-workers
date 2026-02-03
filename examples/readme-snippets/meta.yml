@@ -1,0 +1,10 @@
+id: readme-snippets
+title: README Code Snippets
+description: |
+  Type-checked code snippets used in the package README.
+  This example is hidden from navigation.
+hidden: true
+entryPoint: drivers.ts
+fileMap:
+  './drivers.ts': 'drivers.ts'
+  './api-overview.ts': 'api-overview.ts'

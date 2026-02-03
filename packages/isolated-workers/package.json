@@ -1,6 +1,17 @@
 {
   "name": "isolated-workers",
-  "version": "0.0.0",
+  "version": "0.0.1",
+  "author": {
+    "name": "Craigory Coppola",
+    "url": "https://craigory.dev"
+  },
+  "bugs": {
+    "url": "https://github.com/agentender/isolated-workers/issues/new"
+  },
+  "homepage": "https://craigory.dev/isolated-workers",
+  "repository": {
+    "url": "https://github.com/agentender/isolated-workers"
+  },
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -29,6 +40,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.lib.json",
+    "hydrate-readme": "tsx scripts/hydrate-readme.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
@@ -41,8 +53,22 @@
     "@typescript-eslint/parser": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "typedoc": "catalog:",
     "vitest": "catalog:"
-  }
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "dependsOn": [
+          "hydrate-readme"
+        ]
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
 }
