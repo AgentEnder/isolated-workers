@@ -247,6 +247,19 @@ function extractCommentText(
   );
 }
 
+/**
+ * Strip markdown code fences from example blocks.
+ * TypeDoc includes the ```language ... ``` markers in examples.
+ */
+function stripCodeFences(text: string): string {
+  // Match ```language\n...\n``` pattern
+  const match = text.match(/^```\w*\n?([\s\S]*?)\n?```$/);
+  if (match) {
+    return match[1].trim();
+  }
+  return text;
+}
+
 function parseComment(comment?: TypeDocComment): ApiComment | undefined {
   if (!comment) return undefined;
 
@@ -265,7 +278,7 @@ function parseComment(comment?: TypeDocComment): ApiComment | undefined {
           break;
         case '@example':
           result.examples = result.examples || [];
-          if (text) result.examples.push(text);
+          if (text) result.examples.push(stripCodeFences(text));
           break;
         case '@see':
           result.see = result.see || [];

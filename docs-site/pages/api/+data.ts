@@ -9,6 +9,8 @@ export interface ApiDataLanding {
 export interface ApiDataExport {
   type: 'export';
   export: ApiExport;
+  /** Map of export names to their paths for linking types */
+  knownExports: Record<string, string>;
 }
 
 export type ApiData =
@@ -40,8 +42,15 @@ export async function data(pageContext: PageContextServer): Promise<ApiData> {
     return { type: 'not-found' };
   }
 
+  // Build map of export names to paths for type linking
+  const knownExports: Record<string, string> = {};
+  for (const e of api.allExports) {
+    knownExports[e.name] = e.path;
+  }
+
   return {
     type: 'export',
     export: exp,
+    knownExports,
   };
 }

@@ -3,17 +3,52 @@ import { CodeBlock } from '../../../components/CodeBlock';
 import { Link } from '../../../components/Link';
 import { TypeReference } from '../../../components/TypeReference';
 import { formatSignature } from '../../../utils/format-signature';
+import { parseTypeString } from '../../../utils/type-link';
 import type { ApiExport } from '../../../server/utils/typedoc';
 
 interface ApiExportPageProps {
   mod: ApiExport;
+  knownExports: Record<string, string>;
 }
 
 function slugifyCategory(category: string): string {
   return category.toLowerCase().replace(/\s+/g, '-');
 }
 
-export function ApiExportPage({ mod }: ApiExportPageProps) {
+/**
+ * Render a type string with links to known exports.
+ * Parses type names from strings like "WorkerOptions<TDefs>" and links them.
+ */
+function TypeLink({
+  type,
+  knownExports,
+}: {
+  type: string;
+  knownExports: Record<string, string>;
+}) {
+  const parts = parseTypeString(type);
+
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.isType && knownExports[part.text]) {
+          return (
+            <Link
+              key={i}
+              href={knownExports[part.text]}
+              className="text-neon-cyan hover:underline"
+            >
+              {part.text}
+            </Link>
+          );
+        }
+        return <span key={i}>{part.text}</span>;
+      })}
+    </>
+  );
+}
+
+export function ApiExportPage({ mod, knownExports }: ApiExportPageProps) {
   const categorySlug = mod.category ? slugifyCategory(mod.category) : null;
   const formattedSignature = useMemo(
     () => (mod.signature ? formatSignature(mod.signature) : null),
@@ -115,7 +150,7 @@ export function ApiExportPage({ mod }: ApiExportPageProps) {
                       )}
                     </td>
                     <td className="py-3 pr-4 font-mono text-gray-300">
-                      {param.type}
+                      <TypeLink type={param.type} knownExports={knownExports} />
                     </td>
                     <td className="py-3 text-gray-400">
                       {param.description || '-'}
@@ -132,7 +167,9 @@ export function ApiExportPage({ mod }: ApiExportPageProps) {
       {mod.returnType && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-100 mb-4">Returns</h2>
-          <p className="font-mono text-gray-300">{mod.returnType}</p>
+          <p className="font-mono text-gray-300">
+            <TypeLink type={mod.returnType} knownExports={knownExports} />
+          </p>
         </div>
       )}
 
@@ -158,7 +195,7 @@ export function ApiExportPage({ mod }: ApiExportPageProps) {
                   )}
                 </div>
                 <p className="font-mono text-sm text-gray-400 mb-2">
-                  {prop.type}
+                  <TypeLink type={prop.type} knownExports={knownExports} />
                 </p>
                 {prop.description && (
                   <p className="text-gray-300 text-sm">{prop.description}</p>
@@ -203,7 +240,10 @@ export function ApiExportPage({ mod }: ApiExportPageProps) {
                           </span>
                           <span className="text-gray-500">:</span>
                           <span className="font-mono text-gray-400">
-                            {param.type}
+                            <TypeLink
+                              type={param.type}
+                              knownExports={knownExports}
+                            />
                           </span>
                           {param.description && (
                             <span className="text-gray-500">
@@ -221,7 +261,10 @@ export function ApiExportPage({ mod }: ApiExportPageProps) {
                       Returns
                     </p>
                     <span className="font-mono text-gray-400">
-                      {method.returnType}
+                      <TypeLink
+                        type={method.returnType}
+                        knownExports={knownExports}
+                      />
                     </span>
                   </div>
                 )}
