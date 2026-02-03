@@ -22,9 +22,11 @@ async function main() {
   console.log('Worker starting with custom serializer...');
   console.log('Using:', verboseSerializer.constructor.name);
 
+  // #region start-worker-with-serializer
   const server = await startWorkerServer(handlers, {
     serializer: verboseSerializer,
   });
+  // #endregion start-worker-with-serializer
 
   console.log('Worker ready');
 

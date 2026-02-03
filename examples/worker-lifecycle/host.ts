@@ -7,22 +7,20 @@
  * - Worker state across multiple requests
  */
 
-import { createWorker } from 'isolated-workers';
-import { fileURLToPath } from 'url';
+import { createWorker, WorkerClient } from 'isolated-workers';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import type { Messages } from './messages.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-function printStatus(worker: {
-  isActive: boolean;
-  isConnected: boolean;
-  pid: number;
-}) {
+// #region print-status
+function printStatus(worker: WorkerClient) {
   console.log(`  PID: ${worker.pid}`);
   console.log(`  isActive: ${worker.isActive}`);
   console.log(`  isConnected: ${worker.isConnected}`);
 }
+// #endregion print-status
 
 async function main() {
   console.log('Starting worker lifecycle example...\n');
@@ -65,6 +63,7 @@ async function main() {
     printStatus(worker);
     console.log();
 
+    // #region send-after-close
     // Attempting to send after close should fail
     console.log('--- Attempting Request After Close ---');
     try {
@@ -73,6 +72,7 @@ async function main() {
     } catch (err) {
       console.log(`Expected error: ${(err as Error).message}`);
     }
+    // #endregion send-after-close
 
     console.log('\nWorker lifecycle demonstration complete!');
   } catch (err) {

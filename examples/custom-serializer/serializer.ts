@@ -11,6 +11,7 @@
 
 import { Serializer } from 'isolated-workers';
 
+// #region serializer-class
 /**
  * A verbose JSON serializer that adds metadata to each message.
  * This is for demonstration - in production you might use a more
@@ -51,6 +52,7 @@ export class VerboseJsonSerializer extends Serializer {
   // Custom terminator - using double newline to avoid conflicts
   terminator = '\n\n';
 }
+// #endregion serializer-class
 
 // Export a singleton instance for convenience
 export const verboseSerializer = new VerboseJsonSerializer();

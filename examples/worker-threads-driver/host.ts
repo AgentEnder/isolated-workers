@@ -20,25 +20,24 @@ import type { Messages } from './messages.js';
 async function main() {
   console.log('Using worker_threads driver for in-process workers\n');
 
-  // Create a WorkerThreadsDriver instance
-  const driver = new WorkerThreadsDriver();
-
-  console.log(`Driver: ${driver.name}`);
+  // WorkerThreadsDriver is a pre-configured object (not a class)
+  console.log(`Driver: ${WorkerThreadsDriver.name}`);
   console.log(`Capabilities:`);
-  console.log(`  - Reconnect: ${driver.capabilities.reconnect}`);
-  console.log(`  - Detach: ${driver.capabilities.detach}`);
-  console.log(`  - Shared Memory: ${driver.capabilities.sharedMemory}`);
+  console.log(`  - Reconnect: ${WorkerThreadsDriver.capabilities.reconnect}`);
+  console.log(`  - Detach: ${WorkerThreadsDriver.capabilities.detach}`);
+  console.log(`  - Shared Memory: ${WorkerThreadsDriver.capabilities.sharedMemory}`);
   console.log();
 
   // Create the worker using the worker_threads driver
   const workerPath = join(dirname(fileURLToPath(import.meta.url)), 'worker.ts');
 
   try {
-    // Note: We specify the driver in the options
+    // Specify the driver in the options
     // The createWorker function will use it instead of the default child_process driver
-    const worker = await createWorker<Messages, WorkerThreadsDriver>({
+    // Worker threads automatically inherit the host's execArgv (e.g., --import tsx)
+    const worker = await createWorker<Messages, typeof WorkerThreadsDriver>({
       script: workerPath,
-      driver,
+      driver: WorkerThreadsDriver,
       logLevel: 'info',
     });
 

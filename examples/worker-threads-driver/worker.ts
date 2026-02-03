@@ -2,11 +2,12 @@
  * Worker Threads Driver Example - Worker
  *
  * This worker runs in a worker thread (same process as host).
- * The startWorkerServer automatically detects the driver type
- * and uses the appropriate server implementation.
+ * Since the host spawned this worker using WorkerThreadsDriver,
+ * we must specify the same driver here for the server.
  */
 
 import { startWorkerServer, type Handlers } from 'isolated-workers';
+import { WorkerThreadsDriver } from 'isolated-workers/drivers/worker-threads';
 import type { Messages } from './messages.js';
 
 // Define handlers
@@ -22,8 +23,9 @@ const handlers: Handlers<Messages> = {
 };
 
 // Start the worker server
-// It automatically detects that this is a worker_threads worker
+// Must specify WorkerThreadsDriver to match the host
 startWorkerServer<Messages>(handlers, {
+  driver: WorkerThreadsDriver,
   logLevel: 'info',
 }).then(() => {
   console.log('[Worker] Server started');

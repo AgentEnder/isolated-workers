@@ -8,11 +8,14 @@
 import { startWorkerServer, Handlers } from 'isolated-workers';
 import type { Messages } from './messages.js';
 
+// #region worker-state
 // Worker state - persists across requests
 const startTime = Date.now();
 let requestCount = 0;
 let counter = 0;
+// #endregion worker-state
 
+// #region handlers
 const handlers: Handlers<Messages> = {
   getStatus: () => {
     requestCount++;
@@ -29,6 +32,7 @@ const handlers: Handlers<Messages> = {
     return { newValue: counter };
   },
 };
+// #endregion handlers
 
 async function main() {
   console.log('Worker starting...');

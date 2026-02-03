@@ -6,7 +6,7 @@ description: |
   and lower overhead compared to child processes.
 entryPoint: host.ts
 commands:
-  - command: npx tsx {filename}
+  - command: node --import tsx {filename}
     title: Run worker threads example
     assertions:
       - contains: "Result:"

@@ -7,6 +7,7 @@
 import { startWorkerServer, Handlers, type Middleware } from 'isolated-workers';
 import type { Messages } from './messages.js';
 
+// #region worker-middleware
 /**
  * Worker-side logging middleware
  */
@@ -14,6 +15,7 @@ const workerLoggingMiddleware: Middleware<Messages> = (message, direction) => {
   console.log(`[WORKER ${direction}] Processing: ${message.type}`);
   return message;
 };
+// #endregion worker-middleware
 
 // Define handlers
 const handlers: Handlers<Messages> = {
@@ -32,9 +34,11 @@ const handlers: Handlers<Messages> = {
 async function main() {
   console.log('Worker starting with middleware...');
 
+  // #region start-worker-with-middleware
   const server = await startWorkerServer(handlers, {
     middleware: [workerLoggingMiddleware],
   });
+  // #endregion start-worker-with-middleware
 
   console.log('Worker ready');
 

@@ -18,6 +18,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 async function main() {
   console.log('Starting timeout configuration example...\n');
 
+  // #region timeout-config
   // Define timeout configuration
   const timeoutConfig: TimeoutConfig<Messages> = {
     // Worker lifecycle timeouts
@@ -31,6 +32,7 @@ async function main() {
     quickPing: 1000, // 1 second for quick operations
     slowProcess: 10000, // 10 seconds for slow operations
   };
+  // #endregion timeout-config
 
   console.log('Timeout configuration:');
   console.log('  WORKER_STARTUP:', timeoutConfig.WORKER_STARTUP, 'ms');
@@ -40,10 +42,12 @@ async function main() {
   console.log('  slowProcess:', timeoutConfig.slowProcess, 'ms');
   console.log();
 
+  // #region create-worker-with-timeout
   const worker = await createWorker<Messages>({
     script: join(__dirname, 'worker.ts'),
     timeout: timeoutConfig,
   });
+  // #endregion create-worker-with-timeout
 
   console.log(`Worker spawned with PID: ${worker.pid}\n`);
 

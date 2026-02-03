@@ -14,6 +14,7 @@ import type { Messages } from './messages.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// #region logging-middleware
 /**
  * Logging middleware - logs all messages with direction
  */
@@ -25,7 +26,9 @@ const loggingMiddleware: Middleware<Messages> = (message, direction) => {
   );
   return message;
 };
+// #endregion logging-middleware
 
+// #region timing-middleware
 /**
  * Timing middleware - tracks how long messages take
  * Note: This is a simplified example; real timing would need request correlation
@@ -38,10 +41,12 @@ const timingMiddleware: Middleware<Messages> = (message, direction) => {
   }
   return message;
 };
+// #endregion timing-middleware
 
 async function main() {
   console.log('Starting middleware example...\n');
 
+  // #region create-worker-with-middleware
   // Create worker with middleware pipeline
   // Middleware is applied in order: logging -> timing
   const worker = await createWorker<Messages>({
@@ -49,6 +54,7 @@ async function main() {
     timeout: 10000,
     middleware: [loggingMiddleware, timingMiddleware],
   });
+  // #endregion create-worker-with-middleware
 
   console.log(`Worker spawned with PID: ${worker.pid}\n`);
 

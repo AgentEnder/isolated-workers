@@ -23,11 +23,13 @@ async function main() {
     '\n'
   );
 
+  // #region create-worker-with-serializer
   const worker = await createWorker<Messages>({
     script: join(__dirname, 'worker.ts'),
     timeout: 10000,
     serializer: verboseSerializer,
   });
+  // #endregion create-worker-with-serializer
 
   console.log(`Worker spawned with PID: ${worker.pid}\n`);
 

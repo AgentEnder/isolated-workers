@@ -14,7 +14,8 @@
     "run:middleware": "tsx --tsconfig tsconfig.json middleware/host.ts",
     "run:timeout-config": "tsx --tsconfig tsconfig.json timeout-config/host.ts",
     "run:custom-serializer": "tsx --tsconfig tsconfig.json custom-serializer/host.ts",
-    "run:worker-lifecycle": "tsx --tsconfig tsconfig.json worker-lifecycle/host.ts"
+    "run:worker-lifecycle": "tsx --tsconfig tsconfig.json worker-lifecycle/host.ts",
+    "run:image-processing": "tsx --tsconfig tsconfig.json image-processing/host.ts"
   },
   "type": "module"
 }
