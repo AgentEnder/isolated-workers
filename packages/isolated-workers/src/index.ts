@@ -19,9 +19,13 @@ export * from './types/index.js';
 export {
   createWorker,
   startWorkerServer,
+  type BuiltInTimeoutKey,
   type Connection,
   type ConnectionOptions,
   type MessageHandler,
+  type ServerChannel,
+  type ServerOptions,
+  type ServerDriver,
   type TimeoutConfig,
   type WorkerClient,
   type WorkerHandler,
@@ -30,6 +34,9 @@ export {
   type WorkerServer,
   type WorkerServerOptions,
   type DriverOptionsFor,
+  type ChildProcessDriverOptions,
+  type WorkerThreadsDriverOptions,
+  type WorkerThreadsResourceLimits,
   // Messaging types
   type MiddlewareContext,
   type MiddlewareDirection,

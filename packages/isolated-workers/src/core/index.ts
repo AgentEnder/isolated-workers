@@ -43,11 +43,19 @@ export {
   type WorkerHandler,
   type WorkerHandlers,
   type WorkerServerOptions,
+  type ServerDriver,
   type WorkerServer,
   startWorkerServer,
 } from './worker-server.js';
 
 // Driver types (re-exported from driver.ts)
+export type {
+  ServerChannel,
+  ServerOptions,
+  ChildProcessDriverOptions,
+  WorkerThreadsDriverOptions,
+  WorkerThreadsResourceLimits,
+} from './drivers/index.js';
 export type {
   Driver,
   DriverChannel,
