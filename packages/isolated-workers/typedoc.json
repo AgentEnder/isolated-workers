@@ -1,6 +1,10 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["./src/index.ts"],
+  "entryPoints": [
+    "./src/index.ts",
+    "./src/core/drivers/child-process/index.ts",
+    "./src/core/drivers/worker-threads/index.ts"
+  ],
   "tsconfig": "./tsconfig.json",
   "json": "../../.typedoc/api.json",
   "pretty": false,
