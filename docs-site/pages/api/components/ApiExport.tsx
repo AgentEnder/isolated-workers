@@ -1,13 +1,19 @@
-import { Link } from '../../../components/Link';
 import { CodeBlock } from '../../../components/CodeBlock';
-import type { ApiExport, ApiModule } from '../../../server/utils/typedoc';
+import { Link } from '../../../components/Link';
+import { TypeReference } from '../../../components/TypeReference';
+import type { ApiExport } from '../../../server/utils/typedoc';
 
 interface ApiExportPageProps {
-  export: ApiExport;
-  module: ApiModule;
+  mod: ApiExport;
 }
 
-export function ApiExportPage({ export: exp, module }: ApiExportPageProps) {
+function slugifyCategory(category: string): string {
+  return category.toLowerCase().replace(/\s+/g, '-');
+}
+
+export function ApiExportPage({ mod: mod }: ApiExportPageProps) {
+  const categorySlug = mod.category ? slugifyCategory(mod.category) : null;
+
   return (
     <div>
       {/* Breadcrumb */}
@@ -15,56 +21,69 @@ export function ApiExportPage({ export: exp, module }: ApiExportPageProps) {
         <Link href="/api" className="hover:text-neon-cyan">
           API Reference
         </Link>
+        {mod.category && (
+          <>
+            <span>/</span>
+            <Link
+              href={`/api#${categorySlug}`}
+              className="hover:text-neon-cyan"
+            >
+              {mod.category}
+            </Link>
+          </>
+        )}
         <span>/</span>
-        <Link href={module.path} className="hover:text-neon-cyan">
-          {module.name.charAt(0).toUpperCase() + module.name.slice(1)}
-        </Link>
-        <span>/</span>
-        <span className="text-gray-100">{exp.name}</span>
+        <span className="text-gray-100">{mod.name}</span>
       </div>
 
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-xs px-2 py-1 rounded bg-neon-cyan/20 text-neon-cyan uppercase font-semibold">
-            {exp.kind}
+            {mod.kind}
           </span>
-          {exp.comment?.deprecated && (
+          {mod.comment?.deprecated && (
             <span className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 uppercase font-semibold">
               Deprecated
             </span>
           )}
         </div>
         <h1 className="text-4xl font-bold text-gray-100 font-mono">
-          {exp.name}
+          {mod.name}
         </h1>
+        {/* Add type reference link if typedoc data available */}
+        {mod.path && (
+          <div className="ml-2">
+            <TypeReference export={mod} />
+          </div>
+        )}
       </div>
 
       {/* Signature */}
-      {exp.signature && (
+      {mod.signature && (
         <div className="mb-8">
-          <CodeBlock code={exp.signature} language="typescript" />
+          <CodeBlock code={mod.signature} language="typescript" />
         </div>
       )}
 
       {/* Description */}
-      {exp.description && (
+      {mod.description && (
         <div className="mb-8">
-          <p className="text-gray-300 text-lg">{exp.description}</p>
+          <p className="text-gray-300 text-lg">{mod.description}</p>
         </div>
       )}
 
       {/* Deprecation Warning */}
-      {exp.comment?.deprecated && (
+      {mod.comment?.deprecated && (
         <div className="mb-8 p-4 rounded-lg bg-red-500/10 border border-red-500/30">
           <p className="text-red-400">
-            <strong>Deprecated:</strong> {exp.comment.deprecated}
+            <strong>Deprecated:</strong> {mod.comment.deprecated}
           </p>
         </div>
       )}
 
       {/* Parameters */}
-      {exp.parameters && exp.parameters.length > 0 && (
+      {mod.parameters && mod.parameters.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-100 mb-4">
             Parameters
@@ -81,7 +100,7 @@ export function ApiExportPage({ export: exp, module }: ApiExportPageProps) {
                 </tr>
               </thead>
               <tbody>
-                {exp.parameters.map((param) => (
+                {mod.parameters.map((param) => (
                   <tr key={param.name} className="border-b border-tertiary/50">
                     <td className="py-3 pr-4 font-mono text-neon-cyan">
                       {param.name}
@@ -104,21 +123,21 @@ export function ApiExportPage({ export: exp, module }: ApiExportPageProps) {
       )}
 
       {/* Return Type */}
-      {exp.returnType && (
+      {mod.returnType && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-100 mb-4">Returns</h2>
-          <p className="font-mono text-gray-300">{exp.returnType}</p>
+          <p className="font-mono text-gray-300">{mod.returnType}</p>
         </div>
       )}
 
       {/* Properties */}
-      {exp.properties && exp.properties.length > 0 && (
+      {mod.properties && mod.properties.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-100 mb-4">
             Properties
           </h2>
           <div className="space-y-4">
-            {exp.properties.map((prop) => (
+            {mod.properties.map((prop) => (
               <div
                 key={prop.name}
                 className="p-4 rounded-lg bg-tertiary/30 border border-tertiary/50"
@@ -145,19 +164,19 @@ export function ApiExportPage({ export: exp, module }: ApiExportPageProps) {
       )}
 
       {/* Remarks */}
-      {exp.comment?.remarks && (
+      {mod.comment?.remarks && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-100 mb-4">Remarks</h2>
-          <p className="text-gray-300">{exp.comment.remarks}</p>
+          <p className="text-gray-300">{mod.comment.remarks}</p>
         </div>
       )}
 
       {/* Examples */}
-      {exp.comment?.examples && exp.comment.examples.length > 0 && (
+      {mod.comment?.examples && mod.comment.examples.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-100 mb-4">Examples</h2>
           <div className="space-y-4">
-            {exp.comment.examples.map((example, i) => (
+            {mod.comment.examples.map((example, i) => (
               <CodeBlock key={i} code={example} language="typescript" />
             ))}
           </div>
@@ -165,11 +184,11 @@ export function ApiExportPage({ export: exp, module }: ApiExportPageProps) {
       )}
 
       {/* See Also */}
-      {exp.comment?.see && exp.comment.see.length > 0 && (
+      {mod.comment?.see && mod.comment.see.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-100 mb-4">See Also</h2>
           <ul className="list-disc list-inside text-gray-300">
-            {exp.comment.see.map((ref, i) => (
+            {mod.comment.see.map((ref, i) => (
               <li key={i}>{ref}</li>
             ))}
           </ul>
@@ -179,11 +198,10 @@ export function ApiExportPage({ export: exp, module }: ApiExportPageProps) {
       {/* Navigation */}
       <div className="mt-12 pt-8 border-t border-tertiary/50">
         <Link
-          href={module.path}
+          href={mod.path}
           className="text-neon-cyan hover:text-neon-purple transition-colors"
         >
-          &larr; Back to{' '}
-          {module.name.charAt(0).toUpperCase() + module.name.slice(1)}
+          &larr; Back to {mod.name.charAt(0).toUpperCase() + mod.name.slice(1)}
         </Link>
       </div>
     </div>

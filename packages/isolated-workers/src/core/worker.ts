@@ -6,6 +6,7 @@
 
 import { type SpawnOptions } from 'child_process';
 import type {
+  AnyMessage,
   MessageDefs,
   Middleware,
   TransactionIdGenerator,
@@ -29,7 +30,7 @@ import type {
 } from './driver.js';
 import type { ChildProcessDriverOptions } from './drivers/child-process/index.js';
 import type { WorkerThreadsDriverOptions } from './drivers/worker-threads/index.js';
-import { getTimeoutValue, normalizeTimeoutConfig } from './internals.js';
+import { applyMiddleware, getTimeoutValue, normalizeTimeoutConfig } from './internals.js';
 import {
   createRequest,
   defaultTxIdGenerator,
@@ -266,6 +267,7 @@ async function loadDefaultDriver(): Promise<Driver<ChildProcessCapabilities>> {
  * You can pass a different driver for alternative backends:
  * - `WorkerThreadsDriver`: Uses worker_threads with MessagePort (shared memory capable)
  *
+ * @category Core
  * @param options - Worker options including script path and optional driver
  * @returns Promise resolving to WorkerClient with type-safe messaging
  *
@@ -305,7 +307,7 @@ export async function createWorker<
     timeout,
     detached = false,
     spawnOptions = {},
-    middleware: _middleware = [], // TODO: Apply middleware at messaging layer
+    middleware = [],
     serializer = defaultSerializer,
     txIdGenerator,
     connection: connectionConfig = {},
@@ -314,7 +316,6 @@ export async function createWorker<
     socketPath: customSocketPath,
     debug = false,
   } = options;
-  void _middleware; // Suppress unused warning - will be used when middleware layer is integrated
 
   // Normalize timeout config into a lookup object
   const timeoutConfig = normalizeTimeoutConfig<TMessages>(timeout);
@@ -392,8 +393,14 @@ export async function createWorker<
   let isConnected = channel.isConnected;
 
   // Handle incoming messages
-  channel.onMessage((message) => {
-    const typedMessage = message as TypedResult;
+  channel.onMessage(async (message) => {
+    // Apply incoming middleware if any
+    let processedMessage =
+      middleware.length > 0
+        ? await applyMiddleware(message as AnyMessage<TMessages>, 'incoming', middleware)
+        : message;
+
+    const typedMessage = processedMessage as TypedResult;
     const { tx } = typedMessage;
     const pending = pendingRequests.get(tx);
 
@@ -477,11 +484,20 @@ export async function createWorker<
         throw new Error('Worker is not connected');
       }
 
-      const request = createRequest(
+      let request = createRequest(
         type as string,
         payload,
         effectiveTxIdGenerator
       );
+
+      // Apply outgoing middleware if any
+      if (middleware.length > 0) {
+        request = await applyMiddleware(
+          request as AnyMessage<TMessages>,
+          'outgoing',
+          middleware
+        );
+      }
 
       // Get timeout for this specific message type, falling back to WORKER_MESSAGE default
       const messageTimeout = getTimeout(type);

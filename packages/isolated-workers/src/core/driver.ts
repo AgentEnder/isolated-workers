@@ -51,6 +51,8 @@ export interface DriverChannel {
  * These flags indicate what features a driver supports,
  * allowing higher-level code to make decisions based on
  * available capabilities.
+ *
+ * @category Drivers
  */
 export interface DriverCapabilities {
   /** Can disconnect/reconnect to running worker */
@@ -67,6 +69,7 @@ export interface DriverCapabilities {
  * Drivers implement this interface to provide different worker
  * communication backends.
  *
+ * @category Drivers
  * @typeParam TCapabilities - The specific capabilities this driver supports
  * @typeParam TOptions - Driver-specific spawn options
  *
@@ -96,6 +99,8 @@ export interface Driver<
  *
  * Child process workers support reconnection and detaching,
  * but cannot use SharedArrayBuffer across the IPC boundary.
+ *
+ * @category Drivers
  */
 export interface ChildProcessCapabilities extends DriverCapabilities {
   reconnect: true;
@@ -108,6 +113,8 @@ export interface ChildProcessCapabilities extends DriverCapabilities {
  *
  * Worker thread workers support SharedArrayBuffer but cannot
  * be reconnected or detached from the parent.
+ *
+ * @category Drivers
  */
 export interface WorkerThreadsCapabilities extends DriverCapabilities {
   reconnect: false;
@@ -203,7 +210,12 @@ export type InferCapabilities<T> = {
 };
 
 /**
- * Configuration object for defining a worker driver
+ * Configuration object for defining a worker driver.
+ *
+ * Optional capability methods can be added to enable driver features:
+ * - `disconnect()` + `reconnect()` → reconnect capability
+ * - `detached` property → detach capability
+ * - `transferSharedMemory()` → sharedMemory capability
  */
 export interface DriverConfig<
   TOptions = unknown,
@@ -216,10 +228,24 @@ export interface DriverConfig<
   spawn(script: string, options: TOptions): Promise<DriverChannel>;
 
   /** Get startup data (server side) - throws if not available */
-  getStartupData(): TStartupData;
+  getStartupData(): TStartupData | Promise<TStartupData>;
 
   /** Create server channel (server side) */
   createServer(options: ServerOptions): ServerChannel | Promise<ServerChannel>;
+
+  // Optional capability methods - presence enables the corresponding capability
+
+  /** Disconnect from worker but keep process alive (enables reconnect capability) */
+  disconnect?(): Promise<void>;
+
+  /** Reconnect to existing worker (enables reconnect capability) */
+  reconnect?(): Promise<void>;
+
+  /** Whether the worker is detached (enables detach capability) */
+  readonly detached?: boolean;
+
+  /** Transfer shared memory to worker (enables sharedMemory capability) */
+  transferSharedMemory?(buffer: SharedArrayBuffer): void;
 }
 
 /**
@@ -230,13 +256,20 @@ export interface DriverConfig<
  * - `detached` property → detach: true
  * - `transferSharedMemory()` → sharedMemory: true
  *
+ * The `ThisType<T>` intersection enables proper `this` typing within
+ * the config object, allowing methods to call each other with full
+ * type safety (e.g., `this.getStartupData()` in `createServer()`).
+ *
  * @example
  * ```typescript
  * export const MyDriver = defineWorkerDriver({
  *   name: 'my_driver',
  *   spawn: async (script, options) => { ... },
  *   getStartupData: () => { ... },
- *   createServer: async (options) => { ... },
+ *   createServer: async (options) => {
+ *     const data = await this.getStartupData(); // `this` is properly typed!
+ *     return createServerImpl(data, options);
+ *   },
  *   // Optional capability methods
  *   disconnect: async () => { ... },
  *   reconnect: async () => { ... },
@@ -248,7 +281,7 @@ export function defineWorkerDriver<
   TOptions = unknown,
   TStartupData extends StartupData = StartupData
 >(
-  config: T
+  config: T & ThisType<T>
 ): T & {
   readonly capabilities: InferCapabilities<T>;
 } {

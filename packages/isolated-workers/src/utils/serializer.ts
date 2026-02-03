@@ -23,6 +23,8 @@ export interface SerializedError {
  * Includes terminator sequence to delimit messages in the stream.
  *
  * IMPORTANT: Must be a named class (not anonymous) for mismatch detection.
+ *
+ * @category Serialization
  */
 export abstract class Serializer {
   /**
@@ -44,6 +46,8 @@ export abstract class Serializer {
 
 /**
  * Default JSON serializer with newline terminator
+ *
+ * @category Serialization
  */
 export class JsonSerializer extends Serializer {
   serialize<T>(data: T): string {

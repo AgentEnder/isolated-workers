@@ -34,6 +34,9 @@ export type MessageDefs = Record<string, MessageDef>;
 /**
  * Type constructor for defining message sets.
  *
+ * Use this to define your worker's message contract with full type safety.
+ *
+ * @category Types
  * @example
  * ```typescript
  * type MyMessages = DefineMessages<{

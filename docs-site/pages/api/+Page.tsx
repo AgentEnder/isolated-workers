@@ -1,9 +1,8 @@
 import { useData } from 'vike-react/useData';
 import { Link } from '../../components/Link';
 import type { ApiData } from './+data';
-import { ApiLanding } from './components/ApiLanding';
-import { ApiModulePage } from './components/ApiModule';
 import { ApiExportPage } from './components/ApiExport';
+import { ApiLanding } from './components/ApiLanding';
 
 export default function Page() {
   const data = useData<ApiData>();
@@ -29,10 +28,8 @@ export default function Page() {
 
   switch (data.type) {
     case 'landing':
-      return <ApiLanding modules={data.modules} />;
-    case 'module':
-      return <ApiModulePage module={data.module} />;
+      return <ApiLanding api={data.api} />;
     case 'export':
-      return <ApiExportPage export={data.export} module={data.module} />;
+      return <ApiExportPage mod={data.export} />;
   }
 }

@@ -2,8 +2,8 @@
  * Worker server for handling incoming messages
  *
  * This module provides a high-level interface for workers to receive and
- * respond to messages from the host process. It automatically detects which
- * driver spawned the worker and routes to the appropriate server implementation.
+ * respond to messages from the host process. The driver parameter determines
+ * how the server communicates (child_process sockets or worker_threads ports).
  *
  * @packageDocumentation
  */
@@ -26,20 +26,9 @@ import {
   validateSerializer,
   type Serializer,
 } from '../utils/serializer.js';
-import type { DriverMessage, ServerChannel } from './driver.js';
-import {
-  createChildProcessServer,
-  createWorkerThreadsServer,
-  getStartupData,
-  isChildProcessWorker,
-  isWorkerThreadsWorker,
-  type ChildProcessResponseFunction as ResponseFunction,
-} from './drivers/index.js';
-import {
-  applyMiddleware,
-  DEFAULT_SERVER_CONNECT_TIMEOUT,
-  parseEnvTimeout,
-} from './internals.js';
+import type { DriverMessage, ServerChannel, ServerOptions } from './driver.js';
+import { ChildProcessDriver } from './drivers/child-process/driver.js';
+import { applyMiddleware } from './internals.js';
 import { createResponse, TypedMessage } from './messaging.js';
 
 /**
@@ -55,28 +44,56 @@ export type WorkerHandler<TPayload = unknown, TResult = unknown> = (
 export type WorkerHandlers = Record<string, WorkerHandler>;
 
 /**
+ * Driver interface for server-side usage.
+ *
+ * This is a minimal interface that drivers must satisfy for use with
+ * startWorkerServer. Both ChildProcessDriver and WorkerThreadsDriver
+ * satisfy this interface.
+ */
+export interface ServerDriver {
+  /** Driver identifier */
+  readonly name: string;
+  /** Get startup data (throws if not in correct context) */
+  getStartupData(): unknown;
+  /** Create server channel */
+  createServer(options: ServerOptions): ServerChannel | Promise<ServerChannel>;
+}
+
+/**
  * Server configuration options
  */
 export interface WorkerServerOptions<TDefs extends MessageDefs = MessageDefs> {
-  /** Socket path (from env var if not provided) */
-  socketPath?: string;
-
-  /** Lifecycle options */
   /**
-   * Time to wait for host to connect (default: from env or 30s, 0 = forever).
-   * When spawned via createWorker(), this is set via ISOLATED_WORKERS_SERVER_CONNECT_TIMEOUT env var.
+   * Driver to use for server communication.
+   * Defaults to ChildProcessDriver if not specified.
+   * Must match the driver used on the host side.
+   *
+   * @example
+   * ```typescript
+   * // For child process workers (default)
+   * startWorkerServer(handlers);
+   *
+   * // For worker thread workers
+   * import { WorkerThreadsDriver } from 'isolated-workers/drivers/worker-threads';
+   * startWorkerServer(handlers, { driver: WorkerThreadsDriver });
+   * ```
    */
-  hostConnectTimeout?: number;
-  disconnectBehavior?: 'shutdown' | 'keep-alive'; // Behavior on disconnect (default: 'shutdown')
+  driver?: ServerDriver;
 
-  /** Messaging options */
-  middleware?: Middleware<TDefs>[]; // Per-instance middleware pipeline
-  serializer?: Serializer; // Custom serializer (must match client!)
-  txIdGenerator?: TransactionIdGenerator<TDefs>; // Custom TX ID generator
+  /** Middleware pipeline for message processing */
+  middleware?: Middleware<TDefs>[];
 
-  /** Logging options */
-  logLevel?: LogLevel; // Log level (default: 'error')
-  logger?: Logger; // Custom logger instance
+  /** Custom serializer (must match host!) */
+  serializer?: Serializer;
+
+  /** Custom transaction ID generator */
+  txIdGenerator?: TransactionIdGenerator<TDefs>;
+
+  /** Log level for server operations */
+  logLevel?: LogLevel;
+
+  /** Custom logger instance */
+  logger?: Logger;
 }
 
 /**
@@ -90,33 +107,8 @@ export interface WorkerServer {
 }
 
 /**
- * Detect which driver spawned this worker and return the driver name.
- *
- * @returns The driver name ('child_process' or 'worker_threads') or null if detection fails
- */
-function detectDriver(): 'child_process' | 'worker_threads' | null {
-  // Check startup data first (most reliable)
-  const startupData = getStartupData();
-  if (startupData?.driver === 'child_process') {
-    return 'child_process';
-  }
-  if (startupData?.driver === 'worker_threads') {
-    return 'worker_threads';
-  }
-
-  // Fallback to environment detection
-  if (isWorkerThreadsWorker()) {
-    return 'worker_threads';
-  }
-  if (isChildProcessWorker()) {
-    return 'child_process';
-  }
-
-  return null;
-}
-
-/**
  * Start a worker server that listens for messages (type-safe version)
+ * @category Core
  * @param handlers - Map of typed message handlers
  * @param options - Server options
  * @returns Promise resolving to WorkerServer
@@ -140,83 +132,63 @@ export async function startWorkerServer(
 /**
  * Start a worker server that listens for messages.
  *
- * This function automatically detects which driver spawned the worker and
- * routes to the appropriate server implementation:
- * - child_process: Uses Unix domain sockets for IPC
- * - worker_threads: Uses MessagePort for IPC
+ * The driver parameter determines how the server communicates with the host:
+ * - ChildProcessDriver (default): Uses Unix domain sockets
+ * - WorkerThreadsDriver: Uses MessagePort
  *
+ * The driver will throw an error if called in the wrong context (e.g.,
+ * using WorkerThreadsDriver in a child process or vice versa).
+ *
+ * @category Core
  * @param handlers - Map of message handlers
  * @param options - Server options
  * @returns Promise resolving to WorkerServer
+ *
+ * @example
+ * ```typescript
+ * // Default: child process driver
+ * const server = await startWorkerServer({
+ *   ping: async () => ({ pong: true }),
+ * });
+ *
+ * // Worker threads driver
+ * import { WorkerThreadsDriver } from 'isolated-workers/drivers/worker-threads';
+ * const server = await startWorkerServer(handlers, {
+ *   driver: WorkerThreadsDriver,
+ * });
+ * ```
  */
 export async function startWorkerServer<TDefs extends MessageDefs>(
   handlers: WorkerHandlers | Handlers<TDefs>,
   options: WorkerServerOptions<TDefs> = {}
 ): Promise<WorkerServer> {
   const {
-    socketPath: customSocketPath,
-    hostConnectTimeout: customHostConnectTimeout,
-    disconnectBehavior: _disconnectBehavior = 'shutdown', // TODO: Implement disconnect behavior at channel level
+    driver = ChildProcessDriver,
     middleware = [],
     serializer = defaultSerializer,
     logLevel = 'error',
     logger: customLogger,
   } = options;
-  void _disconnectBehavior; // Suppress unused warning - will be used when disconnect behavior is implemented
 
-  // Create logger - if debug is true, use 'debug' level
   const serverLogger = createMetaLogger(customLogger, logLevel);
 
-  // Validate serializer matches host
   validateSerializer(serializer);
 
-  // Detect which driver spawned this worker
-  const driverType = detectDriver();
+  serverLogger.info('Starting worker server', { driver: driver.name });
 
-  if (!driverType) {
-    throw new Error(
-      'Could not detect driver type. Ensure worker was spawned via createWorker() ' +
-        'or set ISOLATED_WORKERS_SOCKET_PATH env var for child_process compatibility.'
-    );
-  }
-
-  serverLogger.info('Starting worker server', { driver: driverType });
-
-  // Create the appropriate server based on driver type
-  let serverChannel: ServerChannel;
-
-  if (driverType === 'worker_threads') {
-    // Worker threads server
-    serverChannel = createWorkerThreadsServer({
-      serializer,
-      logLevel,
-      logger: serverLogger,
-    });
-    // Worker threads server uses start() not async creation
-    (serverChannel as ReturnType<typeof createWorkerThreadsServer>).start();
-  } else {
-    // Child process server (default)
-    const hostConnectTimeout =
-      customHostConnectTimeout ??
-      parseEnvTimeout(
-        process.env.ISOLATED_WORKERS_SERVER_CONNECT_TIMEOUT,
-        DEFAULT_SERVER_CONNECT_TIMEOUT
-      );
-
-    serverChannel = await createChildProcessServer({
-      socketPath: customSocketPath,
-      hostConnectTimeout,
-      serializer,
-      logLevel,
-      logger: serverLogger,
-    });
-  }
+  // Driver validates startup data and creates server
+  // Will throw if called in wrong context (e.g., wrong driver for this worker type)
+  const serverChannel = await driver.createServer({
+    serializer,
+    logLevel,
+    logger: serverLogger,
+  });
 
   let isRunning = serverChannel.isRunning;
 
   // Set up message handling via the server channel
   serverChannel.onMessage(
-    async (message: DriverMessage, respond: ResponseFunction) => {
+    async (message: DriverMessage, respond: (msg: DriverMessage) => Promise<void>) => {
       const typedMessage = message as TypedMessage;
 
       try {

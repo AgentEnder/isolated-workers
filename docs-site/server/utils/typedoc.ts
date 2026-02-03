@@ -1,4 +1,3 @@
-import { execSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { NavigationItem } from '../../vike-types';
@@ -27,6 +26,7 @@ export interface ApiExport {
   path: string;
   module: string;
   kind: ApiExportKind;
+  category?: string;
   signature?: string;
   description?: string;
   comment?: ApiComment;
@@ -239,7 +239,12 @@ function extractCommentText(
   parts?: Array<{ kind: string; text: string }>
 ): string | undefined {
   if (!parts || parts.length === 0) return undefined;
-  return parts.map((p) => p.text).join('').trim() || undefined;
+  return (
+    parts
+      .map((p) => p.text)
+      .join('')
+      .trim() || undefined
+  );
 }
 
 function parseComment(comment?: TypeDocComment): ApiComment | undefined {
@@ -276,6 +281,21 @@ function parseComment(comment?: TypeDocComment): ApiComment | undefined {
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
+/**
+ * Extract @category tag from a TypeDoc comment
+ */
+function extractCategory(comment?: TypeDocComment): string | undefined {
+  if (!comment?.blockTags) return undefined;
+
+  for (const tag of comment.blockTags) {
+    if (tag.tag === '@category') {
+      return extractCommentText(tag.content);
+    }
+  }
+
+  return undefined;
+}
+
 function typeToString(type?: TypeDocType): string {
   if (!type) return 'unknown';
 
@@ -303,7 +323,9 @@ function typeToString(type?: TypeDocType): string {
       if (type.declaration?.signatures) {
         const sig = type.declaration.signatures[0];
         const params =
-          sig.parameters?.map((p) => `${p.name}: ${typeToString(p.type)}`).join(', ') || '';
+          sig.parameters
+            ?.map((p) => `${p.name}: ${typeToString(p.type)}`)
+            .join(', ') || '';
         return `(${params}) => ${typeToString(sig.type)}`;
       }
       if (type.declaration?.children) {
@@ -314,13 +336,19 @@ function typeToString(type?: TypeDocType): string {
       }
       return '{ ... }';
     case 'indexedAccess':
-      return `${typeToString(type.objectType)}[${typeToString(type.indexType)}]`;
+      return `${typeToString(type.objectType)}[${typeToString(
+        type.indexType
+      )}]`;
     case 'conditional':
-      return `${typeToString(type.checkType)} extends ${typeToString(type.extendsType)} ? ${typeToString(type.trueType)} : ${typeToString(type.falseType)}`;
+      return `${typeToString(type.checkType)} extends ${typeToString(
+        type.extendsType
+      )} ? ${typeToString(type.trueType)} : ${typeToString(type.falseType)}`;
     case 'mapped':
       return '{ [key: string]: ... }';
     case 'typeOperator':
-      return `${type.operator || ''} ${typeToString(type.target as TypeDocType)}`;
+      return `${type.operator || ''} ${typeToString(
+        type.target as TypeDocType
+      )}`;
     case 'query':
       return `typeof ${typeToString(type.target as TypeDocType)}`;
     case 'predicate':
@@ -367,12 +395,11 @@ function parseExport(
 ): ApiExport | null {
   const kind = kindToApiKind(reflection.kind);
   const slug = slugify(reflection.name);
-  const moduleSlug = slugify(moduleName);
 
   const exp: ApiExport = {
     name: reflection.name,
     slug,
-    path: `/api/${moduleSlug}/${slug}`,
+    path: `/api/${slug}`,
     module: moduleName,
     kind,
   };
@@ -382,6 +409,7 @@ function parseExport(
     const sig = reflection.signatures[0];
     exp.comment = parseComment(sig.comment);
     exp.description = exp.comment?.summary;
+    exp.category = extractCategory(sig.comment);
 
     // Parse parameters
     if (sig.parameters) {
@@ -417,14 +445,19 @@ function parseExport(
           .map((p) => `${p.name}${p.optional ? '?' : ''}: ${p.type}`)
           .join(', ')
       : '';
-    exp.signature = `function ${reflection.name}${typeParams}(${params}): ${exp.returnType || 'void'}`;
+    exp.signature = `function ${reflection.name}${typeParams}(${params}): ${
+      exp.returnType || 'void'
+    }`;
   } else {
     // Non-function: type alias, interface, class, etc.
     exp.comment = parseComment(reflection.comment);
     exp.description = exp.comment?.summary;
+    exp.category = extractCategory(reflection.comment);
 
     if (reflection.type) {
-      exp.signature = `type ${reflection.name} = ${typeToString(reflection.type)}`;
+      exp.signature = `type ${reflection.name} = ${typeToString(
+        reflection.type
+      )}`;
     }
 
     // Parse interface/class children (properties, methods)
@@ -445,12 +478,16 @@ function parseExport(
               methodSig.parameters
                 ?.map(
                   (p) =>
-                    `${p.name}${p.flags?.isOptional ? '?' : ''}: ${typeToString(p.type)}`
+                    `${p.name}${p.flags?.isOptional ? '?' : ''}: ${typeToString(
+                      p.type
+                    )}`
                 )
                 .join(', ') || '';
             exp.methods.push({
               name: child.name,
-              signature: `${child.name}(${methodParams}): ${typeToString(methodSig.type)}`,
+              signature: `${child.name}(${methodParams}): ${typeToString(
+                methodSig.type
+              )}`,
               description: extractCommentText(methodSig.comment?.summary),
               parameters: methodSig.parameters?.map((p) => ({
                 name: p.name,
@@ -478,21 +515,22 @@ function parseExport(
     }
 
     // Build signature for interfaces and classes
-    if (
-      reflection.kind === KIND.Interface ||
-      reflection.kind === KIND.Class
-    ) {
+    if (reflection.kind === KIND.Interface || reflection.kind === KIND.Class) {
       const keyword =
         reflection.kind === KIND.Interface ? 'interface' : 'class';
       let typeParams = '';
       if (reflection.typeParameters && reflection.typeParameters.length > 0) {
-        typeParams = `<${reflection.typeParameters.map((tp) => tp.name).join(', ')}>`;
+        typeParams = `<${reflection.typeParameters
+          .map((tp) => tp.name)
+          .join(', ')}>`;
       }
       exp.signature = `${keyword} ${reflection.name}${typeParams}`;
 
       // Add extends clause if present
       if (reflection.extendedTypes && reflection.extendedTypes.length > 0) {
-        exp.signature += ` extends ${reflection.extendedTypes.map(typeToString).join(', ')}`;
+        exp.signature += ` extends ${reflection.extendedTypes
+          .map(typeToString)
+          .join(', ')}`;
       }
     }
   }
@@ -553,7 +591,7 @@ export function parseTypedocJson(json: TypeDocJson): ApiDocs {
       const exp = parseExport(reflection, moduleName);
       if (exp) {
         moduleExports.push(exp);
-        exports[`${moduleSlug}/${exp.slug}`] = exp;
+        exports[exp.slug] = exp;
         allExports.push(exp);
       }
     }
@@ -598,29 +636,15 @@ export async function loadApiDocs(): Promise<ApiDocs> {
   const workspaceRoot = getWorkspaceRoot();
   const jsonPath = path.join(workspaceRoot, '.typedoc', 'api.json');
 
-  // Check if JSON exists, generate if not
-  try {
-    await fs.access(jsonPath);
-  } catch {
-    console.log('[typedoc] Generating API documentation...');
-    try {
-      execSync('npx typedoc', {
-        cwd: path.join(workspaceRoot, 'packages', 'isolated-workers'),
-        stdio: 'inherit',
-      });
-    } catch (err) {
-      console.error('[typedoc] Failed to generate documentation:', err);
-      return { modules: {}, exports: {}, allExports: [] };
-    }
-  }
-
   // Read and parse JSON
   try {
     const jsonContent = await fs.readFile(jsonPath, 'utf-8');
     const json = JSON.parse(jsonContent) as TypeDocJson;
     cachedApiDocs = parseTypedocJson(json);
     console.log(
-      `[typedoc] Loaded ${cachedApiDocs.allExports.length} exports from ${Object.keys(cachedApiDocs.modules).length} modules`
+      `[typedoc] Loaded ${cachedApiDocs.allExports.length} exports from ${
+        Object.keys(cachedApiDocs.modules).length
+      } modules`
     );
     return cachedApiDocs;
   } catch (err) {
@@ -629,29 +653,55 @@ export async function loadApiDocs(): Promise<ApiDocs> {
   }
 }
 
+// Category display order for navigation (lower = first)
+const CATEGORY_ORDER: Record<string, number> = {
+  Core: 0,
+  Types: 10,
+  Configuration: 20,
+  Serialization: 30,
+  Drivers: 40,
+  Advanced: 50,
+};
+
 /**
- * Build navigation items from API docs
+ * Build navigation items from API docs, grouped by category
  */
 export function buildApiNavigation(api: ApiDocs): NavigationItem {
-  const children: NavigationItem[] = [];
+  // Group exports by category
+  const byCategory = new Map<string, ApiExport[]>();
 
-  // Sort modules: core first, then alphabetically
-  const sortedModules = Object.values(api.modules).sort((a, b) => {
-    if (a.slug === 'core') return -1;
-    if (b.slug === 'core') return 1;
-    return a.name.localeCompare(b.name);
+  for (const exp of api.allExports) {
+    const cat = exp.category || 'Other';
+    if (!byCategory.has(cat)) {
+      byCategory.set(cat, []);
+    }
+    byCategory.get(cat)!.push(exp);
+  }
+
+  // Sort categories by defined order
+  const sortedCategories = Array.from(byCategory.keys()).sort((a, b) => {
+    const orderA = CATEGORY_ORDER[a] ?? 999;
+    const orderB = CATEGORY_ORDER[b] ?? 999;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.localeCompare(b);
   });
 
-  for (const mod of sortedModules) {
-    children.push({
-      title: mod.name.charAt(0).toUpperCase() + mod.name.slice(1),
-      path: mod.path,
-      children: mod.exports.map((exp) => ({
-        title: exp.name,
-        path: exp.path,
-      })),
-    });
-  }
+  // Build navigation children grouped by category
+  const children: NavigationItem[] = sortedCategories.map((category) => {
+    const categoryExports = byCategory.get(category)!;
+    const categorySlug = category.toLowerCase().replace(/\s+/g, '-');
+
+    return {
+      title: category,
+      path: `/api#${categorySlug}`,
+      children: categoryExports
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((exp) => ({
+          title: exp.name,
+          path: exp.path,
+        })),
+    };
+  });
 
   return {
     title: 'API Reference',

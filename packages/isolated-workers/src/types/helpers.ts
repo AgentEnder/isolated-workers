@@ -16,6 +16,7 @@ export type MaybePromise<T> = T | Promise<T>;
 /**
  * Extract keys that have a result defined.
  *
+ * @category Types
  * @example
  * ```typescript
  * type Messages = DefineMessages<{
@@ -110,6 +111,7 @@ export type MessageResult<
  *
  * Handlers receive the payload and return the result (or void if no result).
  *
+ * @category Configuration
  * @example
  * ```typescript
  * const handlers: Handlers<MyMessages> = {
@@ -167,6 +169,7 @@ export type AnyMessage<TDefs extends MessageDefs> =
  * Messages are sealed before being passed to middleware, so you can
  * modify existing properties but cannot add new ones.
  *
+ * @category Configuration
  * @example
  * const logMiddleware: Middleware<MyMessages> = (msg, direction) => {
  *   console.log(`${direction}:`, msg.type);

@@ -1,27 +1,18 @@
 import type { PageContextServer } from 'vike/types';
-import type { ApiExport, ApiModule } from '../../server/utils/typedoc';
-
-export type ApiPageType = 'landing' | 'module' | 'export';
+import type { ApiDocs, ApiExport } from '../../server/utils/typedoc';
 
 export interface ApiDataLanding {
   type: 'landing';
-  modules: ApiModule[];
-}
-
-export interface ApiDataModule {
-  type: 'module';
-  module: ApiModule;
+  api: ApiDocs;
 }
 
 export interface ApiDataExport {
   type: 'export';
   export: ApiExport;
-  module: ApiModule;
 }
 
 export type ApiData =
   | ApiDataLanding
-  | ApiDataModule
   | ApiDataExport
   | { type: 'not-found' };
 
@@ -29,40 +20,22 @@ export async function data(pageContext: PageContextServer): Promise<ApiData> {
   const { api } = pageContext.globalContext;
   const { urlPathname } = pageContext;
 
-  // Parse URL: /api, /api/:module, /api/:module/:export
+  // Parse URL: /api or /api/:export
   const parts = urlPathname.split('/').filter(Boolean);
-  // parts[0] = 'api', parts[1] = module?, parts[2] = export?
+  // parts[0] = 'api', parts[1] = export?
 
-  const moduleSlug = parts[1];
-  const exportSlug = parts[2];
+  const exportSlug = parts[1];
 
-  // Landing page: /api
-  if (!moduleSlug) {
-    return {
-      type: 'landing',
-      modules: Object.values(api.modules).sort((a, b) => {
-        if (a.slug === 'core') return -1;
-        if (b.slug === 'core') return 1;
-        return a.name.localeCompare(b.name);
-      }),
-    };
-  }
-
-  const module = api.modules[moduleSlug];
-  if (!module) {
-    return { type: 'not-found' };
-  }
-
-  // Module page: /api/:module
+  // Landing page: /api - show all exports grouped by category
   if (!exportSlug) {
     return {
-      type: 'module',
-      module,
+      type: 'landing',
+      api,
     };
   }
 
-  // Export page: /api/:module/:export
-  const exp = api.exports[`${moduleSlug}/${exportSlug}`];
+  // Export page: /api/:export
+  const exp = api.exports[exportSlug];
   if (!exp) {
     return { type: 'not-found' };
   }
@@ -70,6 +43,5 @@ export async function data(pageContext: PageContextServer): Promise<ApiData> {
   return {
     type: 'export',
     export: exp,
-    module,
   };
 }

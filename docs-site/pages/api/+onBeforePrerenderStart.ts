@@ -6,14 +6,9 @@ export const onBeforePrerenderStart: OnBeforePrerenderStartAsync = async () => {
 
   const urls: string[] = ['/api'];
 
-  // Add module pages
-  for (const module of Object.values(api.modules)) {
-    urls.push(module.path);
-
-    // Add export pages
-    for (const exp of module.exports) {
-      urls.push(exp.path);
-    }
+  // Add individual export pages
+  for (const exp of api.allExports) {
+    urls.push(exp.path);
   }
 
   return urls;
