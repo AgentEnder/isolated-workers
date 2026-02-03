@@ -7,10 +7,14 @@
  * @packageDocumentation
  */
 
+import { createMetaLogger, type Logger } from '../../../utils/logger.js';
 import type { Serializer } from '../../../utils/serializer.js';
 import { defaultSerializer } from '../../../utils/serializer.js';
-import { createMetaLogger, type Logger } from '../../../utils/logger.js';
-import type { DriverMessage, ServerChannel, ServerOptions } from '../../driver.js';
+import type {
+  DriverMessage,
+  ServerChannel,
+  ServerOptions,
+} from '../../driver.js';
 import type { WorkerThreadsStartupData } from './host.js';
 
 /**
@@ -133,7 +137,10 @@ export class WorkerThreadsServerChannel implements ServerChannel {
    * Send a message to the host
    */
   private async sendMessage(message: DriverMessage): Promise<void> {
-    this.logger.debug('Sending message', { tx: message.tx, type: message.type });
+    this.logger.debug('Sending message', {
+      tx: message.tx,
+      type: message.type,
+    });
 
     // Serialize the message for consistent handling
     const serialized = this.serializer.serialize(message);
@@ -182,10 +189,10 @@ export class WorkerThreadsServerChannel implements ServerChannel {
  * server.start();
  * ```
  */
-export function createServer(
+export async function createServer(
   startupData: WorkerThreadsStartupData,
   options: ServerOptions = {}
-): WorkerThreadsServerChannel {
+): Promise<WorkerThreadsServerChannel> {
   const {
     serializer = defaultSerializer,
     logLevel = 'error',
@@ -205,8 +212,7 @@ export function createServer(
   // Use require for synchronous access to parentPort
   let workerThreadsModule: typeof import('worker_threads');
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    workerThreadsModule = require('worker_threads');
+    workerThreadsModule = await import('worker_threads');
   } catch {
     throw new Error(
       'Cannot create WorkerThreadsServerChannel: worker_threads module is not available. ' +
@@ -223,10 +229,13 @@ export function createServer(
 
   logger.info('Creating worker threads server');
 
-  const server = new WorkerThreadsServerChannel(workerThreadsModule.parentPort, {
-    serializer,
-    logger,
-  });
+  const server = new WorkerThreadsServerChannel(
+    workerThreadsModule.parentPort,
+    {
+      serializer,
+      logger,
+    }
+  );
 
   // Start the server immediately (unlike child_process which needs to listen)
   server.start();

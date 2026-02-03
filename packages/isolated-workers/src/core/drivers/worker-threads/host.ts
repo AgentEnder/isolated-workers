@@ -7,14 +7,18 @@
  * @packageDocumentation
  */
 
-import type { Serializer } from '../../../utils/serializer.js';
-import { defaultSerializer } from '../../../utils/serializer.js';
 import {
   createMetaLogger,
   type Logger,
   type LogLevel,
 } from '../../../utils/logger.js';
-import type { DriverChannel, DriverMessage, StartupData } from '../../driver.js';
+import type { Serializer } from '../../../utils/serializer.js';
+import { defaultSerializer } from '../../../utils/serializer.js';
+import type {
+  DriverChannel,
+  DriverMessage,
+  StartupData,
+} from '../../driver.js';
 
 /**
  * workerData key for startup data
@@ -61,6 +65,13 @@ export interface WorkerThreadsDriverOptions {
   /** If true, script is treated as JavaScript code instead of a path */
   eval?: boolean;
 
+  /**
+   * List of node CLI options passed to the worker.
+   * Useful for loading TypeScript files via tsx:
+   * @example ['--import', 'tsx']
+   */
+  execArgv?: string[];
+
   /** Custom serializer (must match worker side) */
   serializer?: Serializer;
 
@@ -69,6 +80,9 @@ export interface WorkerThreadsDriverOptions {
 
   /** Custom logger instance */
   logger?: Logger;
+
+  /** Arguments to pass to the worker script */
+  argv?: string[];
 }
 
 /**
@@ -86,7 +100,9 @@ export class WorkerThreadsChannel implements DriverChannel {
   private readonly serializer: Serializer;
 
   constructor(
-    private readonly worker: InstanceType<typeof import('worker_threads').Worker>,
+    private readonly worker: InstanceType<
+      typeof import('worker_threads').Worker
+    >,
     options: { serializer: Serializer; logger: Logger }
   ) {
     this._isConnected = true;
@@ -170,7 +186,10 @@ export class WorkerThreadsChannel implements DriverChannel {
       throw new Error('Channel is not connected');
     }
 
-    this._logger.debug('Sending message', { type: message.type, tx: message.tx });
+    this._logger.debug('Sending message', {
+      type: message.type,
+      tx: message.tx,
+    });
 
     // Serialize the message for consistent handling
     const serialized = this.serializer.serialize(message);
@@ -209,6 +228,56 @@ export class WorkerThreadsChannel implements DriverChannel {
 }
 
 /**
+ * Flags that should not be inherited by worker threads.
+ * These are typically single-use flags that don't apply to worker scripts.
+ */
+const NON_INHERITABLE_FLAGS = new Set([
+  '-e',
+  '--eval',
+  '-p',
+  '--print',
+  '-c',
+  '--check',
+  '-i',
+  '--interactive',
+]);
+
+/**
+ * Filter execArgv to remove flags that shouldn't be inherited by workers.
+ * Handles both standalone flags and flag=value pairs.
+ */
+function filterExecArgv(argv: string[]): string[] {
+  const result: string[] = [];
+  let skipNext = false;
+
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+
+    if (skipNext) {
+      skipNext = false;
+      continue;
+    }
+
+    // Check if this is a non-inheritable flag
+    const flagName = arg.includes('=') ? arg.split('=')[0] : arg;
+    if (NON_INHERITABLE_FLAGS.has(flagName)) {
+      // If the flag doesn't contain '=' and isn't a boolean flag, skip the next arg too
+      if (
+        !arg.includes('=') &&
+        (arg === '-e' || arg === '-p' || arg === '-c')
+      ) {
+        skipNext = true;
+      }
+      continue;
+    }
+
+    result.push(arg);
+  }
+
+  return result;
+}
+
+/**
  * Spawn a worker thread and establish communication channel.
  *
  * @param script - Path to the worker script (or code if eval is true)
@@ -224,14 +293,53 @@ export async function spawnWorker(
     resourceLimits,
     transferList,
     eval: evalCode = false,
+    execArgv: userExecArgv,
     serializer = defaultSerializer,
     logLevel = 'error',
     logger: customLogger,
   } = options;
 
+  // Inherit host's execArgv by default, filtering out non-inheritable flags
+  const execArgv = userExecArgv ?? filterExecArgv(process.execArgv);
+
   const logger = customLogger ?? createMetaLogger(undefined, logLevel);
 
-  logger.info('Spawning worker thread', { script: evalCode ? '<code>' : script });
+  const argv = options.argv ?? [];
+
+  // Determine if we need to bootstrap tsx for TypeScript files
+  // ESM loaders don't work properly in worker_threads via execArgv,
+  // so we use eval to register tsx programmatically before importing the script
+  let scriptOrCodeToRun: string;
+  let useEval = evalCode;
+
+  if (!evalCode && script.endsWith('.ts')) {
+    // Convert file path to URL for dynamic import
+    const { pathToFileURL } = await import('node:url');
+    const scriptUrl = pathToFileURL(script).href;
+
+    // Bootstrap code that registers tsx and imports the worker script
+    scriptOrCodeToRun = `
+      import('tsx/esm/api').then(({ register }) => {
+        register();
+        return import('${scriptUrl}');
+      }).catch(err => {
+        console.error('[Worker] Failed to bootstrap tsx:', err);
+        process.exit(1);
+      });
+    `;
+    useEval = true;
+  } else {
+    scriptOrCodeToRun = script;
+  }
+
+  logger.info('Spawning worker thread', {
+    script: evalCode ? '<code>' : script,
+  });
+  logger.info('Worker thread spawn options', {
+    resourceLimits,
+    execArgv,
+    argv,
+  });
 
   // Dynamically import worker_threads to handle environments where it's unavailable
   let workerThreadsModule: typeof import('worker_threads');
@@ -257,13 +365,17 @@ export async function spawnWorker(
     [STARTUP_DATA_WORKER_KEY]: startupData,
   };
 
+  logger.debug('Combined worker data:', combinedWorkerData);
+
   // Create the worker
   const Worker = workerThreadsModule.Worker;
-  const worker = new Worker(script, {
+  const worker = new Worker(scriptOrCodeToRun, {
     workerData: combinedWorkerData,
     resourceLimits,
     transferList,
-    eval: evalCode,
+    eval: useEval,
+    execArgv,
+    argv,
   });
 
   logger.debug('Worker thread spawned', { threadId: worker.threadId });

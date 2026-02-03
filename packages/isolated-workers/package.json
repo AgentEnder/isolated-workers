@@ -17,31 +17,22 @@
       "default": "./dist/core/drivers/index.js"
     },
     "./drivers/child-process": {
-      "import": "./dist/core/drivers/child-process.js",
-      "types": "./dist/core/drivers/child-process.d.ts",
-      "default": "./dist/core/drivers/child-process.js"
-    },
-    "./drivers/child-process-server": {
-      "import": "./dist/core/drivers/child-process-server.js",
-      "types": "./dist/core/drivers/child-process-server.d.ts",
-      "default": "./dist/core/drivers/child-process-server.js"
+      "import": "./dist/core/drivers/child-process/index.js",
+      "types": "./dist/core/drivers/child-process/index.d.ts",
+      "default": "./dist/core/drivers/child-process/index.js"
     },
     "./drivers/worker-threads": {
-      "import": "./dist/core/drivers/worker-threads.js",
-      "types": "./dist/core/drivers/worker-threads.d.ts",
-      "default": "./dist/core/drivers/worker-threads.js"
-    },
-    "./drivers/worker-threads-server": {
-      "import": "./dist/core/drivers/worker-threads-server.js",
-      "types": "./dist/core/drivers/worker-threads-server.d.ts",
-      "default": "./dist/core/drivers/worker-threads-server.js"
+      "import": "./dist/core/drivers/worker-threads/index.js",
+      "types": "./dist/core/drivers/worker-threads/index.d.ts",
+      "default": "./dist/core/drivers/worker-threads/index.js"
     }
   },
   "scripts": {
     "build": "tsc -p tsconfig.lib.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "extract-docs": "typedoc --options typedoc.json"
   },
   "dependencies": {},
   "devDependencies": {
@@ -51,6 +42,7 @@
     "@vitest/coverage-v8": "catalog:",
     "eslint": "catalog:",
     "typescript": "catalog:",
+    "typedoc": "catalog:",
     "vitest": "catalog:"
   }
 }

@@ -8,12 +8,12 @@
 
 import {
   defineWorkerDriver,
-  type ServerOptions,
   type ServerChannel,
+  type ServerOptions,
 } from '../../driver.js';
 import type {
-  WorkerThreadsStartupData,
   WorkerThreadsDriverOptions,
+  WorkerThreadsStartupData,
 } from './host.js';
 
 /** workerData key for startup data */
@@ -61,12 +61,11 @@ export const WorkerThreadsDriver = defineWorkerDriver({
    * @throws Error if not running in a worker thread context
    * @returns The startup data passed from the host
    */
-  getStartupData(): WorkerThreadsStartupData {
+  async getStartupData(): Promise<WorkerThreadsStartupData> {
     // Must use require for synchronous access to workerData
     let workerThreadsModule: typeof import('worker_threads');
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      workerThreadsModule = require('worker_threads');
+      workerThreadsModule = await import('worker_threads');
     } catch {
       throw new Error(
         'WorkerThreadsDriver.getStartupData() called but worker_threads module is not available. ' +
@@ -74,7 +73,7 @@ export const WorkerThreadsDriver = defineWorkerDriver({
       );
     }
 
-    if (!workerThreadsModule.parentPort) {
+    if (workerThreadsModule.isMainThread) {
       throw new Error(
         'WorkerThreadsDriver.getStartupData() called but not running inside a worker thread. ' +
           'Ensure this worker was spawned via createWorker() with WorkerThreadsDriver.'
@@ -114,10 +113,11 @@ export const WorkerThreadsDriver = defineWorkerDriver({
    * @param options - Server options
    * @returns ServerChannel (synchronous - no Promise needed)
    */
-  createServer(options: ServerOptions = {}): ServerChannel {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createServer } = require('./server.js') as typeof import('./server.js');
-    const startupData = this.getStartupData();
+  async createServer(options: ServerOptions = {}): Promise<ServerChannel> {
+    const { createServer } = (await import(
+      './server.js'
+    )) as typeof import('./server.js');
+    const startupData = await this.getStartupData();
     return createServer(startupData, options);
   },
 

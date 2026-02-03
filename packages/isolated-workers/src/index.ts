@@ -1,5 +1,9 @@
 /**
- * Isolated Workers - Type-safe worker process library
+ * Type-safe worker process library for Node.js.
+ *
+ * This library provides a simple, type-safe way to spawn and communicate with
+ * worker processes. Define your message contracts with TypeScript and get
+ * full type inference for payloads and responses.
  *
  * @packageDocumentation
  */
@@ -26,6 +30,11 @@ export {
   type WorkerServer,
   type WorkerServerOptions,
   type DriverOptionsFor,
+  // Messaging types
+  type MiddlewareContext,
+  type MiddlewareDirection,
+  type TypedMessage,
+  type TypedResult,
   // Driver types
   type Driver,
   type DriverChannel,
