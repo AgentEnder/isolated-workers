@@ -10,6 +10,7 @@ export default [
       '**/dist/**',
       '**/build/**',
       '**/vitest.config.ts',
+      'benchmarks/**', // Has its own eslint config
     ],
   },
   {
@@ -30,6 +31,7 @@ export default [
           ],
         },
       ],
+      'no-useless-escape': ['off'],
     },
   },
   {

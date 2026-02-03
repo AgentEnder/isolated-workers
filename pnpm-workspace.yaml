@@ -4,6 +4,7 @@ packages:
   - docs-site
   - examples
   - e2e
+  - benchmarks
   - tools/scripts
   - type-tests
 
@@ -29,6 +30,7 @@ catalog:
   prettier: ^2.8.8
   tslib: ^2.3.0
   typescript: ^5.7.2
+  typedoc: '^0.28.16'
   tsx: ^4.7.0
   vite: ^5.4.0
   vitest: ^1.3.1

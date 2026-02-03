@@ -36,6 +36,7 @@ export default tseslint.config(
         },
       ],
       '@typescript-eslint/no-namespace': 0,
+      'no-useless-escape': ['off'],
     },
   },
 
@@ -54,6 +55,10 @@ export default tseslint.config(
       react: {
         version: 'detect',
       },
+    },
+
+    rules: {
+      'no-useless-escape': ['off'],
     },
   } as ConfigArray[number],
 

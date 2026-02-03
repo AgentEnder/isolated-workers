@@ -3,7 +3,14 @@
     "allow": [
       "Bash(gtimeout:*)",
       "Bash(exit:*)",
-      "WebFetch(domain:pagefind.app)"
+      "WebFetch(domain:pagefind.app)",
+      "WebFetch(domain:fastify.dev)",
+      "WebFetch(domain:zod.dev)",
+      "WebFetch(domain:trpc.io)",
+      "WebFetch(domain:vitest.dev)",
+      "WebFetch(domain:astro.build)",
+      "Skill(superpowers:executing-plans)",
+      "WebFetch(domain:craigory.dev)"
     ]
   }
 }

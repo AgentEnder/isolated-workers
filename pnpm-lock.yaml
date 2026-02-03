@@ -45,6 +45,9 @@ catalogs:
     tsx:
       specifier: ^4.7.0
       version: 4.21.0
+    typedoc:
+      specifier: ^0.28.16
+      version: 0.28.16
     typescript:
       specifier: ^5.7.2
       version: 5.9.3
@@ -203,7 +206,7 @@ importers:
         specifier: ^4.1.18
         version: 4.1.18
       typedoc:
-        specifier: ^0.28.16
+        specifier: 'catalog:'
         version: 0.28.16(typescript@5.9.3)
       typescript:
         specifier: ^5.9.3
@@ -261,6 +264,9 @@ importers:
       eslint:
         specifier: 'catalog:'
         version: 9.39.2(jiti@2.6.1)
+      typedoc:
+        specifier: 'catalog:'
+        version: 0.28.16(typescript@5.9.3)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3

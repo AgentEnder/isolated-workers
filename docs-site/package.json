@@ -38,11 +38,24 @@
     "memfs": "^4.56.10",
     "pagefind": "^1.4.0",
     "tailwindcss": "^4.1.18",
-    "typedoc": "^0.28.16",
+    "typedoc": "catalog:",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.1",
     "vite": "^7.3.1",
     "vitest": "catalog:"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "dependsOn": ["^build", "^extract-docs"]
+      },
+      "dev": {
+        "dependsOn": ["^dev", "^extract-docs"]
+      },
+      "preview": {
+        "dependsOn": ["^extract-docs"]
+      }
+    }
   },
   "type": "module"
 }
