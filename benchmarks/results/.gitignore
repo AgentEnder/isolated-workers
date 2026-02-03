@@ -1,0 +1,5 @@
+# Ignore benchmark results by default (they are machine-specific)
+# Remove specific results from gitignore if you want to track them
+*.md
+*.json
+!.gitignore

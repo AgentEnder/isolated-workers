@@ -1,0 +1,22 @@
+{
+  "name": "benchmarks",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench": "tsx src/run.ts",
+    "bench:drivers": "tsx src/driver-comparison.ts",
+    "bench:throughput": "tsx src/throughput.ts",
+    "bench:latency": "tsx src/latency.ts"
+  },
+  "dependencies": {
+    "flexi-bench": "0.2.0",
+    "isolated-workers": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "markdown-factory": "^0.2.0",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}
