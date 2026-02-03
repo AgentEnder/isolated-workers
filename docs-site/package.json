@@ -8,7 +8,10 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@types/unist": "catalog:",
     "gray-matter": "^4.0.3",
+    "hast-util-from-html": "^2.0.3",
+    "hast-util-to-html": "^9.0.5",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "rehype-highlight": "^7.0.2",
@@ -47,13 +50,21 @@
   "nx": {
     "targets": {
       "build": {
-        "dependsOn": ["^build", "^extract-docs"]
+        "dependsOn": [
+          "^build",
+          "^extract-docs"
+        ]
       },
       "dev": {
-        "dependsOn": ["^dev", "^extract-docs"]
+        "dependsOn": [
+          "^dev",
+          "^extract-docs"
+        ]
       },
       "preview": {
-        "dependsOn": ["^extract-docs"]
+        "dependsOn": [
+          "^extract-docs"
+        ]
       }
     }
   },
