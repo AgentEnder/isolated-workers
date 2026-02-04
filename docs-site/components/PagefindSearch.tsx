@@ -192,7 +192,7 @@ export function PagefindSearch() {
     setIsOpen(false);
     setQuery('');
     setResults([]);
-    navigate(applyBaseUrl(result.url));
+    navigate(result.url);
   };
 
   // Scroll selected result into view
