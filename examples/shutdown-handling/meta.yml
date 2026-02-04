@@ -1,0 +1,25 @@
+id: shutdown-handling
+title: Unexpected Worker Shutdown Handling
+description: |
+  Demonstrates how to handle unexpected worker crashes with configurable
+  retry strategies, per-message-type overrides, and detailed error context.
+entryPoint: host.ts
+fileMap:
+  './messages.ts': 'messages.ts'
+  './host.ts': 'host.ts'
+  './worker.ts': 'worker.ts'
+commands:
+  - command: 'pnpm run:shutdown-handling'
+    title: 'Run the example'
+    assertions:
+      - contains: 'Test 1: Normal operation'
+      - contains: 'Result: 25'
+      - contains: 'Test 2: Idempotent operation with crash - retry exhaustion'
+      - contains: 'WorkerCrashedError after retries'
+      - contains: 'Attempt: 3/3'
+      - contains: 'Test 3: Non-idempotent operation'
+      - contains: 'Attempt: 1/1'
+      - contains: 'No retries'
+      - contains: 'Test 4: Batch processing with retry exhaustion'
+      - contains: 'Test 5: Successful batch processing'
+      - contains: 'Processed batch of 3 items'
