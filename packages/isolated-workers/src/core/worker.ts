@@ -11,6 +11,11 @@ import type {
   Middleware,
   TransactionIdGenerator,
 } from '../types/index.js';
+import type {
+  ShutdownReason,
+  UnexpectedShutdownConfig,
+} from '../types/config.js';
+import { WorkerCrashedError } from '../types/errors.js';
 import {
   createMetaLogger,
   type Logger,
@@ -30,7 +35,11 @@ import type {
 } from './driver.js';
 import type { ChildProcessDriverOptions } from './drivers/child-process/index.js';
 import type { WorkerThreadsDriverOptions } from './drivers/worker-threads/index.js';
-import { applyMiddleware, getTimeoutValue, normalizeTimeoutConfig } from './internals.js';
+import {
+  applyMiddleware,
+  getTimeoutValue,
+  normalizeTimeoutConfig,
+} from './internals.js';
 import {
   createRequest,
   defaultTxIdGenerator,
@@ -185,6 +194,9 @@ export interface WorkerOptions<
 
   /** @deprecated Use logLevel instead */
   debug?: boolean;
+
+  /** Unexpected shutdown configuration */
+  unexpectedShutdown?: UnexpectedShutdownConfig<TDefs>;
 }
 
 /**
@@ -247,6 +259,10 @@ interface PendingRequest {
   resolve: (value: unknown) => void;
   reject: (error: Error) => void;
   timeoutId: NodeJS.Timeout;
+  type: string;
+  payload: unknown;
+  attempt: number;
+  maxAttempts: number;
 }
 
 /**
@@ -254,7 +270,9 @@ interface PendingRequest {
  * This allows tree-shaking when using a different driver.
  */
 async function loadDefaultDriver(): Promise<Driver<ChildProcessCapabilities>> {
-  const { ChildProcessDriver } = await import('./drivers/child-process/index.js');
+  const { ChildProcessDriver } = await import(
+    './drivers/child-process/index.js'
+  );
   return ChildProcessDriver as unknown as Driver<ChildProcessCapabilities>;
 }
 
@@ -315,6 +333,7 @@ export async function createWorker<
     logger: customLogger,
     socketPath: customSocketPath,
     debug = false,
+    unexpectedShutdown,
   } = options;
 
   // Normalize timeout config into a lookup object
@@ -391,67 +410,204 @@ export async function createWorker<
   const pendingRequests = new Map<string, PendingRequest>();
   let isActive = true;
   let isConnected = channel.isConnected;
+  let shutdownHandled = false;
+  let closingGracefully = false;
 
-  // Handle incoming messages
-  channel.onMessage(async (message) => {
-    // Apply incoming middleware if any
-    let processedMessage =
-      middleware.length > 0
-        ? await applyMiddleware(message as AnyMessage<TMessages>, 'incoming', middleware)
-        : message;
+  /**
+   * Register event handlers on the channel.
+   * This is called for both initial spawn and retry spawns.
+   */
+  function registerChannelHandlers(ch: DriverChannel) {
+    // Handle incoming messages
+    ch.onMessage(async (message) => {
+      // Apply incoming middleware if any
+      let processedMessage =
+        middleware.length > 0
+          ? await applyMiddleware(
+              message as AnyMessage<TMessages>,
+              'incoming',
+              middleware
+            )
+          : message;
 
-    const typedMessage = processedMessage as TypedResult;
-    const { tx } = typedMessage;
-    const pending = pendingRequests.get(tx);
+      const typedMessage = processedMessage as TypedResult;
+      const { tx } = typedMessage;
+      const pending = pendingRequests.get(tx);
 
-    if (!pending) {
-      workerLogger.warn('Received message for unknown transaction', { tx });
+      if (!pending) {
+        workerLogger.warn('Received message for unknown transaction', { tx });
+        return;
+      }
+
+      // Clear timeout
+      clearTimeout(pending.timeoutId);
+      pendingRequests.delete(tx);
+
+      // Check if it's an error
+      if (isErrorMessage(typedMessage)) {
+        const error = deserializeError(typedMessage.payload);
+        workerLogger.debug('Received error response', {
+          tx,
+          error: error.message,
+        });
+        pending.reject(error);
+      } else {
+        workerLogger.debug('Received success response', { tx });
+        pending.resolve(typedMessage.payload);
+      }
+    });
+
+    // Handle channel errors
+    ch.onError((err: Error) => {
+      workerLogger.error('Channel error', { error: err.message });
+
+      // Reject all pending requests
+      pendingRequests.forEach((pending) => {
+        clearTimeout(pending.timeoutId);
+        pending.reject(new Error(`Channel error: ${err.message}`));
+      });
+      pendingRequests.clear();
+    });
+
+    // Handle channel close
+    ch.onClose(() => {
+      workerLogger.info('Worker channel closed');
+      // Only update state if shutdown wasn't already handled (e.g., by retry logic)
+      if (!shutdownHandled) {
+        isActive = false;
+        isConnected = false;
+
+        // Reject all pending requests
+        pendingRequests.forEach((pending) => {
+          clearTimeout(pending.timeoutId);
+          pending.reject(new Error('Worker closed'));
+        });
+        pendingRequests.clear();
+      }
+    });
+
+    // Handle shutdown events from driver
+    ch.onShutdown((reason) => {
+      handleUnexpectedShutdown(reason);
+    });
+  }
+
+  function handleUnexpectedShutdown(reason: ShutdownReason) {
+    if (shutdownHandled) return;
+    shutdownHandled = true;
+
+    const pending = Array.from(pendingRequests.entries());
+    pendingRequests.clear();
+
+    if (closingGracefully) {
+      for (const [, req] of pending) {
+        clearTimeout(req.timeoutId);
+        req.reject(new Error('Worker closed'));
+      }
       return;
     }
 
-    // Clear timeout
-    clearTimeout(pending.timeoutId);
-    pendingRequests.delete(tx);
+    applyUnexpectedShutdownStrategy(pending, reason);
+  }
 
-    // Check if it's an error
-    if (isErrorMessage(typedMessage)) {
-      const error = deserializeError(typedMessage.payload);
-      workerLogger.debug('Received error response', {
-        tx,
-        error: error.message,
-      });
-      pending.reject(error);
-    } else {
-      workerLogger.debug('Received success response', { tx });
-      pending.resolve(typedMessage.payload);
+  function applyUnexpectedShutdownStrategy(
+    pending: [string, PendingRequest][],
+    reason: ShutdownReason
+  ) {
+    const config = unexpectedShutdown || { strategy: 'reject' };
+    const retryQueue: [string, PendingRequest][] = [];
+
+    for (const [_id, req] of pending) {
+      clearTimeout(req.timeoutId);
+
+      const strategy =
+        req.type in config
+          ? ((config as Record<string, unknown>)[
+              req.type
+            ] as UnexpectedShutdownConfig<TMessages>)
+          : config;
+
+      if (
+        strategy &&
+        'strategy' in strategy &&
+        strategy.strategy === 'retry' &&
+        req.attempt < (strategy.attempts || 1)
+      ) {
+        retryQueue.push([_id, req]);
+      } else {
+        const maxAttempts =
+          strategy && 'strategy' in strategy && strategy.strategy === 'retry'
+            ? strategy.attempts || 1
+            : req.maxAttempts;
+
+        req.reject(
+          new WorkerCrashedError(
+            strategy &&
+            'strategy' in strategy &&
+            strategy.strategy === 'retry' &&
+            req.attempt >= maxAttempts
+              ? `Worker crashed after ${req.attempt} attempts while processing '${req.type}'`
+              : `Worker crashed unexpectedly while processing '${req.type}'`,
+            reason,
+            req.type,
+            req.attempt,
+            maxAttempts
+          )
+        );
+      }
     }
-  });
 
-  // Handle channel errors
-  channel.onError((err: Error) => {
-    workerLogger.error('Channel error', { error: err.message });
+    if (retryQueue.length > 0) {
+      retryPendingRequests(retryQueue);
+    }
+  }
 
-    // Reject all pending requests
-    pendingRequests.forEach((pending) => {
-      clearTimeout(pending.timeoutId);
-      pending.reject(new Error(`Channel error: ${err.message}`));
-    });
-    pendingRequests.clear();
-  });
+  async function retryPendingRequests(retryQueue: [string, PendingRequest][]) {
+    try {
+      workerLogger.info('Spawning new worker for retry', {
+        retryCount: retryQueue.length,
+      });
 
-  // Handle channel close
-  channel.onClose(() => {
-    workerLogger.info('Worker channel closed');
-    isActive = false;
-    isConnected = false;
+      channel = await driver.spawn(script, mergedDriverOptions);
+      isConnected = channel.isConnected;
+      workerLogger.info('New worker channel established', { pid: channel.pid });
 
-    // Reject all pending requests
-    pendingRequests.forEach((pending) => {
-      clearTimeout(pending.timeoutId);
-      pending.reject(new Error('Channel closed'));
-    });
-    pendingRequests.clear();
-  });
+      // Register handlers on the new channel
+      registerChannelHandlers(channel);
+
+      for (const [id, req] of retryQueue) {
+        req.attempt++;
+
+        const messageTimeout = getTimeout(req.type as keyof TMessages);
+
+        req.timeoutId = setTimeout(() => {
+          pendingRequests.delete(id);
+          req.reject(new Error(`Request timeout after ${messageTimeout}ms`));
+        }, messageTimeout);
+
+        pendingRequests.set(id, req);
+
+        channel.send({
+          type: req.type,
+          payload: req.payload,
+          tx: id,
+        });
+      }
+
+      shutdownHandled = false;
+      isActive = true;
+    } catch (error) {
+      workerLogger.error('Failed to spawn retry worker', {
+        error: (error as Error).message,
+      });
+      for (const [, req] of retryQueue) {
+        req.reject(error as Error);
+      }
+    }
+  }
+
+  // Register handlers on initial channel
+  registerChannelHandlers(channel);
 
   // TX ID generator (use provided or default)
   const effectiveTxIdGenerator = txIdGenerator ?? defaultTxIdGenerator;
@@ -502,6 +658,22 @@ export async function createWorker<
       // Get timeout for this specific message type, falling back to WORKER_MESSAGE default
       const messageTimeout = getTimeout(type);
 
+      // Resolve maxAttempts from unexpectedShutdown config
+      let maxAttempts = 1;
+      if (unexpectedShutdown) {
+        const typeStrategy =
+          type in unexpectedShutdown
+            ? unexpectedShutdown[type as string]
+            : unexpectedShutdown;
+        if (
+          typeStrategy &&
+          'strategy' in typeStrategy &&
+          typeStrategy.strategy === 'retry'
+        ) {
+          maxAttempts = typeStrategy.attempts ?? 1;
+        }
+      }
+
       return new Promise((resolve, reject) => {
         // Set up timeout - this IS ref'd (keeps process alive intentionally)
         const timeoutId = setTimeout(() => {
@@ -518,6 +690,10 @@ export async function createWorker<
           resolve: resolve as (value: unknown) => void,
           reject,
           timeoutId,
+          type: type as string,
+          payload,
+          attempt: 1,
+          maxAttempts,
         });
 
         // Send request via driver channel

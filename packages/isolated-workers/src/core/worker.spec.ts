@@ -59,7 +59,10 @@ describe('createWorker', () => {
     });
 
     test('WorkerClient with ChildProcessCapabilities has reconnect methods', () => {
-      type Client = WorkerClient<Record<string, never>, ChildProcessCapabilities>;
+      type Client = WorkerClient<
+        Record<string, never>,
+        ChildProcessCapabilities
+      >;
 
       // disconnect and reconnect should be functions
       expectTypeOf<Client['disconnect']>().toBeFunction();
@@ -67,7 +70,10 @@ describe('createWorker', () => {
     });
 
     test('WorkerClient with WorkerThreadsCapabilities has never for reconnect methods', () => {
-      type Client = WorkerClient<Record<string, never>, WorkerThreadsCapabilities>;
+      type Client = WorkerClient<
+        Record<string, never>,
+        WorkerThreadsCapabilities
+      >;
 
       // disconnect and reconnect should be never
       expectTypeOf<Client['disconnect']>().toBeNever();
@@ -87,6 +93,7 @@ describe('createWorker', () => {
         onMessage: vi.fn(),
         onError: vi.fn(),
         onClose: vi.fn(),
+        onShutdown: vi.fn(),
         close: vi.fn().mockResolvedValue(undefined),
       };
 
@@ -115,6 +122,7 @@ describe('createWorker', () => {
         onMessage: vi.fn(),
         onError: vi.fn(),
         onClose: vi.fn(),
+        onShutdown: vi.fn(),
         close: vi.fn().mockResolvedValue(undefined),
       };
 
@@ -186,15 +194,25 @@ describe('createWorker', () => {
     });
 
     test('ChildProcessCapabilities is correctly typed', () => {
-      expectTypeOf<ChildProcessCapabilities['reconnect']>().toEqualTypeOf<true>();
+      expectTypeOf<
+        ChildProcessCapabilities['reconnect']
+      >().toEqualTypeOf<true>();
       expectTypeOf<ChildProcessCapabilities['detach']>().toEqualTypeOf<true>();
-      expectTypeOf<ChildProcessCapabilities['sharedMemory']>().toEqualTypeOf<false>();
+      expectTypeOf<
+        ChildProcessCapabilities['sharedMemory']
+      >().toEqualTypeOf<false>();
     });
 
     test('WorkerThreadsCapabilities is correctly typed', () => {
-      expectTypeOf<WorkerThreadsCapabilities['reconnect']>().toEqualTypeOf<false>();
-      expectTypeOf<WorkerThreadsCapabilities['detach']>().toEqualTypeOf<false>();
-      expectTypeOf<WorkerThreadsCapabilities['sharedMemory']>().toEqualTypeOf<true>();
+      expectTypeOf<
+        WorkerThreadsCapabilities['reconnect']
+      >().toEqualTypeOf<false>();
+      expectTypeOf<
+        WorkerThreadsCapabilities['detach']
+      >().toEqualTypeOf<false>();
+      expectTypeOf<
+        WorkerThreadsCapabilities['sharedMemory']
+      >().toEqualTypeOf<true>();
     });
   });
 });

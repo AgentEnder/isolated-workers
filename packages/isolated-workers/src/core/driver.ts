@@ -1,3 +1,5 @@
+import type { ShutdownReason } from '../types/config.js';
+
 /**
  * Driver abstraction for worker communication
  *
@@ -37,6 +39,8 @@ export interface DriverChannel {
   onError(handler: (error: Error) => void): void;
   /** Register a close handler */
   onClose(handler: () => void): void;
+  /** Register a shutdown handler */
+  onShutdown(handler: (reason: ShutdownReason) => void): void;
   /** Close the channel */
   close(): Promise<void>;
   /** Whether the channel is connected */

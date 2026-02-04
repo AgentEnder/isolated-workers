@@ -19,6 +19,7 @@ import type {
   DriverMessage,
   StartupData,
 } from '../../driver.js';
+import type { ShutdownReason } from '../../../types/config.js';
 
 /**
  * workerData key for startup data
@@ -97,6 +98,7 @@ export class WorkerThreadsChannel implements DriverChannel {
   private messageHandlers: Array<(message: DriverMessage) => void> = [];
   private errorHandlers: Array<(error: Error) => void> = [];
   private closeHandlers: Array<() => void> = [];
+  private shutdownHandlers: Array<(reason: ShutdownReason) => void> = [];
   private readonly serializer: Serializer;
 
   constructor(
@@ -151,17 +153,37 @@ export class WorkerThreadsChannel implements DriverChannel {
           });
         }
       });
+
+      this.shutdownHandlers.forEach((handler) => {
+        try {
+          handler({ type: 'error', error: err });
+        } catch (handlerErr) {
+          this._logger.error('Shutdown handler error', {
+            error: (handlerErr as Error).message,
+          });
+        }
+      });
     });
 
     // Set up exit handling
     this.worker.on('exit', (code: number) => {
       this._logger.debug('Worker exited', { code });
       this._isConnected = false;
+      const reason: ShutdownReason = { type: 'exit', code, signal: null };
       this.closeHandlers.forEach((handler) => {
         try {
           handler();
         } catch (err) {
           this._logger.error('Close handler error', {
+            error: (err as Error).message,
+          });
+        }
+      });
+      this.shutdownHandlers.forEach((handler) => {
+        try {
+          handler(reason);
+        } catch (err) {
+          this._logger.error('Shutdown handler error', {
             error: (err as Error).message,
           });
         }
@@ -206,6 +228,10 @@ export class WorkerThreadsChannel implements DriverChannel {
 
   onClose(handler: () => void): void {
     this.closeHandlers.push(handler);
+  }
+
+  onShutdown(handler: (reason: ShutdownReason) => void): void {
+    this.shutdownHandlers.push(handler);
   }
 
   async close(): Promise<void> {

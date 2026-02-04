@@ -27,6 +27,7 @@ import type {
   DetachCapability,
   StartupData,
 } from '../../driver.js';
+import type { ShutdownReason } from '../../../types/config.js';
 
 /**
  * Environment variable key for startup data
@@ -72,6 +73,9 @@ export interface ChildProcessDriverOptions {
 
   /** Override socket path (auto-generated if not provided) */
   socketPath?: string;
+
+  /** Shutdown handler callback */
+  onShutdown?: (reason: ShutdownReason) => void;
 }
 
 /**
@@ -108,6 +112,7 @@ export class ChildProcessChannel
   private _isConnected: boolean;
   private _detached: boolean;
   private readonly _logger: Logger;
+  private _onShutdown?: (reason: ShutdownReason) => void;
 
   constructor(
     private connection: Connection,
@@ -120,15 +125,39 @@ export class ChildProcessChannel
       maxDelay: number;
       serializer: Serializer;
     },
-    options: { detached: boolean; logger: Logger }
+    options: {
+      detached: boolean;
+      logger: Logger;
+      onShutdown?: (reason: ShutdownReason) => void;
+    }
   ) {
     this._isConnected = true;
     this._detached = options.detached;
     this._logger = options.logger;
+    this._onShutdown = options.onShutdown;
 
-    // Track connection state
     this.connection.onClose(() => {
       this._isConnected = false;
+    });
+
+    // Always register event listeners, but check if handler is set when event fires
+    // This allows the handler to be set after construction via onShutdown()
+    this.child.on('exit', (code, signal) => {
+      if (this._onShutdown) {
+        this._onShutdown({ type: 'exit', code, signal });
+      }
+    });
+
+    this.connection.onError((error) => {
+      if (this._onShutdown) {
+        this._onShutdown({ type: 'error', error });
+      }
+    });
+
+    this.connection.onClose(() => {
+      if (this._onShutdown) {
+        this._onShutdown({ type: 'close' });
+      }
     });
   }
 
@@ -161,6 +190,10 @@ export class ChildProcessChannel
 
   onClose(handler: () => void): void {
     this.connection.onClose(handler);
+  }
+
+  onShutdown(handler: (reason: ShutdownReason) => void): void {
+    this._onShutdown = handler;
   }
 
   async disconnect(): Promise<void> {
@@ -268,6 +301,7 @@ export async function spawnWorker(
     logLevel = 'error',
     logger: customLogger,
     socketPath: customSocketPath,
+    onShutdown,
   } = options;
 
   const logger = customLogger ?? createMetaLogger(undefined, logLevel);
@@ -338,6 +372,6 @@ export async function spawnWorker(
     child,
     socketPath,
     { timeout, maxRetries, retryDelay, maxDelay, serializer },
-    { detached, logger }
+    { detached, logger, onShutdown }
   );
 }

@@ -22,3 +22,14 @@ export type {
   TransactionIdGenerator,
   WithResult,
 } from './helpers.js';
+
+// Configuration types
+export type {
+  MessageType,
+  ShutdownReason,
+  UnexpectedShutdownStrategy,
+  UnexpectedShutdownConfig,
+} from './config.js';
+
+// Error types
+export { WorkerCrashedError } from './errors.js';
