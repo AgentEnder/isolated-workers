@@ -468,11 +468,11 @@ const server = await startWorkerServer<Messages>(handlers, options);
 
 ```typescript
 import type {
-  DefineMessages, // Define message contracts
+  DefineMessages, // Extract result type
+  Handlers, // Define message contracts
   MessageOf, // Extract message type
   PayloadOf, // Extract payload type
   ResultOf, // Extract result type
-  Handlers, // Handler map type
 } from 'isolated-workers';
 ```
 

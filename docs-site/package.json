@@ -60,6 +60,16 @@
           "^build",
           "^extract-docs"
         ]
+      },
+      "deploy": {
+        "dependsOn": [
+          "build"
+        ],
+        "executor": "nx-github-pages:deploy",
+        "options": {
+          "remote": "https://github.com/AgentEnder/isolated-workers.git",
+          "directory": "{projectRoot}/dist/client"
+        }
       }
     },
     "implicitDependencies": [
