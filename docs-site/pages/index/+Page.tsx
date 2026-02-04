@@ -1,3 +1,4 @@
+import svgUrl from '../../assets/logo.svg';
 import { CodePreview } from '../../components/CodePreview';
 import { FeatureCard } from '../../components/FeatureCard';
 import { Link } from '../../components/Link';
@@ -11,7 +12,7 @@ export default function Page() {
           {/* Logo */}
           <div className="flex justify-center mb-8">
             <img
-              src="/assets/logo.svg"
+              src={svgUrl}
               alt="Isolated Workers Logo"
               className="w-24 h-24 md:w-32 md:h-32"
             />
