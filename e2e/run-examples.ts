@@ -83,15 +83,23 @@ for (const { dir, meta } of examples) {
 
       // Check assertions (strip ANSI codes from output first)
       const cleanOutput = output.replace(/\u001b\[\d+m/g, '');
+      let assertionFailures = [];
       if (cmd.assertions) {
         for (const assertion of cmd.assertions) {
           if (!cleanOutput.includes(assertion.contains)) {
-            console.log(
+            assertionFailures.push(
               `  ❌ Assertion failed: output does not contain "${assertion.contains}"`
             );
-            results.failed++;
             continue;
           }
+        }
+        if (assertionFailures.length) {
+          console.log(`  ❌\t${label}`);
+          for (const failure of assertionFailures) {
+            console.log(failure);
+          }
+          results.failed++;
+          continue;
         }
       }
 
