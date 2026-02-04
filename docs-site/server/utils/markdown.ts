@@ -4,24 +4,22 @@ import rehypeStringify from 'rehype-stringify';
 import remarkGfm from 'remark-gfm';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
+import type { Plugin } from 'unified';
 import { unified } from 'unified';
 import { Literal, Node, Parent } from 'unist';
 import { visit } from 'unist-util-visit';
+import { applyBaseUrl } from '../../utils/base-url';
 import { parseLiquidTag, type LiquidTag } from './liquid-tags';
 import {
   remarkLiquidTags,
   type RemarkLiquidTagsOptions,
 } from './remark-liquid-tags';
+import type { ApiDocs, ApiExport } from './typedoc';
 
 // Note: Code linking is handled in segments.ts on highlighted HTML output,
 // not at the remark/markdown level (since raw code can't contain HTML links)
 
 export type { RemarkLiquidTagsOptions };
-
-// Re-export type for use in segments.ts
-import type { Plugin } from 'unified';
-import { applyBaseUrl } from '../../utils/base-url';
-import type { ApiDocs, ApiExport } from './typedoc';
 
 export interface ProcessMarkdownChunkOptions {
   liquidTags?: RemarkLiquidTagsOptions;
@@ -75,6 +73,25 @@ export const hydrateInlineCodeLinks: Plugin<
   };
 };
 
+export interface HtmlElementNode extends Node {
+  type: 'element';
+  tagName: string;
+  properties?: {
+    [prop: string]: unknown;
+  };
+  children?: Node[];
+}
+
+export const applyBaseUrlToLinks: Plugin<[]> = () => {
+  return (tree: Node) => {
+    visit(tree, 'element', (node: HtmlElementNode) => {
+      if (node.tagName === 'a' && typeof node.properties?.href === 'string') {
+        node.properties.href = applyBaseUrl(node.properties.href);
+      }
+    });
+  };
+};
+
 export async function processMarkdownChunk(
   nodes: RootContent[],
   options: ProcessMarkdownChunkOptions
@@ -100,6 +117,7 @@ export async function processMarkdownChunk(
   processor
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
+    .use(applyBaseUrlToLinks)
     .use(rehypeStringify, { allowDangerousHtml: true });
 
   const result = await processor.run(root);
