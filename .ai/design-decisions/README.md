@@ -15,6 +15,8 @@ This directory tracks key architectural and technical decisions made during the 
 | 007 | Enhanced Configuration System    | ✅ Accepted | 2026-01-30 |
 | 008 | Markdown Docs and Code Hunks     | ✅ Accepted | 2026-02-01 |
 | 009 | Driver Abstraction Pattern       | ✅ Accepted | 2026-02-01 |
+| 010 | Driver Server Symmetry           | ✅ Accepted | 2026-02-01 |
+| 011 | Unexpected Shutdown Handling    | ✅ Accepted | 2026-02-04 |
 
 ## Decision Template
 
