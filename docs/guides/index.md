@@ -26,6 +26,10 @@ Managing worker state, status checks, and graceful shutdown. Learn about state p
 
 Configure timeouts for worker startup, connection, and per-message-type operations. Essential for long-running tasks and responsive health checks.
 
+### [Shutdown Handling](/docs/guides/shutdown-handling)
+
+Configure how workers handle unexpected crashes (OOM, SIGKILL, hard crashes). Learn about crash detection, reject/retry strategies, and per-message-type overrides for handling pending operations.
+
 ### [Custom Serializers](/docs/guides/custom-serializers)
 
 Use custom serialization for binary formats like MessagePack, add compression, or implement encryption for sensitive data crossing process boundaries.
