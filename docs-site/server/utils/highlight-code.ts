@@ -1,8 +1,9 @@
 import {
   createHighlighter,
-  type Highlighter,
   type BundledLanguage,
+  type Highlighter,
 } from 'shiki';
+import { applyBaseUrl } from '../../utils/base-url';
 
 // Singleton highlighter for server-side use
 let highlighter: Highlighter | null = null;
@@ -84,7 +85,9 @@ function injectTypeLinks(
 
       const linkedText = textContent.replace(pattern, (typeName: string) => {
         const href = knownExports[typeName];
-        return `<a href="${href}" class="code-link">${typeName}</a>`;
+        return `<a href="${applyBaseUrl(
+          href
+        )}" class="code-link">${typeName}</a>`;
       });
       return `${openTag}${linkedText}${closeTag}`;
     }

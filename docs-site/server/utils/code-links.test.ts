@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
+  buildSymbolLinks,
   findLinkableSymbols,
   linkHighlightedCode,
-  buildSymbolLinks,
   type LinkableSymbol,
 } from './code-links';
 import type { ApiDocs } from './typedoc';
@@ -11,15 +11,24 @@ import type { ApiDocs } from './typedoc';
 const mockApiDocs: ApiDocs = {
   allExports: [
     { name: 'createWorker', path: '/api/createWorker', kind: 'function' },
-    { name: 'startWorkerServer', path: '/api/startWorkerServer', kind: 'function' },
+    {
+      name: 'startWorkerServer',
+      path: '/api/startWorkerServer',
+      kind: 'function',
+    },
     { name: 'Middleware', path: '/api/Middleware', kind: 'type' },
     { name: 'Handlers', path: '/api/Handlers', kind: 'type' },
-    { name: 'WorkerThreadsDriver', path: '/api/WorkerThreadsDriver', kind: 'variable' },
+    {
+      name: 'WorkerThreadsDriver',
+      path: '/api/WorkerThreadsDriver',
+      kind: 'variable',
+    },
     { name: 'DefineMessages', path: '/api/DefineMessages', kind: 'type' },
   ],
 } as ApiDocs;
 
 const apiSymbols = new Set(mockApiDocs.allExports.map((e) => e.name));
+import.meta.env.BASE_URL = '';
 
 describe('findLinkableSymbols', () => {
   describe('import statements', () => {
@@ -277,7 +286,9 @@ const worker = await createWorker({ script: './w.ts' });
     const symbols = buildSymbolLinks(source, mockApiDocs);
 
     // Should find createWorker twice (import + call)
-    const createWorkerSymbols = symbols.filter((s) => s.name === 'createWorker');
+    const createWorkerSymbols = symbols.filter(
+      (s) => s.name === 'createWorker'
+    );
     expect(createWorkerSymbols.length).toBeGreaterThanOrEqual(2);
 
     // Should find Middleware twice (import + type annotation)

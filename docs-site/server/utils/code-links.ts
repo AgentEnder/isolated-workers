@@ -6,11 +6,12 @@
  * identify identifiers while excluding comments and string literals.
  */
 
-import ts from 'typescript';
-import type { Element, Text, ElementContent } from 'hast';
+import type { Element, ElementContent, Text } from 'hast';
 import { fromHtml } from 'hast-util-from-html';
 import { toHtml } from 'hast-util-to-html';
+import ts from 'typescript';
 import { visit } from 'unist-util-visit';
+import { applyBaseUrl } from '../../utils/base-url';
 import type { ApiDocs, ApiExport } from './typedoc';
 
 /**
@@ -199,7 +200,7 @@ export function linkHighlightedCode(
             type: 'element',
             tagName: 'a',
             properties: {
-              href: apiExport.path,
+              href: applyBaseUrl(apiExport.path),
               className: ['code-link'],
               title: `View ${apiExport.name} documentation`,
             },
@@ -226,7 +227,11 @@ export function linkHighlightedCode(
 
       // Replace this node with the new nodes
       const parentElement = parent as Element;
-      parentElement.children.splice(index, 1, ...(newNodes as ElementContent[]));
+      parentElement.children.splice(
+        index,
+        1,
+        ...(newNodes as ElementContent[])
+      );
     }
   });
 
@@ -306,25 +311,4 @@ export function extractImports(code: string): ImportInfo[] {
   visit(sourceFile);
 
   return imports;
-}
-
-/**
- * @deprecated Use linkHighlightedCode instead
- */
-export function linkSymbols(
-  code: string,
-  symbolLinks: Map<string, { path: string; name: string }>
-): string {
-  // This is a simplified version for backward compatibility
-  let result = code;
-
-  for (const [symbol, link] of symbolLinks) {
-    const regex = new RegExp(`\\b${symbol}\\b`, 'g');
-    result = result.replace(
-      regex,
-      `<a href="${link.path}" class="code-link" title="View ${link.name} documentation">${link.name}</a>`
-    );
-  }
-
-  return result;
 }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { navigate } from 'vike/client/router';
 import { applyBaseUrl } from '../utils/base-url';
 
 interface SearchResult {
@@ -191,7 +192,7 @@ export function PagefindSearch() {
     setIsOpen(false);
     setQuery('');
     setResults([]);
-    window.location.href = result.url;
+    navigate(applyBaseUrl(result.url));
   };
 
   // Scroll selected result into view

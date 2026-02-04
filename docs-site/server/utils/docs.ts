@@ -82,7 +82,6 @@ export async function scanDocs(
       // Determine URL path (frontmatter override or derived)
       const derivedPath = filePathToUrlPath(filePath, docsRoot);
       const urlPath = frontmatter.path || derivedPath;
-      console.log('Found docs page:', urlPath);
 
       docs[urlPath] = {
         path: urlPath,

@@ -20,6 +20,7 @@ export type { RemarkLiquidTagsOptions };
 
 // Re-export type for use in segments.ts
 import type { Plugin } from 'unified';
+import { applyBaseUrl } from '../../utils/base-url';
 import type { ApiDocs, ApiExport } from './typedoc';
 
 export interface ProcessMarkdownChunkOptions {
@@ -60,7 +61,9 @@ export const hydrateInlineCodeLinks: Plugin<
           type: 'html',
           value: `<code class="inline-code">${
             apiDoc
-              ? `<a class="code-link" href=${apiDoc.path}>${node.value}</a>`
+              ? `<a class="code-link" href=${applyBaseUrl(apiDoc.path)}>${
+                  node.value
+                }</a>`
               : node.value
           }</code>`,
         };

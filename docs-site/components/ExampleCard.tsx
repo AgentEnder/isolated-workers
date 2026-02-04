@@ -1,3 +1,5 @@
+import { Link } from './Link';
+
 interface ExampleCardProps {
   id: string;
   title: string;
@@ -9,7 +11,7 @@ export function ExampleCard({ id, title, description }: ExampleCardProps) {
   const badge = getDifficultyBadge(difficulty);
 
   return (
-    <a
+    <Link
       href={`/examples/${id}`}
       className="block group p-6 rounded-2xl bg-tertiary/30 border border-tertiary/50 hover:border-neon-cyan/50 transition-all duration-300 hover:shadow-neon-sm border-glow"
     >
@@ -37,7 +39,7 @@ export function ExampleCard({ id, title, description }: ExampleCardProps) {
           />
         </svg>
       </div>
-    </a>
+    </Link>
   );
 }
 

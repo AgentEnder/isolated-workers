@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { highlightCodeWithLinks } from './highlight-code';
+
+import.meta.env.BASE_URL = '/';
 
 describe('highlightCodeWithLinks', () => {
   const knownExports: Record<string, string> = {
@@ -19,7 +21,11 @@ describe('highlightCodeWithLinks', () => {
 
   it('injects links for known exports', async () => {
     const code = 'const worker = createWorker();';
-    const result = await highlightCodeWithLinks(code, 'typescript', knownExports);
+    const result = await highlightCodeWithLinks(
+      code,
+      'typescript',
+      knownExports
+    );
 
     expect(result.html).toContain('href="/api/create-worker"');
     expect(result.html).toContain('class="code-link"');
@@ -28,7 +34,11 @@ describe('highlightCodeWithLinks', () => {
 
   it('injects multiple links', async () => {
     const code = `import { createWorker, Worker } from 'isolated-workers';`;
-    const result = await highlightCodeWithLinks(code, 'typescript', knownExports);
+    const result = await highlightCodeWithLinks(
+      code,
+      'typescript',
+      knownExports
+    );
 
     expect(result.html).toContain('href="/api/create-worker"');
     expect(result.html).toContain('href="/api/worker"');
@@ -36,7 +46,11 @@ describe('highlightCodeWithLinks', () => {
 
   it('does not link unknown identifiers', async () => {
     const code = 'const foo = bar();';
-    const result = await highlightCodeWithLinks(code, 'typescript', knownExports);
+    const result = await highlightCodeWithLinks(
+      code,
+      'typescript',
+      knownExports
+    );
 
     expect(result.html).not.toContain('href=');
     expect(result.html).not.toContain('code-link');
@@ -46,7 +60,11 @@ describe('highlightCodeWithLinks', () => {
     const code = `const worker = await createWorker({
   script: './worker.js',
 });`;
-    const result = await highlightCodeWithLinks(code, 'typescript', knownExports);
+    const result = await highlightCodeWithLinks(
+      code,
+      'typescript',
+      knownExports
+    );
 
     expect(result.html).toContain('href="/api/create-worker"');
     expect(result.code).toBe(code);
