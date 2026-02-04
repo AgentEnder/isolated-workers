@@ -185,7 +185,7 @@ function TopBar({ logoUrl, onMenuClick, isMobile }: TopBarProps) {
         {isMobile && (
           <button
             onClick={onMenuClick}
-            className="md:hidden p-2 rounded-lg hover:bg-neon-cyan/10 border border-transparent hover:border-neon-cyan/30 transition-all"
+            className="lg:hidden p-2 rounded-lg hover:bg-neon-cyan/10 border border-transparent hover:border-neon-cyan/30 transition-all"
             aria-label="Toggle menu"
           >
             <svg
