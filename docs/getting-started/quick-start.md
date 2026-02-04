@@ -27,7 +27,6 @@ First, define the message contract between your host and worker:
 import { createWorker } from 'isolated-workers';
 
 type WorkerMessages = DefineMessages<{
-  // {% typedoc export:types:DefineMessages %} defines the message contract
   add: {
     payload: { a: number; b: number };
     result: { sum: number };
