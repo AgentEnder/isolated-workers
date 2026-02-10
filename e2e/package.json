@@ -2,10 +2,13 @@
   "name": "isolated-workers-e2e",
   "private": true,
   "dependencies": {
+    "isolated-workers": "workspace:*",
     "yaml": "^2.3.4"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "tsx": "catalog:"
+    "tsx": "catalog:",
+    "vitest": "catalog:",
+    "typescript": "catalog:"
   }
 }
