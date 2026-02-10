@@ -2,9 +2,19 @@
   "name": "e2e",
   "implicitDependencies": ["examples", "isolated-workers"],
   "targets": {
-    "e2e": {
+    "e2e-examples": {
       "command": "tsx {projectRoot}/run-examples.ts",
       "dependsOn": ["isolated-workers:build"]
+    },
+    "e2e-vitest": {
+      "command": "vitest run --config vitest.config.ts",
+      "options": {
+        "cwd": "{projectRoot}"
+      },
+      "dependsOn": ["isolated-workers:build"]
+    },
+    "e2e": {
+      "dependsOn": ["e2e-vitest", "e2e-examples"]
     }
   }
 }

@@ -2,7 +2,11 @@
   "name": "@isolated-workers/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "e2e": "nx run-many -t e2e",
+    "e2e:examples": "nx run-many -t e2e:examples",
+    "e2e:isolation": "nx run-many -t e2e:isolation"
+  },
   "private": true,
   "devDependencies": {
     "nx-github-pages": "catalog:",
