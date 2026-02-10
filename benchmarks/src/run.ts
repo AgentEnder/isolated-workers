@@ -21,6 +21,7 @@ import {
 } from 'flexi-bench';
 import { createWorker, type WorkerClient } from 'isolated-workers';
 import { WorkerThreadsDriver } from 'isolated-workers/drivers/worker-threads';
+import { HttpDriver } from 'isolated-workers/drivers/http';
 import { platform } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -39,9 +40,14 @@ type AnyDriver = any;
  * Get the driver based on the BENCH_DRIVER environment variable
  */
 function getDriver(): AnyDriver {
-  return process.env.BENCH_DRIVER === 'worker_threads'
-    ? WorkerThreadsDriver
-    : undefined;
+  switch (process.env.BENCH_DRIVER) {
+    case 'worker_threads':
+      return WorkerThreadsDriver;
+    case 'http':
+      return HttpDriver;
+    default:
+      return undefined;
+  }
 }
 
 /**
@@ -75,6 +81,7 @@ const driverVariations = [
     'BENCH_DRIVER',
     'worker_threads'
   ),
+  new Variation('http').withEnvironmentVariable('BENCH_DRIVER', 'http'),
 ];
 
 console.log('╔════════════════════════════════════════════════════════════╗');
