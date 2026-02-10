@@ -18,8 +18,8 @@ This directory contains the phased implementation plans for the isolated-workers
 | 10  | [TypeDoc API Reference](./10-typedoc-api-reference.md)                                  | ✅ Completed | Dynamic API docs from TypeDoc JSON                  |
 | 11  | [TypeDoc with Liquid Tags Integration](./11-typedoc-liquid-integration.md)                          | 📝 Draft     | Accurate type references via typedoc liquid tags  |
 | 12  | [Unexpected Shutdown Handling](./12-unexpected-shutdown-handling.md)                          | ✅ Completed | Crash detection and configurable recovery         |
-| 10  | [Documentation Accuracy Fixes](./10-documentation-accuracy-fixes.md)                       | ✅ Completed | Fix all accuracy issues in /docs/ folder       |
-| 10  | [TypeDoc API Reference](./10-typedoc-api-reference.md)                                    | 🔄 In Progress | Dynamic API docs from TypeDoc JSON                  |
+| 13  | [Documentation Accuracy Fixes](./10-documentation-accuracy-fixes.md)                       | ✅ Completed | Fix all accuracy issues in /docs/ folder       |
+| 14  | [E2E Isolation Tests](./e2e-isolation-tests.md)                                        | 🔄 In Progress | Global and module isolation tests with Vite           |
 
 ## Status Legend
 
@@ -30,9 +30,29 @@ This directory contains the phased implementation plans for the isolated-workers
 
 ## Current Focus
 
-**Recently Completed**: 12 - Unexpected Shutdown Handling
+**Recently Completed**: 14 - E2E Isolation Tests
 
-**Status**: ✅ Implementation complete
+**Status**: 🔄 In Progress
+
+**Summary**: E2E isolation tests implemented with:
+- Vitest configuration for Node environment with parallel execution
+- 5 worker fixtures for isolation testing (global, module, require hooks, env, shared module)
+- 5 test suites covering global, module, require hook, environment variable, and concurrent isolation
+- 18/34 tests passing (all child_process driver tests)
+- Updated e2e targets to include both examples and isolation tests
+- Added root scripts for running e2e tests
+
+**Known Issue**: WorkerThreadsDriver tests failing due to tsx bootstrapping conflict (ERR_REQUIRE_CYCLE_MODULE). This is an infrastructure issue in the driver, not an isolation failure.
+
+**Validated Isolation** (child_process driver):
+- ✅ Global properties isolated between workers
+- ✅ Module-level state isolated (each worker has independent module instance)
+- ✅ Require.extensions hooks isolated
+- ✅ Environment variables isolated
+- ✅ Spawn-time environment variables respected
+- ✅ Concurrent workers maintain isolation (tested with 10-20 workers)
+
+**Previously Completed**: 12 - Unexpected Shutdown Handling
 
 **Summary**: Crash detection and configurable recovery implemented with:
 - ShutdownReason discriminated union (exit/error/close)
@@ -43,20 +63,6 @@ This directory contains the phased implementation plans for the isolated-workers
 - Retry worker spawning with handler re-registration
 - Both child_process and worker_threads drivers supported
 - Comprehensive documentation in docs/guides/shutdown-handling.md
-
-**Previously Completed**: 09 - Driver Abstraction
-
-**Summary**: Driver abstraction pattern implemented with:
-- Core driver interfaces and types
-- ChildProcessDriver (socket-based IPC)
-- WorkerThreadsDriver (MessagePort-based IPC)
-- Auto-detection in startWorkerServer
-- Type-safe capability narrowing
-- Package entry points for tree-shaking
-
-**Also In Progress**: Phase 10 - TypeDoc with Liquid Tags Integration (📝 Draft)
-
-**Summary**: Add liquid tag support for type-safe API references in markdown documentation
 
 ## Plan Dependencies
 
