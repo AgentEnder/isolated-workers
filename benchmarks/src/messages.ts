@@ -31,4 +31,18 @@ export type BenchmarkMessages = DefineMessages<{
     payload: { iterations: number };
     result: { result: number; duration: number };
   };
+
+  /**
+   * Get worker memory usage stats
+   */
+  memoryUsage: {
+    payload: Record<string, never>;
+    result: {
+      rss: number;
+      heapTotal: number;
+      heapUsed: number;
+      external: number;
+      arrayBuffers: number;
+    };
+  };
 }>;

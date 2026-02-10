@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "bench": "tsx src/run.ts",
-    "bench:drivers": "tsx src/driver-comparison.ts",
-    "bench:throughput": "tsx src/throughput.ts",
-    "bench:latency": "tsx src/latency.ts"
+    "bench:memory": "tsx src/memory.ts"
   },
   "dependencies": {
     "flexi-bench": "0.2.0",

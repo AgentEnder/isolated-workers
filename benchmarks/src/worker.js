@@ -33,6 +33,17 @@ const handlers = {
     const duration = performance.now() - start;
     return { result, duration };
   },
+
+  memoryUsage: async () => {
+    const mem = process.memoryUsage();
+    return {
+      rss: mem.rss,
+      heapTotal: mem.heapTotal,
+      heapUsed: mem.heapUsed,
+      external: mem.external,
+      arrayBuffers: mem.arrayBuffers,
+    };
+  },
 };
 
 // Auto-detect driver based on context
@@ -46,9 +57,30 @@ async function detectAndStart() {
     await startWorkerServer(handlers, {
       driver: WorkerThreadsDriver,
     });
+  } else if (detectHttpDriver()) {
+    // We're in an HTTP driver context
+    //nx-ignore-next-line
+    const { HttpDriver } = await import('isolated-workers/drivers/http');
+    await startWorkerServer(handlers, {
+      driver: HttpDriver,
+    });
   } else {
     // We're in a child process context (default)
     await startWorkerServer(handlers);
+  }
+}
+
+/**
+ * Check if the startup data indicates the HTTP driver
+ */
+function detectHttpDriver() {
+  const envData = process.env.ISOLATED_WORKERS_STARTUP_DATA;
+  if (!envData) return false;
+  try {
+    const data = JSON.parse(envData);
+    return data.driver === 'http';
+  } catch {
+    return false;
   }
 }
 
