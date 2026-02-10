@@ -7,6 +7,8 @@
  * @packageDocumentation
  */
 
+import type { WorkerOptions } from 'node:worker_threads';
+import type { ShutdownReason } from '../../../types/config.js';
 import {
   createMetaLogger,
   type Logger,
@@ -19,7 +21,6 @@ import type {
   DriverMessage,
   StartupData,
 } from '../../driver.js';
-import type { ShutdownReason } from '../../../types/config.js';
 
 /**
  * workerData key for startup data
@@ -37,42 +38,9 @@ export interface WorkerThreadsStartupData extends StartupData {
 }
 
 /**
- * Resource limits for worker threads
- */
-export interface WorkerThreadsResourceLimits {
-  /** Maximum size of the young generation heap in MB */
-  maxYoungGenerationSizeMb?: number;
-  /** Maximum size of the old generation heap in MB */
-  maxOldGenerationSizeMb?: number;
-  /** Size of the pre-allocated code range in MB */
-  codeRangeSizeMb?: number;
-  /** Default stack size for the worker thread in KB */
-  stackSizeMb?: number;
-}
-
-/**
  * Options for worker threads driver spawn
  */
-export interface WorkerThreadsDriverOptions {
-  /** Additional data to pass to worker via workerData */
-  workerData?: unknown;
-
-  /** Resource limits for the worker thread */
-  resourceLimits?: WorkerThreadsResourceLimits;
-
-  /** List of transferable objects to transfer to worker */
-  transferList?: ArrayBuffer[];
-
-  /** If true, script is treated as JavaScript code instead of a path */
-  eval?: boolean;
-
-  /**
-   * List of node CLI options passed to the worker.
-   * Useful for loading TypeScript files via tsx:
-   * @example ['--import', 'tsx']
-   */
-  execArgv?: string[];
-
+export type WorkerThreadsDriverOptions = WorkerOptions & {
   /** Custom serializer (must match worker side) */
   serializer?: Serializer;
 
@@ -81,10 +49,7 @@ export interface WorkerThreadsDriverOptions {
 
   /** Custom logger instance */
   logger?: Logger;
-
-  /** Arguments to pass to the worker script */
-  argv?: string[];
-}
+};
 
 /**
  * Channel implementation for worker threads driver.
@@ -332,30 +297,85 @@ export async function spawnWorker(
 
   const argv = options.argv ?? [];
 
-  // Determine if we need to bootstrap tsx for TypeScript files
-  // ESM loaders don't work properly in worker_threads via execArgv,
-  // so we use eval to register tsx programmatically before importing the script
-  let scriptOrCodeToRun: string;
+  // For TypeScript files, use tsx's tsImport() via eval to load the worker script.
+  // tsImport handles the full transitive dependency chain without requiring
+  // global ESM loader hook registration (which causes ERR_REQUIRE_CYCLE_MODULE).
+  //
+  // We strip inherited tsx --import flags from execArgv because they cause
+  // require cycle errors in worker_threads, but keep --require flags since they
+  // provide CJS hooks that tsImport may need for resolving dependencies.
+  //
+  // Requires tsx as an optional peer dependency.
+  let scriptOrCodeToRun = script;
   let useEval = evalCode;
 
   if (!evalCode && script.endsWith('.ts')) {
-    // Convert file path to URL for dynamic import
+    // Strip only inherited tsx --import flags (which cause cycles in worker_threads).
+    // Keep tsx --require flags (CJS hooks that complement tsImport).
+    const tsxPattern = /[\\/]tsx[\\/]/;
+    const filtered: string[] = [];
+    for (let i = 0; i < execArgv.length; i++) {
+      const arg = execArgv[i];
+      if (arg === '--import' && i + 1 < execArgv.length && tsxPattern.test(execArgv[i + 1])) {
+        i++; // skip the flag's value too
+        continue;
+      }
+      if (arg.startsWith('--import=') && tsxPattern.test(arg)) {
+        continue;
+      }
+      filtered.push(arg);
+    }
+    execArgv.length = 0;
+    execArgv.push(...filtered);
+
+    // Ensure tsx/cjs is in --require for CJS hook support
+    const hasTsxCjsRequire = execArgv.some(
+      (arg, i) => {
+        if (arg === '--require' && i + 1 < execArgv.length) {
+          return execArgv[i + 1] === 'tsx/cjs' || tsxPattern.test(execArgv[i + 1]);
+        }
+        return arg.startsWith('--require=') && (arg.includes('tsx/cjs') || tsxPattern.test(arg));
+      }
+    );
+
+    const createRequire = (await import('node:module')).default.createRequire(import.meta.url);
+
+    if (!hasTsxCjsRequire) {
+      try {
+        const tsxCjsPath = createRequire.resolve('tsx/cjs');
+        execArgv.push('--require', tsxCjsPath);
+      } catch {
+        throw new Error(
+          'TypeScript worker scripts require tsx as a dependency. ' +
+            'Install tsx: npm install -D tsx'
+        );
+      }
+    }
+
+    // Verify tsx/esm/api is available for tsImport
+    try {
+      createRequire.resolve('tsx/esm/api');
+    } catch {
+      throw new Error(
+        'TypeScript worker scripts require tsx as a dependency. ' +
+          'Install tsx: npm install -D tsx'
+      );
+    }
+
+    // Build eval code that uses tsImport to load the .ts worker script.
+    // tsImport resolves .ts files and their transitive imports without
+    // needing global ESM loader registration.
     const { pathToFileURL } = await import('node:url');
     const scriptUrl = pathToFileURL(script).href;
 
-    // Bootstrap code that registers tsx and imports the worker script
     scriptOrCodeToRun = `
-      import('tsx/esm/api').then(({ register }) => {
-        register();
-        return import('${scriptUrl}');
-      }).catch(err => {
-        console.error('[Worker] Failed to bootstrap tsx:', err);
+      const { tsImport } = require("tsx/esm/api");
+      tsImport("${scriptUrl}", __filename).catch(err => {
+        console.error("[Worker] Failed to bootstrap tsx:", err);
         process.exit(1);
       });
     `;
     useEval = true;
-  } else {
-    scriptOrCodeToRun = script;
   }
 
   logger.info('Spawning worker thread', {

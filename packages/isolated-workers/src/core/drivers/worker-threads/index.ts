@@ -10,11 +10,10 @@ export { WorkerThreadsDriver, type WorkerThreadsDriverType } from './driver.js';
 // Host-side exports (for advanced usage)
 export {
   spawnWorker,
-  WorkerThreadsChannel,
   STARTUP_DATA_WORKER_KEY,
+  WorkerThreadsChannel,
   type WorkerThreadsDriverOptions,
   type WorkerThreadsStartupData,
-  type WorkerThreadsResourceLimits,
 } from './host.js';
 
 // Server-side exports (for advanced usage)

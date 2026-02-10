@@ -4,7 +4,7 @@
  * @packageDocumentation
  */
 
-import { type SpawnOptions } from 'child_process';
+import { type ForkOptions } from 'child_process';
 import type {
   AnyMessage,
   MessageDefs,
@@ -146,7 +146,7 @@ export interface WorkerOptions<
 
   /** Worker lifecycle options */
   detached?: boolean; // Detach worker process (default: false)
-  spawnOptions?: SpawnOptions; // Additional child process options
+  spawnOptions?: ForkOptions; // Additional fork options for child_process driver
 
   /**
    * Timeout configuration for worker operations.
