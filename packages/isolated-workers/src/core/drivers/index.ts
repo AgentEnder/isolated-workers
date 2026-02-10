@@ -11,47 +11,61 @@
 // Re-export driver types and utilities from parent
 export {
   defineWorkerDriver,
-  type Driver,
-  type DriverChannel,
-  type DriverMessage,
-  type DriverCapabilities,
   type ChildProcessCapabilities,
-  type WorkerThreadsCapabilities,
-  type ReconnectCapability,
   type DetachCapability,
+  type Driver,
+  type DriverCapabilities,
+  type DriverChannel,
+  type DriverConfig,
+  type DriverMessage,
+  type HttpCapabilities,
+  type InferCapabilities,
+  type ReconnectCapability,
   type ServerChannel,
   type ServerOptions,
   type StartupData,
-  type InferCapabilities,
-  type DriverConfig,
+  type WorkerThreadsCapabilities,
 } from '../driver.js';
 
 // Child process driver
 export {
-  ChildProcessDriver,
   ChildProcessChannel,
+  ChildProcessDriver,
   ChildProcessServerChannel,
-  STARTUP_DATA_ENV_KEY,
-  encodeStartupData,
   DEFAULT_SERVER_CONNECT_TIMEOUT,
-  type ChildProcessDriverType,
+  encodeStartupData,
+  STARTUP_DATA_ENV_KEY,
   type ChildProcessDriverOptions,
-  type ChildProcessStartupData,
+  type ChildProcessDriverType,
   type ResponseFunction as ChildProcessResponseFunction,
+  type ChildProcessStartupData,
 } from './child-process/index.js';
 
 // Worker threads driver
 export {
-  WorkerThreadsDriver,
-  WorkerThreadsChannel,
-  WorkerThreadsServerChannel,
   STARTUP_DATA_WORKER_KEY,
-  type WorkerThreadsDriverType,
+  WorkerThreadsChannel,
+  WorkerThreadsDriver,
+  WorkerThreadsServerChannel,
   type WorkerThreadsDriverOptions,
-  type WorkerThreadsStartupData,
-  type WorkerThreadsResourceLimits,
+  type WorkerThreadsDriverType,
   type ResponseFunction as WorkerThreadsResponseFunction,
+  type WorkerThreadsStartupData,
 } from './worker-threads/index.js';
+
+// HTTP driver
+export {
+  HttpChannel,
+  HttpDriver,
+  HttpServerChannel,
+  DEFAULT_SERVER_CONNECT_TIMEOUT as HTTP_DEFAULT_SERVER_CONNECT_TIMEOUT,
+  encodeStartupData as httpEncodeStartupData,
+  STARTUP_DATA_ENV_KEY as HTTP_STARTUP_DATA_ENV_KEY,
+  type HttpDriverOptions,
+  type HttpDriverType,
+  type ResponseFunction as HttpResponseFunction,
+  type HttpStartupData,
+} from './http/index.js';
 
 /**
  * Load the default driver (child_process) via dynamic import.

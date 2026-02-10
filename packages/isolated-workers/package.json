@@ -37,6 +37,11 @@
       "import": "./dist/core/drivers/worker-threads/index.js",
       "types": "./dist/core/drivers/worker-threads/index.d.ts",
       "default": "./dist/core/drivers/worker-threads/index.js"
+    },
+    "./drivers/http": {
+      "import": "./dist/core/drivers/http/index.js",
+      "types": "./dist/core/drivers/http/index.d.ts",
+      "default": "./dist/core/drivers/http/index.js"
     }
   },
   "scripts": {
@@ -48,6 +53,14 @@
     "extract-docs": "typedoc --options typedoc.json"
   },
   "dependencies": {},
+  "peerDependencies": {
+    "tsx": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "tsx": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@types/node": "catalog:",
     "@typescript-eslint/eslint-plugin": "catalog:",
