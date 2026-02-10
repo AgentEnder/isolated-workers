@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import { fork, type ChildProcess, type SpawnOptions } from 'child_process';
+import { fork, type ChildProcess, type ForkOptions } from 'child_process';
 import type { Serializer } from '../../../utils/serializer.js';
 import { defaultSerializer } from '../../../utils/serializer.js';
 import {
@@ -44,8 +44,8 @@ export interface ChildProcessDriverOptions {
   /** Whether to detach the worker process */
   detached?: boolean;
 
-  /** Additional spawn options */
-  spawnOptions?: SpawnOptions;
+  /** Additional spawn options (ForkOptions for child_process) */
+  spawnOptions?: ForkOptions;
 
   /** Custom serializer (must match worker side) */
   serializer?: Serializer;
