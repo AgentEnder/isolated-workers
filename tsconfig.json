@@ -3,8 +3,10 @@
   "compileOnSave": false,
   "files": [],
   "references": [
-    {
-      "path": "./type-tests"
-    }
+    { "path": "./packages/isolated-workers" },
+    { "path": "./type-tests" },
+    { "path": "./examples" },
+    { "path": "./benchmarks" },
+    { "path": "./e2e" }
   ]
 }

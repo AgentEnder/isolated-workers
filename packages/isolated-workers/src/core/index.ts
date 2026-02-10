@@ -5,64 +5,63 @@
  */
 
 export {
-  type MiddlewareDirection,
-  type MiddlewareContext,
-  type TypedMessage,
-  type TypedResult,
-  type MessageHandler,
-  sendMessage,
-  sendError,
   createMessageHandler,
   createRequest,
   createResponse,
-  isResultMessage,
-  isErrorMessage,
   defaultTxIdGenerator,
+  isErrorMessage,
+  isResultMessage,
+  sendError,
+  sendMessage,
+  type MessageHandler,
+  type MiddlewareContext,
+  type MiddlewareDirection,
+  type TypedMessage,
+  type TypedResult,
 } from './messaging.js';
 
 export {
-  type ConnectionOptions,
-  type Connection,
   createConnection,
+  type Connection,
+  type ConnectionOptions,
 } from './connection.js';
 
 export {
-  type BuiltInTimeoutKey,
-  type TimeoutConfig,
-  type WorkerOptions,
-  type WorkerClient,
-  type DriverOptionsFor,
-  DEFAULT_STARTUP_TIMEOUT,
-  DEFAULT_SERVER_CONNECT_TIMEOUT,
-  DEFAULT_MESSAGE_TIMEOUT,
   createWorker,
+  DEFAULT_MESSAGE_TIMEOUT,
+  DEFAULT_SERVER_CONNECT_TIMEOUT,
+  DEFAULT_STARTUP_TIMEOUT,
   shutdownWorker,
+  type BuiltInTimeoutKey,
+  type DriverOptionsFor,
+  type TimeoutConfig,
+  type WorkerClient,
+  type WorkerOptions,
 } from './worker.js';
 
 export {
+  startWorkerServer,
+  type ServerDriver,
   type WorkerHandler,
   type WorkerHandlers,
-  type WorkerServerOptions,
-  type ServerDriver,
   type WorkerServer,
-  startWorkerServer,
+  type WorkerServerOptions,
 } from './worker-server.js';
 
 // Driver types (re-exported from driver.ts)
 export type {
-  ServerChannel,
-  ServerOptions,
-  ChildProcessDriverOptions,
-  WorkerThreadsDriverOptions,
-  WorkerThreadsResourceLimits,
-} from './drivers/index.js';
-export type {
+  ChildProcessCapabilities,
+  DetachCapability,
   Driver,
+  DriverCapabilities,
   DriverChannel,
   DriverMessage,
-  DriverCapabilities,
-  ChildProcessCapabilities,
-  WorkerThreadsCapabilities,
   ReconnectCapability,
-  DetachCapability,
+  WorkerThreadsCapabilities,
 } from './driver.js';
+export type {
+  ChildProcessDriverOptions,
+  ServerChannel,
+  ServerOptions,
+  WorkerThreadsDriverOptions,
+} from './drivers/index.js';

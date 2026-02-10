@@ -127,6 +127,20 @@ export interface WorkerThreadsCapabilities extends DriverCapabilities {
 }
 
 /**
+ * Capability type for HTTP driver.
+ *
+ * HTTP workers support reconnection and detaching (same as child_process)
+ * but cannot use SharedArrayBuffer across the HTTP boundary.
+ *
+ * @category Drivers
+ */
+export interface HttpCapabilities extends DriverCapabilities {
+  reconnect: true;
+  detach: true;
+  sharedMemory: false;
+}
+
+/**
  * Reconnect capability mixin.
  *
  * Channels that support reconnection implement this interface
