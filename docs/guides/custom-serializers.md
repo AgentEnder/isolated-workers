@@ -38,7 +38,7 @@ class MySerializer extends Serializer {
 
 Here's a serializer that wraps messages with metadata for debugging:
 
-{% example custom-serializer:serializer.ts#serializer-class %}
+<%= example('custom-serializer').region('serializer-class') %>
 
 ## Using Custom Serializers
 
@@ -46,11 +46,11 @@ Here's a serializer that wraps messages with metadata for debugging:
 
 On the host:
 
-{% example custom-serializer:host.ts#create-worker-with-serializer %}
+<%= example('custom-serializer').region('create-worker-with-serializer') %>
 
 On the worker:
 
-{% example custom-serializer:worker.ts#start-worker-with-serializer %}
+<%= example('custom-serializer').region('start-worker-with-serializer') %>
 
 ## Use Cases
 
@@ -161,5 +161,5 @@ export const serializer = new (class extends Serializer { ... })();
 
 ## See Also
 
-- {% example-link custom-serializer %} - Complete custom serializer example
+- [<%= example('custom-serializer').title %>](/examples/custom-serializer) - Complete custom serializer example
 - [Error Handling](/docs/guides/error-handling) - How errors are serialized

@@ -40,7 +40,7 @@ Workers maintain state across messages. Define variables at the module level in 
 
 ### Can I have multiple workers?
 
-> Yes, call **{% typedoc export:createWorker %}** multiple times to spawn multiple worker processes. Each worker is independent with its own state and message queue. This is useful for parallel processing or running different worker types.
+> Yes, call **createWorker** multiple times to spawn multiple worker processes. Each worker is independent with its own state and message queue. This is useful for parallel processing or running different worker types.
 
 ```typescript
 import { createWorker } from 'isolated-workers';

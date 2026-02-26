@@ -455,5 +455,5 @@ const customTxGen: TransactionIdGenerator<Messages> = (message) => {
 
 - [Middleware](/docs/guides/middleware) - Using middleware for message inspection
 - [Error Handling](/docs/guides/error-handling) - Type-safe error propagation
-- {% example-link basic-ping %} - Simple typed message example
-- {% example-link image-processing %} - Complex payload example
+- [<%= example('basic-ping').title %>](/examples/basic-ping) - Simple typed message example
+- [<%= example('image-processing').title %>](/examples/image-processing) - Complex payload example

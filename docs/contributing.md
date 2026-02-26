@@ -201,16 +201,14 @@ examples/
 ### meta.yml Format
 
 ```yaml
-id: my-example
 title: My Example Title
 description: |
   A clear description of what this example demonstrates
   and what users will learn from it.
-entryPoint: host.ts
-fileMap:
-  './messages.ts': 'messages.ts'
-  './host.ts': 'host.ts'
-  './worker.ts': 'worker.ts'
+include:
+  - messages.ts
+  - host.ts
+  - worker.ts
 commands:
   - command: 'pnpm run:my-example'
     title: 'Run the example'
@@ -236,15 +234,15 @@ Brief introduction to what this example shows.
 
 ### Shared Message Definitions
 
-{% file messages.ts %}
+<%= example('my-example').file('messages.ts') %>
 
 ### Host (Client)
 
-{% file host.ts %}
+<%= example('my-example').file('host.ts') %>
 
 ### Worker
 
-{% file worker.ts %}
+<%= example('my-example').file('worker.ts') %>
 
 ## Running the Example
 
@@ -268,7 +266,7 @@ export type Messages = DefineMessages<{
 Reference in markdown:
 
 ```markdown
-{% file messages.ts region="message-definitions" %}
+<%= example('my-example').region('message-definitions') %>
 ```
 
 ## Getting Help
