@@ -1,156 +1,46 @@
-import fs from 'node:fs/promises';
-import path, { join } from 'node:path';
-import type { PageContextServer } from 'vike/types';
-import { type ExampleMetadata } from '../../../server/utils/examples';
-import { highlightCodeWithLinks } from '../../../server/utils/highlight-code';
-import { getLanguageFromFilename } from '../../../server/utils/highlighter';
-import { extractFilePlaceholder } from '../../../server/utils/markdown';
-import { extractHunk, stripMarkers } from '../../../server/utils/regions';
-import {
-  type ContentSegment,
-  createFileSegment,
-  parseMarkdownToSegments,
-} from '../../../server/utils/segments';
-import { loadApiDocs } from '../../../server/utils/typedoc';
-
-// Re-export ContentSegment for the Page component
-export type { ContentSegment };
-
-interface CodeFile {
-  filename: string;
-  content: string;
-  language: string;
-  /** Pre-highlighted HTML with API links applied */
-  highlightedHtml: string;
-}
+import { createGuideRenderer } from '@functional-examples/documentation'
+import type { ScannedExample } from '@functional-examples/devkit'
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import type { PageContextServer } from 'vike/types'
+import { renderMarkdown } from '../../../server/utils/markdown.js'
 
 export interface ExampleData {
-  example: ExampleMetadata | null;
-  /** Content split into segments for proper rendering */
-  segments: ContentSegment[];
-  /** All available files for this example */
-  files: CodeFile[];
-  /** Set of filenames that were rendered inline via {{file:...}} */
-  renderedFiles: string[];
+  example: ScannedExample | null
+  renderedHtml: string
 }
 
-export async function data(
-  pageContext: PageContextServer
-): Promise<ExampleData> {
-  const { id } = pageContext.routeParams;
-  const example = pageContext.globalContext.examples[id];
+export async function data(pageContext: PageContextServer): Promise<ExampleData> {
+  const { id } = pageContext.routeParams
+  const scannedExamples = pageContext.globalContext.scannedExamples
+  const example = scannedExamples.find((ex) => ex.id === id) ?? null
 
   if (!example) {
-    return {
-      example: null,
-      segments: [],
-      files: [],
-      renderedFiles: [],
-    };
+    return { example: null, renderedHtml: '' }
   }
 
-  // Read content.md
-  let rawContent = '';
+  // Load content.md from examples/<id>/content.md relative to repo root
+  // import.meta.dirname = docs-site/pages/examples/@id
+  // ../../../.. = repo root
+  const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..', '..')
+  const contentPath = path.join(repoRoot, 'examples', id, 'content.md')
+
+  let rawContent: string
   try {
-    rawContent = await fs.readFile(join(example.path, 'content.md'), 'utf-8');
+    rawContent = await fs.readFile(contentPath, 'utf-8')
   } catch {
-    rawContent = `# ${example.title}\n\n${example.description}`;
+    rawContent = `# ${example.title}\n\n${example.description ?? ''}`
   }
 
-  // Track which files are rendered inline
-  const renderedFiles: string[] = [];
-
-  // Load API docs for code linking
-  const apiDocs = await loadApiDocs();
-
-  // Build API exports map for highlighting
-  const apiExportsMap: Record<string, string> = {};
-  for (const apiExport of apiDocs.allExports) {
-    apiExportsMap[apiExport.name] = apiExport.path;
+  // Expand Eta example references, then render to HTML
+  const renderer = createGuideRenderer(scannedExamples)
+  let expandedContent = rawContent
+  try {
+    expandedContent = renderer.render(rawContent)
+  } catch (err) {
+    console.warn(`[examples] Hydration failed for "${id}":`, (err as Error).message)
   }
 
-  // Read example files
-  const files: CodeFile[] = [];
-  const commonFiles = [
-    'messages.ts',
-    'host.ts',
-    'worker.ts',
-    'index.ts',
-    'serializer.ts',
-  ];
-
-  for (const filename of commonFiles) {
-    const filePath = path.join(example.path, filename);
-    try {
-      const fileContent = await fs.readFile(filePath, 'utf-8');
-      const language = getLanguageFromFilename(filename);
-
-      // Strip region markers for display
-      const displayContent = stripMarkers(fileContent);
-
-      // Pre-highlight with API links (using stripped content)
-      const highlighted = await highlightCodeWithLinks(
-        displayContent,
-        language,
-        apiExportsMap
-      );
-
-      files.push({
-        filename,
-        content: displayContent,
-        language,
-        highlightedHtml: highlighted.html,
-      });
-    } catch {
-      // File doesn't exist, skip it
-    }
-  }
-
-  const segments = await parseMarkdownToSegments(rawContent, {
-    // Examples don't extract inline code blocks - they use file references
-    extractCodeBlocks: false,
-    nodeHandler: async (node) => {
-      const placeholderCheck = extractFilePlaceholder(node);
-      if (!placeholderCheck.isPlaceholder) {
-        return null;
-      }
-
-      // Find the file
-      const file = files.find((f) => f.filename === placeholderCheck.filename);
-      if (!file) {
-        throw new Error(
-          `Referenced file "${placeholderCheck.filename}" not found in example "${example.id}".`
-        );
-      }
-
-      // Extract hunk or strip markers from full file
-      let content: string;
-      if (placeholderCheck.hunk) {
-        try {
-          content = extractHunk(file.content, placeholderCheck.hunk);
-        } catch {
-          throw new Error(
-            `Region '${placeholderCheck.hunk}' not found in file "${placeholderCheck.filename}" in example "${example.id}".`
-          );
-        }
-      } else {
-        content = stripMarkers(file.content);
-      }
-
-      const displayName = placeholderCheck.hunk
-        ? `${file.filename}#${placeholderCheck.hunk}`
-        : file.filename;
-
-      renderedFiles.push(file.filename);
-      return createFileSegment(displayName, content, file.language, apiDocs);
-    },
-    apiDocs,
-  });
-
-  return {
-    example,
-    segments,
-    files,
-    renderedFiles,
-  };
+  const renderedHtml = await renderMarkdown(expandedContent)
+  return { example, renderedHtml }
 }
