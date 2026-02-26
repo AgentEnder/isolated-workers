@@ -50,19 +50,19 @@ unexpectedShutdown: {
 
 Define message types that both host and worker import:
 
-{% file messages.ts %}
+<%= example('shutdown-handling').file('messages.ts') %>
 
 ### Host (Client)
 
 Demonstrates different shutdown strategies and error handling:
 
-{% file host.ts %}
+<%= example('shutdown-handling').file('host.ts') %>
 
 ### Worker
 
 Worker that processes requests and can crash on specific commands:
 
-{% file worker.ts %}
+<%= example('shutdown-handling').file('worker.ts') %>
 
 ## Running the Example
 
