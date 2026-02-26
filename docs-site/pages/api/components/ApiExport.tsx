@@ -1,20 +1,13 @@
-import { CodeBlock } from '../../../components/CodeBlock';
-import { Link } from '../../../components/Link';
-import { TypeReference } from '../../../components/TypeReference';
-import { parseTypeString } from '../../../utils/type-link';
-import type { ApiExport } from '../../../server/utils/typedoc';
-import type { HighlightedExample } from '../+data';
+import { Link } from '../../../components/Link'
+import { TypeReference } from '../../../components/TypeReference'
+import type { LinkedApiExport } from 'vike-plugin-typedoc'
 
 interface ApiExportPageProps {
-  mod: ApiExport;
-  knownExports: Record<string, string>;
-  highlightedExamples: HighlightedExample[];
-  highlightedSignature?: HighlightedExample;
-  descriptionHtml?: string;
+  mod: LinkedApiExport
 }
 
 function slugifyCategory(category: string): string {
-  return category.toLowerCase().replace(/\s+/g, '-');
+  return category.toLowerCase().replace(/\s+/g, '-')
 }
 
 /**
@@ -24,56 +17,17 @@ function slugifyCategory(category: string): string {
 function getKindLabel(kind: string, name: string): string {
   // Drivers should show as "Driver" instead of "variable"
   if (kind === 'variable' && name.endsWith('Driver')) {
-    return 'Driver';
+    return 'Driver'
   }
   // Server channels should show as "Class" instead of "variable"
   if (kind === 'variable' && name.endsWith('Channel')) {
-    return 'Class';
+    return 'Class'
   }
-  return kind;
+  return kind
 }
 
-/**
- * Render a type string with links to known exports.
- * Parses type names from strings like "WorkerOptions<TDefs>" and links them.
- */
-function TypeLink({
-  type,
-  knownExports,
-}: {
-  type: string;
-  knownExports: Record<string, string>;
-}) {
-  const parts = parseTypeString(type);
-
-  return (
-    <>
-      {parts.map((part, i) => {
-        if (part.isType && knownExports[part.text]) {
-          return (
-            <Link
-              key={i}
-              href={knownExports[part.text]}
-              className="text-neon-cyan hover:underline"
-            >
-              {part.text}
-            </Link>
-          );
-        }
-        return <span key={i}>{part.text}</span>;
-      })}
-    </>
-  );
-}
-
-export function ApiExportPage({
-  mod,
-  knownExports,
-  highlightedExamples,
-  highlightedSignature,
-  descriptionHtml,
-}: ApiExportPageProps) {
-  const categorySlug = mod.category ? slugifyCategory(mod.category) : null;
+export function ApiExportPage({ mod }: ApiExportPageProps) {
+  const categorySlug = mod.category ? slugifyCategory(mod.category) : null
 
   return (
     <div>
@@ -121,21 +75,18 @@ export function ApiExportPage({
       </div>
 
       {/* Signature - skip for drivers as they're complex objects */}
-      {highlightedSignature && !mod.name.endsWith('Driver') && (
-        <div className="mb-8">
-          <CodeBlock
-            code={highlightedSignature.code}
-            language="typescript"
-            preHighlightedHtml={highlightedSignature.html}
-          />
-        </div>
+      {mod.signatureCodeHtml && !mod.name.endsWith('Driver') && (
+        <div
+          className="mb-8"
+          dangerouslySetInnerHTML={{ __html: mod.signatureCodeHtml }}
+        />
       )}
 
       {/* Description */}
-      {descriptionHtml && (
+      {mod.descriptionHtml && (
         <div
           className="mb-8 prose prose-invert prose-neon max-w-none"
-          dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+          dangerouslySetInnerHTML={{ __html: mod.descriptionHtml }}
         />
       )}
 
@@ -174,9 +125,10 @@ export function ApiExportPage({
                         <span className="text-gray-500">?</span>
                       )}
                     </td>
-                    <td className="py-3 pr-4 font-mono text-gray-300">
-                      <TypeLink type={param.type} knownExports={knownExports} />
-                    </td>
+                    <td
+                      className="py-3 pr-4 font-mono text-gray-300"
+                      dangerouslySetInnerHTML={{ __html: param.typeHtml }}
+                    />
                     <td className="py-3 text-gray-400">
                       {param.description || '-'}
                     </td>
@@ -189,12 +141,13 @@ export function ApiExportPage({
       )}
 
       {/* Return Type */}
-      {mod.returnType && (
+      {mod.returnTypeHtml && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-100 mb-4">Returns</h2>
-          <p className="font-mono text-gray-300">
-            <TypeLink type={mod.returnType} knownExports={knownExports} />
-          </p>
+          <p
+            className="font-mono text-gray-300"
+            dangerouslySetInnerHTML={{ __html: mod.returnTypeHtml }}
+          />
         </div>
       )}
 
@@ -219,9 +172,10 @@ export function ApiExportPage({
                     <span className="text-xs text-gray-500">(readonly)</span>
                   )}
                 </div>
-                <p className="font-mono text-sm text-gray-400 mb-2">
-                  <TypeLink type={prop.type} knownExports={knownExports} />
-                </p>
+                <p
+                  className="font-mono text-sm text-gray-400 mb-2"
+                  dangerouslySetInnerHTML={{ __html: prop.typeHtml }}
+                />
                 {prop.description && (
                   <p className="text-gray-300 text-sm">{prop.description}</p>
                 )}
@@ -241,11 +195,10 @@ export function ApiExportPage({
                 key={method.name}
                 className="p-4 rounded-lg bg-tertiary/30 border border-tertiary/50"
               >
-                <div className="mb-3">
-                  <code className="font-mono text-neon-cyan">
-                    {method.signature}
-                  </code>
-                </div>
+                <div
+                  className="mb-3 font-mono text-neon-cyan"
+                  dangerouslySetInnerHTML={{ __html: method.signatureHtml }}
+                />
                 {method.description && (
                   <p className="text-gray-300 text-sm mb-3">
                     {method.description}
@@ -264,12 +217,10 @@ export function ApiExportPage({
                             {param.optional && '?'}
                           </span>
                           <span className="text-gray-500">:</span>
-                          <span className="font-mono text-gray-400">
-                            <TypeLink
-                              type={param.type}
-                              knownExports={knownExports}
-                            />
-                          </span>
+                          <span
+                            className="font-mono text-gray-400"
+                            dangerouslySetInnerHTML={{ __html: param.typeHtml }}
+                          />
                           {param.description && (
                             <span className="text-gray-500">
                               — {param.description}
@@ -280,17 +231,17 @@ export function ApiExportPage({
                     </div>
                   </div>
                 )}
-                {method.returnType && (
+                {method.returnTypeHtml && (
                   <div className="mt-3 pt-3 border-t border-tertiary/50">
                     <p className="text-xs text-gray-500 uppercase font-semibold mb-2">
                       Returns
                     </p>
-                    <span className="font-mono text-gray-400">
-                      <TypeLink
-                        type={method.returnType}
-                        knownExports={knownExports}
-                      />
-                    </span>
+                    <span
+                      className="font-mono text-gray-400"
+                      dangerouslySetInnerHTML={{
+                        __html: method.returnTypeHtml,
+                      }}
+                    />
                   </div>
                 )}
               </div>
@@ -300,24 +251,26 @@ export function ApiExportPage({
       )}
 
       {/* Remarks */}
-      {mod.comment?.remarks && (
+      {mod.remarksHtml && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-100 mb-4">Remarks</h2>
-          <p className="text-gray-300">{mod.comment.remarks}</p>
+          <div
+            className="prose prose-invert prose-neon max-w-none text-gray-300"
+            dangerouslySetInnerHTML={{ __html: mod.remarksHtml }}
+          />
         </div>
       )}
 
       {/* Examples */}
-      {highlightedExamples.length > 0 && (
+      {mod.examplesHtml && mod.examplesHtml.length > 0 && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-100 mb-4">Examples</h2>
           <div className="space-y-4">
-            {highlightedExamples.map((example, i) => (
-              <CodeBlock
+            {mod.examplesHtml.map((html, i) => (
+              <div
                 key={i}
-                code={example.code}
-                language="typescript"
-                preHighlightedHtml={example.html}
+                className="prose prose-invert prose-neon max-w-none"
+                dangerouslySetInnerHTML={{ __html: html }}
               />
             ))}
           </div>
@@ -339,12 +292,12 @@ export function ApiExportPage({
       {/* Navigation */}
       <div className="mt-12 pt-8 border-t border-tertiary/50">
         <Link
-          href={mod.path}
+          href="/api"
           className="text-neon-cyan hover:text-neon-purple transition-colors"
         >
-          &larr; Back to {mod.name.charAt(0).toUpperCase() + mod.name.slice(1)}
+          &larr; Back to API Reference
         </Link>
       </div>
     </div>
-  );
+  )
 }

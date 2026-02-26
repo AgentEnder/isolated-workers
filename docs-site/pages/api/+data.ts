@@ -1,100 +1,46 @@
-import type { PageContextServer } from 'vike/types';
-import { highlightCodeWithLinks } from '../../server/utils/highlight-code';
-import { processMarkdownWithTypedoc } from '../../server/utils/markdown';
-import type { ApiDocs, ApiExport } from '../../server/utils/typedoc';
-import { formatSignature } from '../../utils/format-signature';
+/// <reference types="vike-plugin-typedoc/config" />
+import type { LinkedApiExport } from 'vike-plugin-typedoc'
+import type { PageContextServer } from 'vike/types'
 
 export interface ApiDataLanding {
-  type: 'landing';
-  api: ApiDocs;
-}
-
-export interface HighlightedExample {
-  /** Pre-highlighted HTML with type links */
-  html: string;
-  /** Original code for copy functionality */
-  code: string;
+  type: 'landing'
+  packageSlugs: string[]
 }
 
 export interface ApiDataExport {
-  type: 'export';
-  export: ApiExport;
-  /** Map of export names to their paths for linking types */
-  knownExports: Record<string, string>;
-  /** Pre-highlighted examples with type links */
-  highlightedExamples: HighlightedExample[];
-  /** Pre-highlighted signature with type links */
-  highlightedSignature?: HighlightedExample;
-  /** Processed description HTML from markdown */
-  descriptionHtml?: string;
+  type: 'export'
+  export: LinkedApiExport
 }
 
-export type ApiData = ApiDataLanding | ApiDataExport | { type: 'not-found' };
+export type ApiData = ApiDataLanding | ApiDataExport | { type: 'not-found' }
 
 export async function data(pageContext: PageContextServer): Promise<ApiData> {
-  const { api } = pageContext.globalContext;
-  const { urlPathname } = pageContext;
+  const typedoc = pageContext.globalContext.$$VIKE_PLUGIN_TYPEDOC$$
+  if (!typedoc) return { type: 'not-found' }
 
-  // Parse URL: /api or /api/:export
-  const parts = urlPathname.split('/').filter(Boolean);
-  // parts[0] = 'api', parts[1] = export?
+  const parts = pageContext.urlPathname.split('/').filter(Boolean)
+  // parts[0] = 'api', parts[1] = packageSlug?, parts[2] = symbolSlug?
+  const packageSlug = parts[1]
+  const symbolSlug = parts[2]
 
-  const exportSlug = parts[1];
-
-  // Landing page: /api - show all exports grouped by category
-  if (!exportSlug) {
+  if (!packageSlug) {
     return {
       type: 'landing',
-      api,
-    };
+      packageSlugs: Object.keys(typedoc.apiDocs.packages),
+    }
   }
 
-  // Export page: /api/:export
-  const exp = api.exports[exportSlug];
-  if (!exp) {
-    return { type: 'not-found' };
+  if (!symbolSlug) {
+    const pkg = typedoc.getPackage(packageSlug)
+    if (!pkg) return { type: 'not-found' }
+    return {
+      type: 'landing',
+      packageSlugs: pkg.exports.map((e) => e.slug),
+    }
   }
 
-  // Build map of export names to paths for type linking
-  const knownExports: Record<string, string> = {};
-  for (const e of api.allExports) {
-    knownExports[e.name] = e.path;
-  }
+  const linked = typedoc.getLinkedExport(packageSlug, symbolSlug)
+  if (!linked) return { type: 'not-found' }
 
-  // Pre-highlight examples with Shiki and inject type links
-  // (done server-side to avoid loading Shiki on the client)
-  const examples = exp.comment?.examples || [];
-  const highlightedExamples: HighlightedExample[] = await Promise.all(
-    examples.map((code) =>
-      highlightCodeWithLinks(code, 'typescript', knownExports)
-    )
-  );
-
-  // Format and highlight signature with type links
-  let highlightedSignature: HighlightedExample | undefined;
-  if (exp.signature) {
-    const formattedSig = formatSignature(exp.signature);
-    highlightedSignature = await highlightCodeWithLinks(
-      formattedSig,
-      'typescript',
-      knownExports
-    );
-  }
-
-  // Process description as markdown
-  let descriptionHtml: string | undefined;
-  if (exp.description) {
-    descriptionHtml = await processMarkdownWithTypedoc(exp.description, {
-      apiDocs: api,
-    });
-  }
-
-  return {
-    type: 'export',
-    export: exp,
-    knownExports,
-    highlightedExamples,
-    highlightedSignature,
-    descriptionHtml,
-  };
+  return { type: 'export', export: linked }
 }
