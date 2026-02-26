@@ -1,23 +1,21 @@
-import { type DocMetadata } from './server/utils/docs';
-import { type ExampleMetadata } from './server/utils/examples';
-import { type ApiDocs } from './server/utils/typedoc';
+import type { ScannedExample } from '@functional-examples/devkit'
+import type { DocMetadata } from './server/utils/docs.js'
 
 export interface NavigationItem {
-  title: string;
-  path?: string;
-  children?: NavigationItem[];
-  order?: number;
+  title: string
+  path?: string
+  children?: NavigationItem[]
+  order?: number
 }
 
 declare global {
   namespace Vike {
     interface GlobalContext {
-      examples: Record<string, ExampleMetadata>;
-      docs: Record<string, DocMetadata>;
-      api: ApiDocs;
-      navigation: NavigationItem[];
+      scannedExamples: ScannedExample[]
+      docs: Record<string, DocMetadata>
+      navigation: NavigationItem[]
     }
   }
 }
 
-export { NavigationItem };
+export { NavigationItem }
