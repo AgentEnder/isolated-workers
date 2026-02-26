@@ -218,37 +218,32 @@ commands:
 
 ### content.md Format
 
-Write documentation that explains the example:
+Write documentation that explains the example. Use Eta template tags to embed file
+contents and named regions directly from the example source:
+
+- Embed a full file: use the `example(id).file(filename)` Eta helper
+- Embed a named region: use the `example(id).region(regionName)` Eta helper
+
+Example structure:
 
 ```markdown
 # My Example Title
 
 Brief introduction to what this example shows.
 
-## Overview
-
-- Key concept 1
-- Key concept 2
-
 ## Files
 
 ### Shared Message Definitions
 
-<%= example('my-example').file('messages.ts') %>
+[messages.ts embedded via Eta template tag]
 
 ### Host (Client)
 
-<%= example('my-example').file('host.ts') %>
-
-### Worker
-
-<%= example('my-example').file('worker.ts') %>
+[host.ts embedded via Eta template tag]
 
 ## Running the Example
 
-\`\`\`bash
 pnpm nx run examples:run-example --example=my-example
-\`\`\`
 ```
 
 ### Region Markers for Code Embedding
@@ -263,11 +258,7 @@ export type Messages = DefineMessages<{
 // #endregion message-definitions
 ```
 
-Reference in markdown:
-
-```markdown
-<%= example('my-example').region('message-definitions') %>
-```
+Reference the region by name using the `example('id').region('name')` Eta helper.
 
 ## Getting Help
 
