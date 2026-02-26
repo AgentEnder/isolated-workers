@@ -1,9 +1,11 @@
-import type { OnBeforePrerenderStartAsync } from 'vike/types';
-import { scanExamples } from '../../../server/utils/examples';
+import { scan } from 'functional-examples'
+import type { OnBeforePrerenderStartAsync } from 'vike/types'
+import path from 'node:path'
 
 const onBeforePrerenderStart: OnBeforePrerenderStartAsync = async () => {
-  const examples = await scanExamples();
-  return examples.map((ex) => `/examples/${ex.id}`);
-};
+  const repoRoot = path.resolve(import.meta.dirname, '../../..')
+  const { examples } = await scan({ root: repoRoot })
+  return examples.map((ex) => `/examples/${ex.id}`)
+}
 
-export default onBeforePrerenderStart;
+export default onBeforePrerenderStart

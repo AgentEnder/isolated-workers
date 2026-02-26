@@ -1,15 +1,23 @@
-import type { PageContextServer } from 'vike/types';
-import {
-  scanExamples,
-  type ExampleMetadata,
-} from '../../server/utils/examples';
+import type { ScannedExample } from '@functional-examples/devkit'
+import type { PageContextServer } from 'vike/types'
 
-interface Data {
-  examples: ExampleMetadata[];
+interface ExampleSummary {
+  id: string
+  title: string
+  description: string
 }
 
-export async function data(_pageContext: PageContextServer): Promise<Data> {
-  const examples = await scanExamples();
-  // Filter out hidden examples from the listing page
-  return { examples: examples.filter((ex) => !ex.hidden) };
+interface Data {
+  examples: ExampleSummary[]
+}
+
+export async function data(pageContext: PageContextServer): Promise<Data> {
+  const examples = pageContext.globalContext.scannedExamples
+    .filter((ex: ScannedExample) => !ex.metadata.hidden)
+    .map((ex: ScannedExample) => ({
+      id: ex.id,
+      title: ex.title,
+      description: ex.description ?? '',
+    }))
+  return { examples }
 }
