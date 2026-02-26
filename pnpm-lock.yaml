@@ -156,6 +156,9 @@ importers:
 
   docs-site:
     dependencies:
+      '@functional-examples/devkit':
+        specifier: ^0.1.0
+        version: 0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
       '@functional-examples/documentation':
         specifier: ^0.1.0
         version: 0.1.0(functional-examples@0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6))(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)
