@@ -30,7 +30,7 @@ createWorker() → Starting → Connected → Active → Closing → Closed
 
 The worker client exposes two status properties:
 
-{% example worker-lifecycle:host.ts#print-status %}
+<%= example('worker-lifecycle').region('print-status') %>
 
 | Property      | Description                                                   |
 | ------------- | ------------------------------------------------------------- |
@@ -43,11 +43,11 @@ A healthy worker has both `isActive: true` and `isConnected: true`.
 
 Workers maintain state across messages. Variables defined at the module level persist:
 
-{% example worker-lifecycle:worker.ts#worker-state %}
+<%= example('worker-lifecycle').region('worker-state') %>
 
 Each message handler can read and modify this shared state:
 
-{% example worker-lifecycle:worker.ts#handlers %}
+<%= example('worker-lifecycle').region('handlers') %>
 
 This is useful for:
 
@@ -85,7 +85,7 @@ The `close()` method:
 
 Attempting to send a message after closing throws an error:
 
-{% example worker-lifecycle:host.ts#send-after-close %}
+<%= example('worker-lifecycle').region('send-after-close') %>
 
 Check `isActive` before sending if you're unsure of the worker's state:
 
@@ -205,6 +205,6 @@ async function getWorker() {
 
 ## See Also
 
-- {% example-link worker-lifecycle %} - Complete lifecycle example
+- [<%= example('worker-lifecycle').title %>](/examples/worker-lifecycle) - Complete lifecycle example
 - [Timeout Configuration](/docs/guides/timeout-configuration) - Configuring startup and message timeouts
 - [Error Handling](/docs/guides/error-handling) - Handling worker errors

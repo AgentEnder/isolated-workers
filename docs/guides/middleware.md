@@ -40,27 +40,27 @@ Returning void passes the original message through unchanged.
 
 Here's a logging middleware that tracks all message traffic:
 
-{% example middleware:host.ts#logging-middleware %}
+<%= example('middleware').region('logging-middleware') %>
 
 You can also create middleware that tracks timing:
 
-{% example middleware:host.ts#timing-middleware %}
+<%= example('middleware').region('timing-middleware') %>
 
 ## Using Middleware on the Host
 
 Pass middleware to `createWorker` as an array. Middleware executes in array order:
 
-{% example middleware:host.ts#create-worker-with-middleware %}
+<%= example('middleware').region('create-worker-with-middleware') %>
 
 ## Using Middleware on the Worker
 
 Workers also support middleware pipelines:
 
-{% example middleware:worker.ts#worker-middleware %}
+<%= example('middleware').region('worker-middleware') %>
 
 Configure it when starting the worker server:
 
-{% example middleware:worker.ts#start-worker-with-middleware %}
+<%= example('middleware').region('start-worker-with-middleware') %>
 
 ## Middleware Use Cases
 
@@ -141,5 +141,5 @@ For **incoming** messages, the same order applies - no automatic reversal.
 
 ## See Also
 
-- {% example-link middleware %} - Complete middleware example
+- [<%= example('middleware').title %>](/examples/middleware) - Complete middleware example
 - [Error Handling](/docs/guides/error-handling) - How errors propagate through the system

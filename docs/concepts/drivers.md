@@ -160,5 +160,5 @@ class MyCustomDriver implements Driver<MyCapabilities> {
 
 ## See Also
 
-- {% example worker-threads-driver %} - Using the worker_threads driver
-- {% example basic-ping %} - Basic example (uses default child_process driver)
+- [<%= example('worker-threads-driver').title %>](/examples/worker-threads-driver) - Using the worker_threads driver
+- [<%= example('basic-ping').title %>](/examples/basic-ping) - Basic example (uses default child_process driver)

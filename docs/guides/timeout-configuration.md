@@ -26,11 +26,11 @@ You can also set **per-message-type timeouts** that override `WORKER_MESSAGE` fo
 
 Pass a timeout configuration object to `createWorker`:
 
-{% example timeout-config:host.ts#timeout-config %}
+<%= example('timeout-config').region('timeout-config') %>
 
 Then use it when creating the worker:
 
-{% example timeout-config:host.ts#create-worker-with-timeout %}
+<%= example('timeout-config').region('create-worker-with-timeout') %>
 
 ## Type-Safe Configuration
 
@@ -121,5 +121,5 @@ const worker = await createWorker<Messages>({
 
 ## See Also
 
-- {% example-link timeout-config %} - Complete timeout configuration example
+- [<%= example('timeout-config').title %>](/examples/timeout-config) - Complete timeout configuration example
 - [Worker Lifecycle](/docs/guides/worker-lifecycle) - Managing worker state

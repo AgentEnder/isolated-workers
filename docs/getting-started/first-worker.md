@@ -18,29 +18,29 @@ We'll build a worker that handles image processing operations. This demonstrates
 
 Create a shared types file that both host and worker will use:
 
-{% example image-processing:messages.ts#messages %}
+<%= example('image-processing').region('messages') %>
 
 ## Step 2: Implement the Worker
 
 Create the worker script with handlers for each message type:
 
-{% example image-processing:worker.ts#handlers %}
+<%= example('image-processing').region('handlers') %>
 
 ## Step 3: Create the Host Process
 
 Create the main process that spawns and communicates with the worker. Note how we configure per-operation timeouts:
 
-{% example image-processing:host.ts#create-worker %}
+<%= example('image-processing').region('create-worker') %>
 
 Now use the worker to process images:
 
-{% example image-processing:host.ts#process-single %}
+<%= example('image-processing').region('process-single') %>
 
 Check worker status and batch process multiple images:
 
-{% example image-processing:host.ts#check-status %}
+<%= example('image-processing').region('check-status') %>
 
-{% example image-processing:host.ts#batch-process %}
+<%= example('image-processing').region('batch-process') %>
 
 ### Built-in Timeout Keys
 

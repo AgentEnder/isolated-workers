@@ -33,15 +33,15 @@ try {
 
 Here's a complete example showing error propagation. First, the shared message definitions:
 
-{% example error-handling:messages.ts %}
+<%= example('error-handling').file('messages.ts') %>
 
 The worker validates input and throws for invalid operations:
 
-{% example error-handling:worker.ts %}
+<%= example('error-handling').file('worker.ts') %>
 
 The host catches and handles the error:
 
-{% example error-handling:host.ts %}
+<%= example('error-handling').file('host.ts') %>
 
 ## Best Practices
 
@@ -114,5 +114,5 @@ type DivideResult =
 
 ## See Also
 
-- {% example-link error-handling %} - Complete error handling example
+- [<%= example('error-handling').title %>](/examples/error-handling) - Complete error handling example
 - [API Reference: createWorker](/api/create-worker) - Worker creation options
