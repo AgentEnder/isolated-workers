@@ -4,6 +4,10 @@
     "run-example": {
       "command": "tsx --tsconfig {projectRoot}/tsconfig.json {projectRoot}/{args.example}/host.ts",
       "dependsOn": ["^build"]
+    },
+    "test-examples": {
+      "command": "functional-examples test",
+      "cwd": "{workspaceRoot}"
     }
   }
 }
