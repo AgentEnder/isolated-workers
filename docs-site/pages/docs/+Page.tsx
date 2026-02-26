@@ -1,10 +1,9 @@
 import { useData } from 'vike-react/useData';
 import { Link } from '../../components/Link';
-import { SegmentList } from '../../components/SegmentRenderer';
 import type { DocsData } from './+data';
 
 export default function Page() {
-  const { doc, segments } = useData<DocsData>();
+  const { doc } = useData<DocsData>();
 
   if (!doc) {
     return (
@@ -36,9 +35,16 @@ export default function Page() {
         <span className="text-gray-100">{doc.title}</span>
       </div>
 
-      {/* Content segments */}
+      {/* Content */}
       <div className="prose prose-invert max-w-none space-y-8">
-        <SegmentList segments={segments} />
+        {doc?.renderedHtml ? (
+          <div
+            className="docs-prose"
+            dangerouslySetInnerHTML={{ __html: doc.renderedHtml }}
+          />
+        ) : (
+          <p>Document not found.</p>
+        )}
       </div>
 
       {/* Navigation */}
