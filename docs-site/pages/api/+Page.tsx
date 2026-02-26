@@ -1,11 +1,11 @@
-import { useData } from 'vike-react/useData';
-import { Link } from '../../components/Link';
-import type { ApiData } from './+data';
-import { ApiExportPage } from './components/ApiExport';
-import { ApiLanding } from './components/ApiLanding';
+import { useData } from 'vike-react/useData'
+import { Link } from '../../components/Link'
+import type { ApiData } from './+data'
+import { ApiExportPage } from './components/ApiExport'
+import { ApiLanding } from './components/ApiLanding'
 
 export default function Page() {
-  const data = useData<ApiData>();
+  const data = useData<ApiData>()
 
   if (data.type === 'not-found') {
     return (
@@ -23,21 +23,13 @@ export default function Page() {
           Back to API Reference
         </Link>
       </div>
-    );
+    )
   }
 
   switch (data.type) {
     case 'landing':
-      return <ApiLanding api={data.api} />;
+      return <ApiLanding packageSlugs={data.packageSlugs} />
     case 'export':
-      return (
-        <ApiExportPage
-          mod={data.export}
-          knownExports={data.knownExports}
-          highlightedExamples={data.highlightedExamples}
-          highlightedSignature={data.highlightedSignature}
-          descriptionHtml={data.descriptionHtml}
-        />
-      );
+      return <ApiExportPage mod={data.export} />
   }
 }
