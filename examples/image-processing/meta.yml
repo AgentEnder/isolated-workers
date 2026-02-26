@@ -1,15 +1,13 @@
-id: image-processing
 title: Image Processing Worker
 description: |
   A complete example demonstrating how to build a production-ready worker
   for CPU-intensive tasks like image processing. Shows type-safe messaging,
   per-operation timeouts, worker state, and batch processing.
 hidden: true
-entryPoint: host.ts
-fileMap:
-  './messages.ts': 'messages.ts'
-  './host.ts': 'host.ts'
-  './worker.ts': 'worker.ts'
+include:
+  - messages.ts
+  - host.ts
+  - worker.ts
 commands:
   - command: 'pnpm run:image-processing'
     title: 'Run the example'
