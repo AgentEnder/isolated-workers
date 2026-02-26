@@ -1,13 +1,11 @@
-id: custom-serializer
 title: Custom Serializer
 description: |
   Shows how to implement and use a custom serializer for message encoding. This is useful for using binary formats like MessagePack, adding compression, or wrapping messages with metadata. Both host and worker must use the same serializer.
-entryPoint: host.ts
-fileMap:
-  './messages.ts': 'messages.ts'
-  './serializer.ts': 'serializer.ts'
-  './host.ts': 'host.ts'
-  './worker.ts': 'worker.ts'
+include:
+  - messages.ts
+  - serializer.ts
+  - host.ts
+  - worker.ts
 commands:
   - command: 'pnpm run:custom-serializer'
     title: 'Run the example'

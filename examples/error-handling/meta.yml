@@ -1,13 +1,11 @@
-id: error-handling
 title: Error Handling
 description: |
   Demonstrates how errors thrown in worker handlers propagate back to the host,
   including error messages and proper cleanup.
-entryPoint: host.ts
-fileMap:
-  './messages.ts': 'messages.ts'
-  './host.ts': 'host.ts'
-  './worker.ts': 'worker.ts'
+include:
+  - messages.ts
+  - host.ts
+  - worker.ts
 commands:
   - command: 'pnpm run:error-handling'
     title: 'Run the example'

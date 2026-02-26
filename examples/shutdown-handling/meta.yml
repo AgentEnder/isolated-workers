@@ -1,13 +1,11 @@
-id: shutdown-handling
 title: Unexpected Worker Shutdown Handling
 description: |
   Demonstrates how to handle unexpected worker crashes with configurable
   retry strategies, per-message-type overrides, and detailed error context.
-entryPoint: host.ts
-fileMap:
-  './messages.ts': 'messages.ts'
-  './host.ts': 'host.ts'
-  './worker.ts': 'worker.ts'
+include:
+  - messages.ts
+  - host.ts
+  - worker.ts
 commands:
   - command: 'pnpm run:shutdown-handling'
     title: 'Run the example'
