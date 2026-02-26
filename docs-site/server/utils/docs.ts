@@ -1,6 +1,9 @@
 import matter from 'gray-matter';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import type { ScannedExample } from '@functional-examples/devkit';
+import { createGuideRenderer } from '@functional-examples/documentation';
+import { renderMarkdown } from './markdown.js';
 
 export interface NavigationItem {
   title: string;
@@ -17,6 +20,8 @@ export interface DocMetadata {
     section: string;
     order: number;
   };
+  content: string; // raw markdown (after frontmatter strip)
+  renderedHtml: string; // pre-rendered HTML
 }
 
 /**
@@ -76,8 +81,8 @@ export async function scanDocs(
     const files = await walkDir(docsRoot);
 
     for (const filePath of files) {
-      const content = await fs.readFile(filePath, 'utf-8');
-      const { data: frontmatter } = matter(content);
+      const rawContent = await fs.readFile(filePath, 'utf-8');
+      const { data: frontmatter, content } = matter(rawContent);
 
       // Determine URL path (frontmatter override or derived)
       const derivedPath = filePathToUrlPath(filePath, docsRoot);
@@ -89,6 +94,8 @@ export async function scanDocs(
         title: frontmatter.title || path.basename(filePath, '.md'),
         description: frontmatter.description,
         nav: frontmatter.nav,
+        content,
+        renderedHtml: '',
       };
     }
   } catch (error) {
@@ -158,6 +165,44 @@ export function buildDocsNavigation(
   }
 
   return navigation;
+}
+
+/**
+ * Expand Eta example references in guide markdown, then render to HTML.
+ * Returns the same map with content and renderedHtml populated.
+ */
+export async function hydrateGuides(
+  docs: Record<string, DocMetadata>,
+  examples: ScannedExample[]
+): Promise<Record<string, DocMetadata>> {
+  const renderer = createGuideRenderer(examples);
+  const hydrated: Record<string, DocMetadata> = {};
+
+  for (const [urlPath, doc] of Object.entries(docs)) {
+    let expandedContent = doc.content;
+    try {
+      expandedContent = renderer.render(doc.content);
+    } catch (err) {
+      console.warn(
+        `[docs] Guide hydration failed for "${urlPath}":`,
+        (err as Error).message
+      );
+    }
+
+    let renderedHtml = '';
+    try {
+      renderedHtml = await renderMarkdown(expandedContent);
+    } catch (err) {
+      console.warn(
+        `[docs] Markdown render failed for "${urlPath}":`,
+        (err as Error).message
+      );
+    }
+
+    hydrated[urlPath] = { ...doc, content: expandedContent, renderedHtml };
+  }
+
+  return hydrated;
 }
 
 /**

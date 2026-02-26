@@ -92,18 +92,24 @@ describe('buildDocsNavigation', () => {
         filePath: '/docs/a.md',
         title: 'A',
         nav: { section: 'Guides', order: 2 },
+        content: '',
+        renderedHtml: '',
       },
       '/docs/b': {
         path: '/docs/b',
         filePath: '/docs/b.md',
         title: 'B',
         nav: { section: 'Guides', order: 1 },
+        content: '',
+        renderedHtml: '',
       },
       '/docs/c': {
         path: '/docs/c',
         filePath: '/docs/c.md',
         title: 'C',
         nav: { section: 'API', order: 1 },
+        content: '',
+        renderedHtml: '',
       },
     };
 
@@ -123,6 +129,8 @@ describe('buildDocsNavigation', () => {
         filePath: '/docs/orphan.md',
         title: 'Orphan',
         // no nav - should default to Docs section
+        content: '',
+        renderedHtml: '',
       },
     };
 

@@ -12,6 +12,7 @@
     "@functional-examples/yaml-manifest": "^0.1.0",
     "@functional-examples/javascript": "^0.1.0",
     "@functional-examples/test": "^0.1.0",
+    "@functional-examples/devkit": "^0.1.0",
     "@functional-examples/documentation": "^0.1.0",
     "rehype-typedoc": "^0.0.1",
     "vike-plugin-typedoc": "^0.0.1",
