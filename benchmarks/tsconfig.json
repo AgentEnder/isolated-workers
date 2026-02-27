@@ -16,7 +16,5 @@
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"],
-  "references": [
-    { "path": "../packages/isolated-workers/tsconfig.lib.json" }
-  ]
+  "references": []
 }

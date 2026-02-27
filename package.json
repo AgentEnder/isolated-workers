@@ -9,14 +9,10 @@
   },
   "private": true,
   "devDependencies": {
-    "nx-github-pages": "catalog:",
-    "@functional-examples/documentation": "^0.1.0",
-    "@functional-examples/javascript": "^0.1.0",
-    "@functional-examples/test": "^0.1.0",
-    "@functional-examples/yaml-manifest": "^0.1.0",
-    "functional-examples": "^0.1.0",
-    "rehype-typedoc": "^0.0.1",
-    "vike-plugin-typedoc": "^0.0.1",
+    "@functional-examples/documentation": "^0.1.1",
+    "@functional-examples/javascript": "^0.1.1",
+    "@functional-examples/test": "^0.1.1",
+    "@functional-examples/yaml-manifest": "^0.1.1",
     "@nx/eslint": "catalog:",
     "@nx/eslint-plugin": "catalog:",
     "@nx/js": "catalog:",
@@ -25,13 +21,22 @@
     "@typescript-eslint/eslint-plugin": "catalog:",
     "@typescript-eslint/parser": "catalog:",
     "eslint": "catalog:",
+    "functional-examples": "^0.1.1",
     "nx": "catalog:",
+    "nx-github-pages": "catalog:",
     "prettier": "catalog:",
+    "rehype-typedoc": "^0.1.0",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vike-plugin-typedoc": "^0.1.0"
   },
   "nx": {
     "includedScripts": []
   },
-  "packageManager": "pnpm@10.23.0"
+  "packageManager": "pnpm@10.23.0",
+  "pnpm": {
+    "overrides": {
+      "@functional-examples/documentation": "link:../functional-examples/packages/documentation"
+    }
+  }
 }

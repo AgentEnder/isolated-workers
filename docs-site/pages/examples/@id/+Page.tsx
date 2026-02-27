@@ -1,14 +1,20 @@
-import { useData } from 'vike-react/useData'
-import { Link } from '../../../components/Link'
-import type { ExampleData } from './+data'
+import { useRef } from 'react';
+import { useData } from 'vike-react/useData';
+import { useCodeCopyHydration } from '../../../components/CodeCopyHydration';
+import { Link } from '../../../components/Link';
+import type { ExampleData } from './+data';
 
 export default function Page() {
-  const { example, renderedHtml } = useData<ExampleData>()
+  const { example, renderedHtml } = useData<ExampleData>();
+  const contentRef = useRef<HTMLDivElement>(null);
+  useCodeCopyHydration(contentRef);
 
   if (!example) {
     return (
       <div className="text-center py-20">
-        <h1 className="text-4xl font-bold text-gray-100 mb-4">Example Not Found</h1>
+        <h1 className="text-4xl font-bold text-gray-100 mb-4">
+          Example Not Found
+        </h1>
         <p className="text-gray-400 mb-8">
           The example you&apos;re looking for doesn&apos;t exist.
         </p>
@@ -19,7 +25,7 @@ export default function Page() {
           Back to Examples
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -43,16 +49,20 @@ export default function Page() {
 
       {/* Rendered content */}
       <div
-        className="prose prose-invert max-w-none space-y-8"
+        ref={contentRef}
+        className="docs-prose prose prose-invert text-sm max-w-none space-y-8"
         dangerouslySetInnerHTML={{ __html: renderedHtml }}
       />
 
       {/* Navigation */}
       <div className="mt-12 pt-8 border-t border-tertiary/50">
-        <Link href="/examples" className="text-neon-cyan hover:text-neon-purple transition-colors">
+        <Link
+          href="/examples"
+          className="text-neon-cyan hover:text-neon-purple transition-colors"
+        >
           &larr; Back to Examples
         </Link>
       </div>
     </div>
-  )
+  );
 }

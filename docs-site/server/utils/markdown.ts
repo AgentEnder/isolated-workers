@@ -8,6 +8,9 @@ import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'
 import { unified } from 'unified'
 
+import { rehypeBaseUrl } from './rehype-base-url.js'
+import { parseCodeBlockMeta, rehypeCodeBlockChrome, rehypePreserveCodeMeta, titleTransformer } from './rehype-code-block-chrome.js'
+
 let _rehypeOptions: RehypeTypedocOptions | undefined
 let _remarkCodePropsOptions: RemarkCodePropsOptions | undefined
 
@@ -26,7 +29,7 @@ export function configureRemarkCodeProps(options: RemarkCodePropsOptions): void 
  *   remarkParse → remarkGfm → remarkDirective → remarkCodeProps
  *   → remarkRehype → rehypeRaw → rehypeTypedoc (if configured)
  *   → @shikijs/rehype → rehypeTypedocCodeBlocks (if configured)
- *   → rehypeStringify
+ *   → rehypeCodeBlockChrome → rehypeStringify
  */
 export async function renderMarkdown(md: string): Promise<string> {
   const { default: rehypeShiki } = await import('@shikijs/rehype')
@@ -37,6 +40,7 @@ export async function renderMarkdown(md: string): Promise<string> {
     .use(remarkDirective)
     .use(remarkCodeProps, _remarkCodePropsOptions ?? {})
     .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypePreserveCodeMeta)
     .use(rehypeRaw)
 
   if (_rehypeOptions) {
@@ -46,12 +50,16 @@ export async function renderMarkdown(md: string): Promise<string> {
   processor.use(rehypeShiki, {
     theme: 'github-dark',
     addLanguageClass: true,
+    parseMetaString: parseCodeBlockMeta,
+    transformers: [titleTransformer],
   })
 
   if (_rehypeOptions) {
     processor.use(rehypeTypedocCodeBlocks, _rehypeOptions)
   }
 
+  processor.use(rehypeCodeBlockChrome)
+  processor.use(rehypeBaseUrl, { base: import.meta.env.BASE_URL ?? '/' })
   processor.use(rehypeStringify)
 
   const file = await processor.process(md)

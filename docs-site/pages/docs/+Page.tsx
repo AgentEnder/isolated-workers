@@ -1,9 +1,13 @@
+import { useRef } from 'react';
 import { useData } from 'vike-react/useData';
+import { useCodeCopyHydration } from '../../components/CodeCopyHydration';
 import { Link } from '../../components/Link';
 import type { DocsData } from './+data';
 
 export default function Page() {
   const { doc } = useData<DocsData>();
+  const contentRef = useRef<HTMLDivElement>(null);
+  useCodeCopyHydration(contentRef);
 
   if (!doc) {
     return (
@@ -36,7 +40,7 @@ export default function Page() {
       </div>
 
       {/* Content */}
-      <div className="prose prose-invert max-w-none space-y-8">
+      <div ref={contentRef} className="prose prose-invert max-w-none space-y-8">
         {doc?.renderedHtml ? (
           <div
             className="docs-prose"
