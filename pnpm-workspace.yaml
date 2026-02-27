@@ -41,3 +41,6 @@ catalog:
 
 onlyBuiltDependencies:
   - nx
+
+overrides:
+  '@functional-examples/documentation': link:../functional-examples/packages/documentation

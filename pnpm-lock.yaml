@@ -67,22 +67,25 @@ catalogs:
       specifier: ^1.3.1
       version: 1.6.1
 
+overrides:
+  '@functional-examples/documentation': link:../functional-examples/packages/documentation
+
 importers:
 
   .:
     devDependencies:
       '@functional-examples/documentation':
-        specifier: ^0.1.0
-        version: 0.1.0(functional-examples@0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6))(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)
+        specifier: link:../functional-examples/packages/documentation
+        version: link:../functional-examples/packages/documentation
       '@functional-examples/javascript':
-        specifier: ^0.1.0
-        version: 0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)
+        specifier: ^0.1.1
+        version: 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)
       '@functional-examples/test':
-        specifier: ^0.1.0
-        version: 0.1.0(functional-examples@0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6))(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)
+        specifier: ^0.1.1
+        version: 0.1.1(functional-examples@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6))(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)
       '@functional-examples/yaml-manifest':
-        specifier: ^0.1.0
-        version: 0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)
+        specifier: ^0.1.1
+        version: 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)
       '@nx/eslint':
         specifier: 'catalog:'
         version: 22.5.0(@babel/traverse@7.28.6)(@zkochan/js-yaml@0.0.7)(eslint@9.39.2(jiti@2.6.1))(nx@22.5.0)
@@ -108,8 +111,8 @@ importers:
         specifier: 'catalog:'
         version: 9.39.2(jiti@2.6.1)
       functional-examples:
-        specifier: ^0.1.0
-        version: 0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
+        specifier: ^0.1.1
+        version: 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
       nx:
         specifier: 'catalog:'
         version: 22.5.0
@@ -120,8 +123,8 @@ importers:
         specifier: 'catalog:'
         version: 2.8.8
       rehype-typedoc:
-        specifier: ^0.0.1
-        version: 0.0.1(remark-directive@3.0.1)(unified@11.0.5)
+        specifier: ^0.1.0
+        version: 0.1.0(remark-directive@3.0.1)(unified@11.0.5)
       tsx:
         specifier: 'catalog:'
         version: 4.21.0
@@ -129,8 +132,8 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
       vike-plugin-typedoc:
-        specifier: ^0.0.1
-        version: 0.0.1(react@19.2.4)(vike-react@0.6.19(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.252(react-streaming@0.4.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))))(vike@0.4.252(react-streaming@0.4.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)))
+        specifier: ^0.1.0
+        version: 0.1.0(react@19.2.4)(vike-react@0.6.19(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.252(react-streaming@0.4.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))))(vike@0.4.252(react-streaming@0.4.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)))
 
   benchmarks:
     dependencies:
@@ -160,8 +163,8 @@ importers:
         specifier: ^0.1.0
         version: 0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
       '@functional-examples/documentation':
-        specifier: ^0.1.0
-        version: 0.1.0(functional-examples@0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6))(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)
+        specifier: link:../../functional-examples/packages/documentation
+        version: link:../../functional-examples/packages/documentation
       '@functional-examples/javascript':
         specifier: ^0.1.0
         version: 0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)
@@ -1324,25 +1327,47 @@ packages:
       yaml:
         optional: true
 
-  '@functional-examples/documentation@0.1.0':
-    resolution: {integrity: sha512-a9p3KhzI7iqDwNeJhdDhdLvqyMwvgRyIi/eMYgrRAdOWxUZMfxVUdrtSTF3BUPEoN7dsBZLt9pZehNmdPb3LoA==}
+  '@functional-examples/devkit@0.1.1':
+    resolution: {integrity: sha512-PpwjNDnAYkt2fE1hsQh8r7aOTseVGpTumwAOHNZDf3UluJGEoiF3zhZDztimSSMUhQJdn4wHsKUHxRw6j/c5Zw==}
     peerDependencies:
-      functional-examples: 0.1.0
-      yaml: '*'
+      json5: '>=2.0.0'
+      jsonc-parser: '>=3.0.0'
+      picomatch: '>=4.0.0'
+      tinyglobby: '>=0.2.0'
+      yaml: '>=2.0.0'
     peerDependenciesMeta:
+      json5:
+        optional: true
+      jsonc-parser:
+        optional: true
+      picomatch:
+        optional: true
+      tinyglobby:
+        optional: true
       yaml:
         optional: true
 
   '@functional-examples/javascript@0.1.0':
     resolution: {integrity: sha512-8gYwzhfIJjR6O0XVyz5gJVCw59wZB8O3FLkXdIE8CvJRg13evdPYHI3tjKFI8aEDdvvh8UnapXbxaq6Q4/erkw==}
 
+  '@functional-examples/javascript@0.1.1':
+    resolution: {integrity: sha512-y3qEhMP7Rj+mBwNaMo7+o9g2rxRjeXU0nNgYCyfIv/ls+ArE8W5GUE6QV0c4SBrsUrVncJrx54MUn+lDBF8J2w==}
+
   '@functional-examples/test@0.1.0':
     resolution: {integrity: sha512-x4FESwfNGsnrtkcbQcs8RGpx9wIzZgEABj0iSNm9Uiu/o0RHCDhE3JquMrugZ3hIIkZWmLBUtWTVRJKIgO3t4w==}
     peerDependencies:
       functional-examples: 0.1.0
 
+  '@functional-examples/test@0.1.1':
+    resolution: {integrity: sha512-XTGl+jllG8SWn13/K+M3ovsIlwp0KZbzpz1dTNdF6UK0xPj3fLNWSXjej+V9/R2cKPAfUn3qMsnDpC0a48PuhQ==}
+    peerDependencies:
+      functional-examples: 0.1.1
+
   '@functional-examples/yaml-manifest@0.1.0':
     resolution: {integrity: sha512-5ptOVruKJRf5kWPM5Yo3iWzMWTUoH+8gKrQromLfdpyqqXwrwIWHAXJySRuAGN/sPjNLdEvVZM9HBW8nTXnTSA==}
+
+  '@functional-examples/yaml-manifest@0.1.1':
+    resolution: {integrity: sha512-xf+4CzgNR0gDjs5vy6Mi9r8qNitN6b34n11llh7SCqklPya9dVmdCCroQ5uHr29bxR1GRwxMMQi2VXWD47ZoDg==}
 
   '@gerrit0/mini-shiki@3.22.0':
     resolution: {integrity: sha512-jMpciqEVUBKE1QwU64S4saNMzpsSza6diNCk4MWAeCxO2+LFi2FIFmL2S0VDLzEJCxuvCbU783xi8Hp/gkM5CQ==}
@@ -2733,10 +2758,6 @@ packages:
     resolution: {integrity: sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==}
     engines: {node: '>=0.10.0'}
 
-  eta@3.5.0:
-    resolution: {integrity: sha512-e3x3FBvGzeCIHhF+zhK8FZA2vC5uFn6b4HJjegUbIWrDb4mJ7JjTGMJY9VGIbRVpmSwHopNiaJibhjIr+HfLug==}
-    engines: {node: '>=6.0.0'}
-
   execa@8.0.1:
     resolution: {integrity: sha512-VyhnebXciFV2DESc+p6B+y0LjSm0krU4OgJN44qFAhBY0TJ+1V61tYD2+wHusZ6F9n5K+vl8k0sTy7PEfV4qpg==}
     engines: {node: '>=16.17'}
@@ -2843,6 +2864,10 @@ packages:
 
   functional-examples@0.1.0:
     resolution: {integrity: sha512-mjkyJEZIxbQTbXdbRBIFHP58hKBUFGfdIHDAhDFyn2e/x+PnDdDXxodMzEZ+p8aWSqsIhJirj3+zCY7s/l41Sw==}
+    hasBin: true
+
+  functional-examples@0.1.1:
+    resolution: {integrity: sha512-cKRSFNfS++I3gIMvUFXLobv2NzNZrlUxXPDIJPnFTjOdaK3Ufbbx8qwCn4LTEHL4pDgjczrF54BdifZJwdj8rA==}
     hasBin: true
 
   functions-have-names@1.2.3:
@@ -3963,6 +3988,12 @@ packages:
       remark-directive: '>=3.0.0'
       unified: '>=11.0.0'
 
+  rehype-typedoc@0.1.0:
+    resolution: {integrity: sha512-7ORrExsQ15LCWvCKT3SxMqLJCwZRpXUxxkvH0adMiWV/GrHpl8Zga/hNqZXd8m+9pmJmhnmgBmK3bCaRTDGGTw==}
+    peerDependencies:
+      remark-directive: '>=3.0.0'
+      unified: '>=11.0.0'
+
   remark-breaks@4.0.0:
     resolution: {integrity: sha512-IjEjJOkH4FuJvHZVIW0QCDWxcG96kCq7An/KVH2NfJe6rKZU2AsHeB3OEjPNRxi4QC34Xdx7I2KGYn6IpT7gxQ==}
 
@@ -4413,6 +4444,20 @@ packages:
 
   vike-plugin-typedoc@0.0.1:
     resolution: {integrity: sha512-d9YP52wx5vB196jcmJIaIzsDt0U+chshTVmu7PB7ngIW/XGcqXMorD3vp/IabU3k0+A0irzrmoPwWKLUeUZOMg==}
+    peerDependencies:
+      react: '>=18'
+      vike: '>=0.4.250'
+      vike-react: '>=0.5'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      vike:
+        optional: true
+      vike-react:
+        optional: true
+
+  vike-plugin-typedoc@0.1.0:
+    resolution: {integrity: sha512-swVNPenGoPjBFKHVojEK1FioYvW6lu0qRnsPLgOL+t0eS/KRNWY98tE9c2MSJlHr076baktdrS+JaJu1WSXv0Q==}
     peerDependencies:
       react: '>=18'
       vike: '>=0.4.250'
@@ -5609,26 +5654,38 @@ snapshots:
       - tsx
       - zod
 
-  '@functional-examples/documentation@0.1.0(functional-examples@0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6))(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)':
+  '@functional-examples/devkit@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)':
+    dependencies:
+      cli-forge: 1.2.0(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)
+    optionalDependencies:
+      json5: 2.2.3
+      jsonc-parser: 3.2.0
+      picomatch: 4.0.3
+      tinyglobby: 0.2.15
+      yaml: 2.8.2
+    transitivePeerDependencies:
+      - markdown-factory
+      - tsx
+      - zod
+
+  '@functional-examples/javascript@0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)':
     dependencies:
       '@functional-examples/devkit': 0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
-      cli-forge: 1.2.0(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)
-      eta: 3.5.0
-      functional-examples: 0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
-      zod: 4.3.6
-    optionalDependencies:
+      dependency-tree: 11.3.0
+      picomatch: 4.0.3
+      tinyglobby: 0.2.15
       yaml: 2.8.2
     transitivePeerDependencies:
       - json5
       - jsonc-parser
       - markdown-factory
-      - picomatch
-      - tinyglobby
+      - supports-color
       - tsx
+      - zod
 
-  '@functional-examples/javascript@0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)':
+  '@functional-examples/javascript@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)':
     dependencies:
-      '@functional-examples/devkit': 0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
+      '@functional-examples/devkit': 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
       dependency-tree: 11.3.0
       picomatch: 4.0.3
       tinyglobby: 0.2.15
@@ -5656,9 +5713,37 @@ snapshots:
       - tsx
       - yaml
 
+  '@functional-examples/test@0.1.1(functional-examples@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6))(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)':
+    dependencies:
+      '@functional-examples/devkit': 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
+      cli-forge: 1.2.0(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)
+      functional-examples: 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
+      zod: 4.3.6
+    transitivePeerDependencies:
+      - json5
+      - jsonc-parser
+      - markdown-factory
+      - picomatch
+      - tinyglobby
+      - tsx
+      - yaml
+
   '@functional-examples/yaml-manifest@0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)':
     dependencies:
       '@functional-examples/devkit': 0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
+      picomatch: 4.0.3
+      tinyglobby: 0.2.15
+      yaml: 2.8.2
+    transitivePeerDependencies:
+      - json5
+      - jsonc-parser
+      - markdown-factory
+      - tsx
+      - zod
+
+  '@functional-examples/yaml-manifest@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)':
+    dependencies:
+      '@functional-examples/devkit': 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
       picomatch: 4.0.3
       tinyglobby: 0.2.15
       yaml: 2.8.2
@@ -7369,8 +7454,6 @@ snapshots:
 
   esutils@2.0.3: {}
 
-  eta@3.5.0: {}
-
   execa@8.0.1:
     dependencies:
       cross-spawn: 7.0.6
@@ -7486,6 +7569,23 @@ snapshots:
   functional-examples@0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6):
     dependencies:
       '@functional-examples/devkit': 0.1.0(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
+      ajv: 8.18.0
+      cli-forge: 1.2.0(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)
+      jiti: 2.6.1
+      minimatch: 10.1.1
+      tinyglobby: 0.2.15
+    transitivePeerDependencies:
+      - json5
+      - jsonc-parser
+      - markdown-factory
+      - picomatch
+      - tsx
+      - yaml
+      - zod
+
+  functional-examples@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6):
+    dependencies:
+      '@functional-examples/devkit': 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(markdown-factory@0.2.0(yaml@2.8.2))(picomatch@4.0.3)(tinyglobby@0.2.15)(tsx@4.21.0)(yaml@2.8.2)(zod@4.3.6)
       ajv: 8.18.0
       cli-forge: 1.2.0(markdown-factory@0.2.0(yaml@2.8.2))(tsx@4.21.0)(zod@4.3.6)
       jiti: 2.6.1
@@ -8936,6 +9036,12 @@ snapshots:
       unified: 11.0.5
       unist-util-visit: 5.1.0
 
+  rehype-typedoc@0.1.0(remark-directive@3.0.1)(unified@11.0.5):
+    dependencies:
+      remark-directive: 3.0.1
+      unified: 11.0.5
+      unist-util-visit: 5.1.0
+
   remark-breaks@4.0.0:
     dependencies:
       '@types/mdast': 4.0.4
@@ -9510,6 +9616,23 @@ snapshots:
     dependencies:
       rehype-stringify: 10.0.1
       rehype-typedoc: 0.0.1(remark-directive@3.0.1)(unified@11.0.5)
+      remark-breaks: 4.0.0
+      remark-directive: 3.0.1
+      remark-gfm: 4.0.1
+      remark-parse: 11.0.0
+      remark-rehype: 11.1.2
+      unified: 11.0.5
+    optionalDependencies:
+      react: 19.2.4
+      vike: 0.4.252(react-streaming@0.4.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))
+      vike-react: 0.6.19(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.252(react-streaming@0.4.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)))
+    transitivePeerDependencies:
+      - supports-color
+
+  vike-plugin-typedoc@0.1.0(react@19.2.4)(vike-react@0.6.19(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.252(react-streaming@0.4.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))))(vike@0.4.252(react-streaming@0.4.15(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.1.0)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))):
+    dependencies:
+      rehype-stringify: 10.0.1
+      rehype-typedoc: 0.1.0(remark-directive@3.0.1)(unified@11.0.5)
       remark-breaks: 4.0.0
       remark-directive: 3.0.1
       remark-gfm: 4.0.1
