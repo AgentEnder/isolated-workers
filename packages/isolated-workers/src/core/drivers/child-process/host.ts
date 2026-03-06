@@ -19,7 +19,7 @@ import {
   generateSocketPath,
   cleanupSocketPath,
 } from '../../../platform/socket.js';
-import { createConnection, type Connection } from '../../connection.js';
+import { createConnection, type Connection } from './connection.js';
 import type {
   DriverChannel,
   DriverMessage,
@@ -288,15 +288,18 @@ export async function spawnWorker(
   script: string | URL,
   options: ChildProcessDriverOptions = {}
 ): Promise<ChildProcessChannel> {
-  const resolvedScript = typeof script === 'string' ? script : (() => {
+  let resolvedScript: string;
+  if (typeof script === 'string') {
+    resolvedScript = script;
+  } else {
     if (script.protocol !== 'file:') {
       throw new Error(
         `child_process driver only supports file:// URLs or string paths, got "${script.protocol}"`
       );
     }
-    const { fileURLToPath } = require('node:url') as typeof import('node:url');
-    return fileURLToPath(script);
-  })();
+    const { fileURLToPath } = await import('node:url');
+    resolvedScript = fileURLToPath(script);
+  }
 
   const {
     env = {},

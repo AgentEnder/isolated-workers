@@ -83,7 +83,11 @@ export function getTerminatorBuffer(serializer: Serializer): Uint8Array {
  * Called on worker startup.
  */
 export function validateSerializer(serializer: Serializer): void {
-  const expectedName = process.env.ISOLATED_WORKERS_SERIALIZER;
+  // Guard against environments without process (e.g., Web Workers)
+  const expectedName =
+    typeof process !== 'undefined' && process.env
+      ? process.env.ISOLATED_WORKERS_SERIALIZER
+      : undefined;
   const actualName = serializer.constructor.name;
 
   if (expectedName && actualName !== expectedName) {
