@@ -141,6 +141,20 @@ export interface HttpCapabilities extends DriverCapabilities {
 }
 
 /**
+ * Capability type for web_worker driver.
+ *
+ * Web Workers support SharedArrayBuffer (with COOP/COEP headers)
+ * but cannot be reconnected or detached from the page.
+ *
+ * @category Drivers
+ */
+export interface WebWorkerCapabilities extends DriverCapabilities {
+  reconnect: false;
+  detach: false;
+  sharedMemory: true;
+}
+
+/**
  * Reconnect capability mixin.
  *
  * Channels that support reconnection implement this interface
