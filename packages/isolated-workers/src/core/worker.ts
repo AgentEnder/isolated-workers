@@ -112,8 +112,8 @@ export interface WorkerOptions<
   TDefs extends MessageDefs = MessageDefs,
   TDriver extends Driver = Driver<ChildProcessCapabilities>
 > {
-  /** Path to worker script */
-  script: string;
+  /** Path to worker script or URL (file:// for Node drivers, any for web_worker) */
+  script: string | URL;
 
   /**
    * Driver to use for spawning the worker.

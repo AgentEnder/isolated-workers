@@ -285,9 +285,19 @@ export class ChildProcessChannel
  * @returns Promise resolving to a ChildProcessChannel
  */
 export async function spawnWorker(
-  script: string,
+  script: string | URL,
   options: ChildProcessDriverOptions = {}
 ): Promise<ChildProcessChannel> {
+  const resolvedScript = typeof script === 'string' ? script : (() => {
+    if (script.protocol !== 'file:') {
+      throw new Error(
+        `child_process driver only supports file:// URLs or string paths, got "${script.protocol}"`
+      );
+    }
+    const { fileURLToPath } = require('node:url') as typeof import('node:url');
+    return fileURLToPath(script);
+  })();
+
   const {
     env = {},
     detached = false,
@@ -307,7 +317,7 @@ export async function spawnWorker(
   const logger = customLogger ?? createMetaLogger(undefined, logLevel);
   const socketPath = customSocketPath ?? generateSocketPath('worker');
 
-  logger.info('Spawning worker', { script, socketPath, detached });
+  logger.info('Spawning worker', { script: resolvedScript, socketPath, detached });
 
   // Create startup data for the worker
   const startupData: ChildProcessStartupData = {
@@ -318,7 +328,7 @@ export async function spawnWorker(
   };
 
   // Spawn the child process
-  const child = fork(script, [], {
+  const child = fork(resolvedScript, [], {
     ...spawnOptions,
     env: {
       ...process.env,

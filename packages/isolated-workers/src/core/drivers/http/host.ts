@@ -348,9 +348,19 @@ export class HttpChannel
  * @returns Promise resolving to an HttpChannel
  */
 export async function spawnWorker(
-  script: string,
+  script: string | URL,
   options: HttpDriverOptions = {}
 ): Promise<HttpChannel> {
+  const resolvedScript = typeof script === 'string' ? script : (() => {
+    if (script.protocol !== 'file:') {
+      throw new Error(
+        `http driver only supports file:// URLs or string paths, got "${script.protocol}"`
+      );
+    }
+    const { fileURLToPath } = require('node:url') as typeof import('node:url');
+    return fileURLToPath(script);
+  })();
+
   const {
     env = {},
     detached = false,
@@ -369,7 +379,7 @@ export async function spawnWorker(
 
   const logger = customLogger ?? createMetaLogger(undefined, logLevel);
 
-  logger.info('Spawning HTTP worker', { script, port: preferredPort, detached });
+  logger.info('Spawning HTTP worker', { script: resolvedScript, port: preferredPort, detached });
 
   // Create startup data for the worker
   const startupData: HttpStartupData = {
@@ -380,7 +390,7 @@ export async function spawnWorker(
   };
 
   // Spawn the child process
-  const child = fork(script, [], {
+  const child = fork(resolvedScript, [], {
     ...spawnOptions,
     env: {
       ...process.env,
