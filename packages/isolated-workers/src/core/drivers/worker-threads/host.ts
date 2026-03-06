@@ -276,9 +276,19 @@ function filterExecArgv(argv: string[]): string[] {
  * @returns Promise resolving to a WorkerThreadsChannel
  */
 export async function spawnWorker(
-  script: string,
+  script: string | URL,
   options: WorkerThreadsDriverOptions = {}
 ): Promise<WorkerThreadsChannel> {
+  const resolvedScript = typeof script === 'string' ? script : (() => {
+    if (script.protocol !== 'file:') {
+      throw new Error(
+        `worker_threads driver only supports file:// URLs or string paths, got "${script.protocol}"`
+      );
+    }
+    const { fileURLToPath } = require('node:url') as typeof import('node:url');
+    return fileURLToPath(script);
+  })();
+
   const {
     workerData: userWorkerData,
     resourceLimits,
@@ -306,10 +316,10 @@ export async function spawnWorker(
   // provide CJS hooks that tsImport may need for resolving dependencies.
   //
   // Requires tsx as an optional peer dependency.
-  let scriptOrCodeToRun = script;
+  let scriptOrCodeToRun = resolvedScript;
   let useEval = evalCode;
 
-  if (!evalCode && script.endsWith('.ts')) {
+  if (!evalCode && resolvedScript.endsWith('.ts')) {
     // Strip only inherited tsx --import flags (which cause cycles in worker_threads).
     // Keep tsx --require flags (CJS hooks that complement tsImport).
     const tsxPattern = /[\\/]tsx[\\/]/;
@@ -366,7 +376,7 @@ export async function spawnWorker(
     // tsImport resolves .ts files and their transitive imports without
     // needing global ESM loader registration.
     const { pathToFileURL } = await import('node:url');
-    const scriptUrl = pathToFileURL(script).href;
+    const scriptUrl = pathToFileURL(resolvedScript).href;
 
     scriptOrCodeToRun = `
       const { tsImport } = require("tsx/esm/api");
@@ -379,7 +389,7 @@ export async function spawnWorker(
   }
 
   logger.info('Spawning worker thread', {
-    script: evalCode ? '<code>' : script,
+    script: evalCode ? '<code>' : resolvedScript,
   });
   logger.info('Worker thread spawn options', {
     resourceLimits,

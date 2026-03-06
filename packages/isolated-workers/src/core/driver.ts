@@ -95,7 +95,7 @@ export interface Driver<
   /** Driver capabilities */
   readonly capabilities: TCapabilities;
   /** Spawn a worker and return communication channel */
-  spawn(script: string, options: TOptions): Promise<DriverChannel>;
+  spawn(script: string | URL, options: TOptions): Promise<DriverChannel>;
 }
 
 /**
@@ -257,7 +257,7 @@ export interface DriverConfig<
   name: string;
 
   /** Spawn a worker (host side) */
-  spawn(script: string, options: TOptions): Promise<DriverChannel>;
+  spawn(script: string | URL, options: TOptions): Promise<DriverChannel>;
 
   /** Get startup data (server side) - throws if not available */
   getStartupData(): TStartupData | Promise<TStartupData>;

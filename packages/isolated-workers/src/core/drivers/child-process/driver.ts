@@ -49,7 +49,7 @@ export const ChildProcessDriver = defineWorkerDriver({
    * @param options - Spawn options
    * @returns Promise resolving to a DriverChannel
    */
-  async spawn(script: string, options: ChildProcessDriverOptions = {}) {
+  async spawn(script: string | URL, options: ChildProcessDriverOptions = {}) {
     const { spawnWorker } = await import('./host.js');
     return spawnWorker(script, options);
   },
