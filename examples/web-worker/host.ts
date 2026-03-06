@@ -11,7 +11,7 @@ import { WebWorkerDriver } from 'isolated-workers/drivers/web-worker';
 import type { Messages } from './messages.js';
 
 async function main() {
-  const worker = await createWorker<Messages>({
+  const worker = await createWorker<Messages, typeof WebWorkerDriver>({
     script: new URL('./worker.ts', import.meta.url),
     driver: WebWorkerDriver,
   });
