@@ -20,6 +20,7 @@ This directory contains the phased implementation plans for the isolated-workers
 | 12  | [Unexpected Shutdown Handling](./12-unexpected-shutdown-handling.md)                          | ✅ Completed | Crash detection and configurable recovery         |
 | 13  | [Documentation Accuracy Fixes](./10-documentation-accuracy-fixes.md)                       | ✅ Completed | Fix all accuracy issues in /docs/ folder       |
 | 14  | [E2E Isolation Tests](./e2e-isolation-tests.md)                                        | 🔄 In Progress | Global and module isolation tests with Vite           |
+| 15  | [Cross-Environment Web Worker Driver](./15-cross-environment-web-worker-driver.md)     | 📝 Draft        | Web Worker driver for browser environments            |
 
 ## Status Legend
 
