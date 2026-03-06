@@ -102,7 +102,7 @@ describe('WebWorkerChannel', () => {
       | ((ev: MessageEvent) => void)
       | null;
     expect(onmessage).toBeDefined();
-    onmessage!({ data: message } as MessageEvent);
+    (onmessage as (ev: MessageEvent) => void)({ data: message } as MessageEvent);
 
     expect(handler).toHaveBeenCalledWith(message);
   });
@@ -122,7 +122,7 @@ describe('WebWorkerChannel', () => {
     const onmessage = mockPort.onmessage as
       | ((ev: MessageEvent) => void)
       | null;
-    onmessage!({ data: message } as MessageEvent);
+    (onmessage as (ev: MessageEvent) => void)({ data: message } as MessageEvent);
 
     expect(handler1).toHaveBeenCalledWith(message);
     expect(handler2).toHaveBeenCalledWith(message);
@@ -145,7 +145,7 @@ describe('WebWorkerChannel', () => {
     const onmessage = mockPort.onmessage as
       | ((ev: MessageEvent) => void)
       | null;
-    onmessage!({ data: message } as MessageEvent);
+    (onmessage as (ev: MessageEvent) => void)({ data: message } as MessageEvent);
 
     expect(throwingHandler).toHaveBeenCalled();
     expect(safeHandler).toHaveBeenCalledWith(message);
@@ -190,7 +190,7 @@ describe('WebWorkerChannel', () => {
       | ((ev: ErrorEvent) => void)
       | null;
     expect(onerror).toBeDefined();
-    onerror!({ message: 'Script error' } as ErrorEvent);
+    (onerror as (ev: ErrorEvent) => void)({ message: 'Script error' } as ErrorEvent);
 
     expect(errorHandler).toHaveBeenCalledTimes(1);
     const errorArg = errorHandler.mock.calls[0][0] as Error;
@@ -213,7 +213,7 @@ describe('WebWorkerChannel', () => {
       | ((ev: MessageEvent) => void)
       | null;
     expect(onmessageerror).toBeDefined();
-    onmessageerror!({} as MessageEvent);
+    (onmessageerror as (ev: MessageEvent) => void)({} as MessageEvent);
 
     expect(errorHandler).toHaveBeenCalledTimes(1);
     const errorArg = errorHandler.mock.calls[0][0] as Error;

@@ -77,7 +77,7 @@ describe('WebWorkerServerChannel', () => {
       | ((ev: MessageEvent) => void)
       | null;
     expect(onmessage).toBeDefined();
-    onmessage!({ data: message } as MessageEvent);
+    (onmessage as (ev: MessageEvent) => void)({ data: message } as MessageEvent);
 
     expect(handler).toHaveBeenCalledTimes(1);
     // First arg is the message, second is the respond function
@@ -99,7 +99,7 @@ describe('WebWorkerServerChannel', () => {
     const onmessage = mockPort.onmessage as
       | ((ev: MessageEvent) => void)
       | null;
-    onmessage!({ data: message } as MessageEvent);
+    (onmessage as (ev: MessageEvent) => void)({ data: message } as MessageEvent);
 
     // Get the respond function passed to the handler
     const respond = handler.mock.calls[0][1] as (
@@ -136,7 +136,7 @@ describe('WebWorkerServerChannel', () => {
     const onmessage = mockPort.onmessage as
       | ((ev: MessageEvent) => void)
       | null;
-    onmessage!({ data: message } as MessageEvent);
+    (onmessage as (ev: MessageEvent) => void)({ data: message } as MessageEvent);
 
     expect(errorHandler).toHaveBeenCalledTimes(1);
     const errorArg = errorHandler.mock.calls[0][0] as Error;
@@ -153,7 +153,7 @@ describe('WebWorkerServerChannel', () => {
       | ((ev: MessageEvent) => void)
       | null;
     expect(onmessageerror).toBeDefined();
-    onmessageerror!({} as MessageEvent);
+    (onmessageerror as (ev: MessageEvent) => void)({} as MessageEvent);
 
     expect(errorHandler).toHaveBeenCalledTimes(1);
     const errorArg = errorHandler.mock.calls[0][0] as Error;
