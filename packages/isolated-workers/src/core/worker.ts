@@ -31,9 +31,11 @@ import type {
   Driver,
   DriverCapabilities,
   DriverChannel,
+  WebWorkerCapabilities,
   WorkerThreadsCapabilities,
 } from './driver.js';
 import type { ChildProcessDriverOptions } from './drivers/child-process/index.js';
+import type { WebWorkerDriverOptions } from './drivers/web-worker/index.js';
 import type { WorkerThreadsDriverOptions } from './drivers/worker-threads/index.js';
 import {
   applyMiddleware,
@@ -100,6 +102,8 @@ export type DriverOptionsFor<TDriver extends Driver> =
     ? ChildProcessDriverOptions
     : TDriver extends Driver<WorkerThreadsCapabilities>
     ? WorkerThreadsDriverOptions
+    : TDriver extends Driver<WebWorkerCapabilities>
+    ? WebWorkerDriverOptions
     : Record<string, unknown>;
 
 /**

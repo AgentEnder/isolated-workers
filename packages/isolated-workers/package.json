@@ -42,6 +42,11 @@
       "import": "./dist/core/drivers/http/index.js",
       "types": "./dist/core/drivers/http/index.d.ts",
       "default": "./dist/core/drivers/http/index.js"
+    },
+    "./drivers/web-worker": {
+      "import": "./dist/core/drivers/web-worker/index.js",
+      "types": "./dist/core/drivers/web-worker/index.d.ts",
+      "default": "./dist/core/drivers/web-worker/index.js"
     }
   },
   "scripts": {

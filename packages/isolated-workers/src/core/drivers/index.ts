@@ -24,6 +24,7 @@ export {
   type ServerChannel,
   type ServerOptions,
   type StartupData,
+  type WebWorkerCapabilities,
   type WorkerThreadsCapabilities,
 } from '../driver.js';
 
@@ -66,6 +67,17 @@ export {
   type ResponseFunction as HttpResponseFunction,
   type HttpStartupData,
 } from './http/index.js';
+
+// Web Worker driver
+export {
+  WebWorkerChannel,
+  WebWorkerDriver,
+  WebWorkerServerChannel,
+  type WebWorkerDriverOptions,
+  type WebWorkerDriverType,
+  type ResponseFunction as WebWorkerResponseFunction,
+  type WebWorkerStartupData,
+} from './web-worker/index.js';
 
 /**
  * Load the default driver (child_process) via dynamic import.
