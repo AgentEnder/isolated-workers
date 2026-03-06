@@ -1,0 +1,9 @@
+title: Web Worker Driver
+description: |
+  Use the WebWorkerDriver for browser-based workers. Web workers run in a
+  separate thread within the browser, enabling parallel computation without
+  blocking the main thread.
+include:
+  - messages.ts
+  - host.ts
+  - worker.ts
