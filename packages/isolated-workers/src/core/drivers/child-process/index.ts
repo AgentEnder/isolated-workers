@@ -24,3 +24,10 @@ export {
   DEFAULT_SERVER_CONNECT_TIMEOUT,
   type ResponseFunction,
 } from './server.js';
+
+// Connection (socket-based, child-process only)
+export {
+  createConnection,
+  type Connection,
+  type ConnectionOptions,
+} from './connection.js';

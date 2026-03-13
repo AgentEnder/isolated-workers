@@ -289,12 +289,14 @@ export async function startWorkerServer<TDefs extends MessageDefs>(
     serverLogger.info('Worker server stopped');
   };
 
-  // Handle process signals for graceful shutdown
-  const signalHandler = () => {
-    void stopServer();
-  };
-  process.on('SIGTERM', signalHandler);
-  process.on('SIGINT', signalHandler);
+  // Handle process signals for graceful shutdown (Node.js only)
+  if (typeof process !== 'undefined' && typeof process.on === 'function') {
+    const signalHandler = () => {
+      void stopServer();
+    };
+    process.on('SIGTERM', signalHandler);
+    process.on('SIGINT', signalHandler);
+  }
 
   return {
     get isRunning() {

@@ -11,20 +11,12 @@ export {
   defaultTxIdGenerator,
   isErrorMessage,
   isResultMessage,
-  sendError,
-  sendMessage,
   type MessageHandler,
   type MiddlewareContext,
   type MiddlewareDirection,
   type TypedMessage,
   type TypedResult,
 } from './messaging.js';
-
-export {
-  createConnection,
-  type Connection,
-  type ConnectionOptions,
-} from './connection.js';
 
 export {
   createWorker,

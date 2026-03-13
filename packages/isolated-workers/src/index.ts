@@ -22,8 +22,6 @@ export {
   type BuiltInTimeoutKey,
   type ChildProcessCapabilities,
   type ChildProcessDriverOptions,
-  type Connection,
-  type ConnectionOptions,
   type DetachCapability,
   // Driver types
   type Driver,
