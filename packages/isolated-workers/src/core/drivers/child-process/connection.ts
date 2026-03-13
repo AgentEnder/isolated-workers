@@ -4,12 +4,12 @@
  * @packageDocumentation
  */
 
-import { Socket, createConnection as createNetConnection } from 'net';
-import { createMetaLogger, type Logger } from '../utils/index.js';
-import { defaultSerializer, type Serializer } from '../utils/serializer.js';
-import { TypedMessage, TypedResult } from './messaging.js';
-import type { MessageDefs, Middleware, AnyMessage } from '../types/index.js';
-import { calculateDelay, applyMiddleware } from './internals.js';
+import { type Socket, createConnection as createNetConnection } from 'net';
+import { createMetaLogger, type Logger } from '../../../utils/index.js';
+import { defaultSerializer, type Serializer } from '../../../utils/serializer.js';
+import { TypedMessage, TypedResult } from '../../messaging.js';
+import type { MessageDefs, Middleware, AnyMessage } from '../../../types/index.js';
+import { calculateDelay, applyMiddleware } from '../../internals.js';
 
 /**
  * Connection options

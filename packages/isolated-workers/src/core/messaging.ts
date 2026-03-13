@@ -4,25 +4,16 @@
  * @packageDocumentation
  */
 
-import { Socket } from 'net';
-import { randomUUID } from 'crypto';
 import {
-  serializeError,
   type SerializedError,
-  type Serializer,
-  defaultSerializer,
 } from '../utils/serializer.js';
-import { createMetaLogger } from '../utils/index.js';
 import type {
   BaseMessage,
-  MessageDefs,
-  AnyMessage,
-  Middleware,
   TransactionIdGenerator,
 } from '../types/index.js';
-import { applyMiddleware } from './internals.js';
-
-const logger = createMetaLogger();
+import {
+  createMetaLogger,
+} from '../utils/index.js';
 
 /**
  * Direction for middleware context
@@ -62,104 +53,14 @@ export interface TypedResult<T = unknown> extends BaseMessage {
  */
 export type MessageHandler = (payload: unknown) => unknown | Promise<unknown>;
 
+const logger = createMetaLogger();
+
 /**
  * Default transaction ID generator using crypto.randomUUID()
  */
 export const defaultTxIdGenerator: TransactionIdGenerator = (_message) => {
-  return randomUUID();
+  return globalThis.crypto.randomUUID();
 };
-
-/**
- * Send a message through a socket with per-instance middleware
- */
-export async function sendMessage<TDefs extends MessageDefs>(
-  socket: Socket,
-  message: AnyMessage<TDefs>,
-  serializer: Serializer = defaultSerializer,
-  middleware: Middleware<TDefs>[] = []
-): Promise<void> {
-  logger.debug('Sending message', {
-    type: message.type,
-    tx: message.tx,
-  });
-
-  // Apply outgoing middleware (message is sealed inside applyMiddleware)
-  const processedMessage =
-    middleware.length > 0
-      ? await applyMiddleware(message, 'outgoing', middleware)
-      : message;
-
-  const serialized = serializer.serialize(processedMessage);
-  const terminatorStr =
-    typeof serializer.terminator === 'string'
-      ? serializer.terminator
-      : serializer.terminator.toString();
-
-  // Convert to string for sending (handles both string and Buffer serialization)
-  const dataStr =
-    typeof serialized === 'string'
-      ? serialized + terminatorStr
-      : serialized.toString() + terminatorStr;
-
-  await new Promise<void>((resolve, reject) => {
-    socket.write(dataStr, (err) => {
-      if (err) {
-        logger.error('Failed to send message', {
-          error: err.message,
-          tx: message.tx,
-        });
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
-}
-
-/**
- * Send an error response
- * @param socket - Socket to send through
- * @param tx - Transaction ID
- * @param type - Message type
- * @param error - Error to send
- */
-export async function sendError(
-  socket: Socket,
-  tx: string,
-  type: string,
-  error: Error,
-  serializer: Serializer = defaultSerializer
-): Promise<void> {
-  const errorMessage = {
-    tx,
-    type: `${type}Error`,
-    payload: serializeError(error),
-  };
-
-  logger.debug('Sending error', { type: errorMessage.type, tx });
-
-  const serialized = serializer.serialize(errorMessage);
-  const terminatorStr =
-    typeof serializer.terminator === 'string'
-      ? serializer.terminator
-      : serializer.terminator.toString();
-
-  const dataStr =
-    typeof serialized === 'string'
-      ? serialized + terminatorStr
-      : serialized.toString() + terminatorStr;
-
-  await new Promise<void>((resolve, reject) => {
-    socket.write(dataStr, (err) => {
-      if (err) {
-        logger.error('Failed to send error', { error: err.message, tx });
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
-}
 
 /**
  * Create a message handler that processes incoming messages
