@@ -13,7 +13,7 @@ import type {
 } from './worker.js';
 import type {
   Driver,
-  DriverChannel,
+  WorkerHandle,
   ChildProcessCapabilities,
   WorkerThreadsCapabilities,
 } from './driver.js';
@@ -41,12 +41,12 @@ describe('createWorker', () => {
       expectTypeOf<WtOptions>().toEqualTypeOf<WorkerThreadsDriverOptions>();
     });
 
-    test('WorkerClient has capabilities property', () => {
+    test('WorkerClient has expected properties', () => {
       type Client = WorkerClient<Record<string, never>>;
 
-      expectTypeOf<Client>().toHaveProperty('capabilities');
       expectTypeOf<Client>().toHaveProperty('send');
       expectTypeOf<Client>().toHaveProperty('close');
+      expectTypeOf<Client>().toHaveProperty('getHandle');
       expectTypeOf<Client>().toHaveProperty('pid');
       expectTypeOf<Client>().toHaveProperty('isActive');
       expectTypeOf<Client>().toHaveProperty('isConnected');
@@ -61,7 +61,7 @@ describe('createWorker', () => {
     test('WorkerClient with ChildProcessCapabilities has reconnect methods', () => {
       type Client = WorkerClient<
         Record<string, never>,
-        ChildProcessCapabilities
+        Driver<ChildProcessCapabilities>
       >;
 
       // disconnect and reconnect should be functions
@@ -72,7 +72,7 @@ describe('createWorker', () => {
     test('WorkerClient with WorkerThreadsCapabilities has never for reconnect methods', () => {
       type Client = WorkerClient<
         Record<string, never>,
-        WorkerThreadsCapabilities
+        Driver<WorkerThreadsCapabilities>
       >;
 
       // disconnect and reconnect should be never
@@ -85,8 +85,8 @@ describe('createWorker', () => {
     // These tests use mocks since we can't actually spawn workers in unit tests
 
     test('should accept a mock driver', async () => {
-      // Create a mock driver
-      const mockChannel: DriverChannel = {
+      // Create a mock worker handle
+      const mockChannel: WorkerHandle = {
         isConnected: true,
         pid: 12345,
         send: vi.fn().mockResolvedValue(undefined),
@@ -95,6 +95,7 @@ describe('createWorker', () => {
         onClose: vi.fn(),
         onShutdown: vi.fn(),
         close: vi.fn().mockResolvedValue(undefined),
+        getHandle: () => ({}),
       };
 
       const mockDriver: Driver<ChildProcessCapabilities> = {
@@ -114,8 +115,8 @@ describe('createWorker', () => {
       expect(typeof mockDriver.spawn).toBe('function');
     });
 
-    test('mock driver spawn returns DriverChannel', async () => {
-      const mockChannel: DriverChannel = {
+    test('mock driver spawn returns WorkerHandle', async () => {
+      const mockChannel: WorkerHandle = {
         isConnected: true,
         pid: undefined, // worker_threads style
         send: vi.fn().mockResolvedValue(undefined),
@@ -124,6 +125,7 @@ describe('createWorker', () => {
         onClose: vi.fn(),
         onShutdown: vi.fn(),
         close: vi.fn().mockResolvedValue(undefined),
+        getHandle: () => ({}),
       };
 
       const mockDriver: Driver<WorkerThreadsCapabilities> = {
@@ -181,14 +183,14 @@ describe('createWorker', () => {
       // With reconnect: true
       type ReconnectableClient = WorkerClient<
         Record<string, never>,
-        { reconnect: true; detach: boolean; sharedMemory: boolean }
+        Driver<{ reconnect: true; detach: boolean; sharedMemory: boolean }>
       >;
       expectTypeOf<ReconnectableClient['disconnect']>().toBeFunction();
 
       // With reconnect: false
       type NonReconnectableClient = WorkerClient<
         Record<string, never>,
-        { reconnect: false; detach: boolean; sharedMemory: boolean }
+        Driver<{ reconnect: false; detach: boolean; sharedMemory: boolean }>
       >;
       expectTypeOf<NonReconnectableClient['disconnect']>().toBeNever();
     });

@@ -1,11 +1,11 @@
 /**
- * Unit tests for WebWorkerChannel (host side)
+ * Unit tests for WebWorkerWorkerHandle (host side)
  *
  * Mocks the browser Worker and MessagePort APIs since they are
  * not available in a Node.js test environment.
  */
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { WebWorkerChannel } from '../host.js';
+import { WebWorkerWorkerHandle } from '../host.js';
 import type { DriverMessage } from '../../../driver.js';
 
 // ---------------------------------------------------------------------------
@@ -42,15 +42,15 @@ function createMockWorker(): Worker {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('WebWorkerChannel', () => {
+describe('WebWorkerWorkerHandle', () => {
   let mockWorker: Worker;
   let mockPort: MessagePort;
-  let channel: WebWorkerChannel;
+  let channel: WebWorkerWorkerHandle;
 
   beforeEach(() => {
     mockWorker = createMockWorker();
     mockPort = createMockMessagePort();
-    channel = new WebWorkerChannel(mockWorker, mockPort);
+    channel = new WebWorkerWorkerHandle(mockWorker, mockPort);
   });
 
   test('starts connected', () => {
