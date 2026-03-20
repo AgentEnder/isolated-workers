@@ -25,8 +25,10 @@ export {
   DEFAULT_STARTUP_TIMEOUT,
   shutdownWorker,
   type BuiltInTimeoutKey,
+  type CapabilitiesOf,
   type DriverOptionsFor,
   type TimeoutConfig,
+  type UnderlyingWorkerOf,
   type WorkerClient,
   type WorkerOptions,
 } from './worker.js';
@@ -43,12 +45,10 @@ export {
 // Driver types (re-exported from driver.ts)
 export type {
   ChildProcessCapabilities,
-  DetachCapability,
   Driver,
   DriverCapabilities,
-  DriverChannel,
   DriverMessage,
-  ReconnectCapability,
+  WorkerHandle,
   WorkerThreadsCapabilities,
 } from './driver.js';
 export type {

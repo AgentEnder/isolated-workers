@@ -6,16 +6,16 @@
 
 import { type ForkOptions } from 'child_process';
 import type {
+  ShutdownReason,
+  UnexpectedShutdownConfig,
+} from '../types/config.js';
+import { WorkerCrashedError } from '../types/errors.js';
+import type {
   AnyMessage,
   MessageDefs,
   Middleware,
   TransactionIdGenerator,
 } from '../types/index.js';
-import type {
-  ShutdownReason,
-  UnexpectedShutdownConfig,
-} from '../types/config.js';
-import { WorkerCrashedError } from '../types/errors.js';
 import {
   createMetaLogger,
   type Logger,
@@ -30,13 +30,8 @@ import type {
   ChildProcessCapabilities,
   Driver,
   DriverCapabilities,
-  DriverChannel,
-  WebWorkerCapabilities,
-  WorkerThreadsCapabilities,
+  WorkerHandle,
 } from './driver.js';
-import type { ChildProcessDriverOptions } from './drivers/child-process/index.js';
-import type { WebWorkerDriverOptions } from './drivers/web-worker/index.js';
-import type { WorkerThreadsDriverOptions } from './drivers/worker-threads/index.js';
 import {
   applyMiddleware,
   getTimeoutValue,
@@ -95,16 +90,46 @@ export const DEFAULT_SERVER_CONNECT_TIMEOUT = 30_000;
 export const DEFAULT_MESSAGE_TIMEOUT = 5 * 60 * 1000;
 
 /**
- * Driver-specific options mapping
+ * Extract driver-specific options from a Driver type.
+ *
+ * Infers `TOptions` from the driver's `spawn()` method signature,
+ * so custom drivers automatically get correct option types without
+ * needing to extend a hardcoded mapping.
  */
-export type DriverOptionsFor<TDriver extends Driver> =
-  TDriver extends Driver<ChildProcessCapabilities>
-    ? ChildProcessDriverOptions
-    : TDriver extends Driver<WorkerThreadsCapabilities>
-    ? WorkerThreadsDriverOptions
-    : TDriver extends Driver<WebWorkerCapabilities>
-    ? WebWorkerDriverOptions
-    : Record<string, unknown>;
+export type DriverOptionsFor<TDriver extends Driver> = TDriver extends {
+  spawn(script: string | URL, options: infer TOptions): Promise<WorkerHandle>;
+}
+  ? TOptions
+  : Record<string, unknown>;
+
+/**
+ * Extract capability flags from a Driver type.
+ */
+export type CapabilitiesOf<TDriver extends Driver> = TDriver extends Driver<
+  infer C
+>
+  ? C
+  : DriverCapabilities;
+
+/**
+ * Extract the spawn return type from a Driver.
+ */
+type SpawnResult<TDriver extends Driver> =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TDriver extends { spawn(...args: any[]): Promise<infer R> }
+    ? R
+    : WorkerHandle;
+
+/**
+ * Map a Driver type to its underlying worker instance type.
+ *
+ * Infers from the spawn return type's `getHandle()` return type.
+ * Each WorkerHandle implementation returns its concrete underlying type.
+ */
+export type UnderlyingWorkerOf<TDriver extends Driver> =
+  SpawnResult<TDriver> extends { getHandle(): infer THandle }
+    ? THandle
+    : unknown;
 
 /**
  * Worker options for spawning
@@ -203,20 +228,25 @@ export interface WorkerOptions<
   unexpectedShutdown?: UnexpectedShutdownConfig<TDefs>;
 }
 
+type OmitNever<T> = { [K in keyof T as T[K] extends never ? never : K]: T[K] };
+
 /**
  * Base worker client interface for type-safe messaging.
  *
  * The availability of certain methods depends on the driver's capabilities:
- * - `disconnect()` / `reconnect()`: Only available with child_process driver
+ * - `disconnect()` / `reconnect()`: Only available with reconnect-capable drivers
  * - `pid`: Returns number for child_process, undefined for worker_threads
+ *
+ * @typeParam TMessages - Message definitions type
+ * @typeParam TDriver - Driver type, used to derive capabilities and underlying worker type
  */
-export interface WorkerClient<
+export type WorkerClient<
   TMessages extends Record<
     string,
     { payload: unknown; result?: unknown }
   > = Record<string, { payload: unknown; result?: unknown }>,
-  TCapabilities extends DriverCapabilities = DriverCapabilities
-> {
+  TDriver extends Driver = Driver
+> = OmitNever<{
   /** Send a message and await response */
   send<K extends keyof TMessages>(
     type: K,
@@ -230,7 +260,7 @@ export interface WorkerClient<
    * Disconnect from worker but keep process alive.
    * Only available when driver supports reconnect capability.
    */
-  disconnect: TCapabilities['reconnect'] extends true
+  disconnect: CapabilitiesOf<TDriver>['reconnect'] extends true
     ? () => Promise<void>
     : never;
 
@@ -238,9 +268,19 @@ export interface WorkerClient<
    * Reconnect to existing worker.
    * Only available when driver supports reconnect capability.
    */
-  reconnect: TCapabilities['reconnect'] extends true
+  reconnect: CapabilitiesOf<TDriver>['reconnect'] extends true
     ? () => Promise<void>
     : never;
+
+  /**
+   * Get the raw underlying worker instance.
+   *
+   * Returns a typed handle based on the driver:
+   * - child_process → ChildProcess
+   * - worker_threads → Worker
+   * - Custom drivers → whatever their WorkerHandle.getHandle() returns
+   */
+  getHandle(): UnderlyingWorkerOf<TDriver>;
 
   /**
    * Process ID of the worker.
@@ -253,10 +293,7 @@ export interface WorkerClient<
 
   /** Whether connection to worker is active */
   isConnected: boolean;
-
-  /** The driver capabilities for this worker */
-  readonly capabilities: TCapabilities;
-}
+}>;
 
 // Pending requests map
 interface PendingRequest {
@@ -315,12 +352,7 @@ export async function createWorker<
   TDriver extends Driver = Driver<ChildProcessCapabilities>
 >(
   options: WorkerOptions<TMessages, TDriver>
-): Promise<
-  WorkerClient<
-    TMessages,
-    TDriver extends Driver<infer C> ? C : DriverCapabilities
-  >
-> {
+): Promise<WorkerClient<TMessages, TDriver>> {
   const {
     script,
     driver: providedDriver,
@@ -363,12 +395,10 @@ export async function createWorker<
 
   // Load driver: use provided driver or dynamically load child_process driver
   const driver = providedDriver ?? ((await loadDefaultDriver()) as TDriver);
-  const capabilities = driver.capabilities;
 
   workerLogger.info('Creating worker', {
     script,
     driver: driver.name,
-    capabilities,
   });
 
   // Build driver-specific options
@@ -399,7 +429,7 @@ export async function createWorker<
   }
 
   // Spawn the worker using the driver
-  let channel: DriverChannel;
+  let channel: WorkerHandle;
   try {
     channel = await driver.spawn(script, mergedDriverOptions);
     workerLogger.info('Worker channel established', { pid: channel.pid });
@@ -421,7 +451,7 @@ export async function createWorker<
    * Register event handlers on the channel.
    * This is called for both initial spawn and retry spawns.
    */
-  function registerChannelHandlers(ch: DriverChannel) {
+  function registerChannelHandlers(ch: WorkerHandle) {
     // Handle incoming messages
     ch.onMessage(async (message) => {
       // Apply incoming middleware if any
@@ -616,14 +646,12 @@ export async function createWorker<
   // TX ID generator (use provided or default)
   const effectiveTxIdGenerator = txIdGenerator ?? defaultTxIdGenerator;
 
-  // Build the client object based on capabilities
-  type ResultCapabilities = TDriver extends Driver<infer C>
-    ? C
-    : DriverCapabilities;
-
   const client = {
     pid: channel.pid,
-    capabilities: capabilities as ResultCapabilities,
+
+    getHandle() {
+      return channel.getHandle();
+    },
 
     get isActive() {
       return isActive && channel.isConnected;
@@ -732,18 +760,15 @@ export async function createWorker<
     },
 
     // Reconnect capability (only for drivers that support it)
-    disconnect: capabilities.reconnect
+    disconnect: driver.capabilities.reconnect
       ? async (): Promise<void> => {
           if (!isConnected) {
             return;
           }
 
-          workerLogger.info(
-            'Disconnecting from worker (keeping process alive)',
-            {
-              pid: channel.pid,
-            }
-          );
+          workerLogger.info('Disconnecting from worker', {
+            pid: channel.pid,
+          });
 
           // Clear pending requests
           pendingRequests.forEach((pending) => {
@@ -752,13 +777,12 @@ export async function createWorker<
           });
           pendingRequests.clear();
 
-          // For reconnectable channels, we'd use the disconnect method
-          // For now, just mark as disconnected
+          await channel.disconnect?.();
           isConnected = false;
         }
       : undefined,
 
-    reconnect: capabilities.reconnect
+    reconnect: driver.capabilities.reconnect
       ? async (): Promise<void> => {
           if (isConnected) {
             workerLogger.warn('Already connected to worker');
@@ -770,15 +794,12 @@ export async function createWorker<
           }
 
           workerLogger.info('Reconnecting to worker', { pid: channel.pid });
-
-          // For reconnectable channels, we'd use the reconnect method
-          // This requires the channel to support reconnection
+          await channel.reconnect?.();
           isConnected = true;
-
           workerLogger.info('Reconnected to worker', { pid: channel.pid });
         }
       : undefined,
-  } as WorkerClient<TMessages, ResultCapabilities>;
+  } as WorkerClient<TMessages, TDriver>;
 
   return client;
 }

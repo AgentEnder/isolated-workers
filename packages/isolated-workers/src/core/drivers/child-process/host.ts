@@ -21,10 +21,8 @@ import {
 } from '../../../platform/socket.js';
 import { createConnection, type Connection } from './connection.js';
 import type {
-  DriverChannel,
+  WorkerHandle,
   DriverMessage,
-  ReconnectCapability,
-  DetachCapability,
   StartupData,
 } from '../../driver.js';
 import type { ShutdownReason } from '../../../types/config.js';
@@ -101,14 +99,12 @@ export function encodeStartupData(data: StartupData): string {
 }
 
 /**
- * Channel implementation for child process driver.
+ * WorkerHandle implementation for child process driver.
  *
- * Wraps a Connection and ChildProcess, providing the DriverChannel interface
- * with optional reconnect and detach capabilities.
+ * Wraps a Connection and ChildProcess, providing the WorkerHandle interface
+ * with reconnect and detach capabilities.
  */
-export class ChildProcessChannel
-  implements DriverChannel, ReconnectCapability, DetachCapability
-{
+export class ChildProcessWorkerHandle implements WorkerHandle {
   private _isConnected: boolean;
   private _detached: boolean;
   private readonly _logger: Logger;
@@ -167,6 +163,10 @@ export class ChildProcessChannel
 
   get pid(): number | undefined {
     return this.child.pid;
+  }
+
+  getHandle(): ChildProcess {
+    return this.child;
   }
 
   get detached(): boolean {
@@ -282,12 +282,12 @@ export class ChildProcessChannel
  *
  * @param script - Path to the worker script
  * @param options - Spawn options
- * @returns Promise resolving to a ChildProcessChannel
+ * @returns Promise resolving to a ChildProcessWorkerHandle
  */
 export async function spawnWorker(
   script: string | URL,
   options: ChildProcessDriverOptions = {}
-): Promise<ChildProcessChannel> {
+): Promise<ChildProcessWorkerHandle> {
   let resolvedScript: string;
   if (typeof script === 'string') {
     resolvedScript = script;
@@ -380,7 +380,7 @@ export async function spawnWorker(
   }
 
   // Create and return the channel
-  return new ChildProcessChannel(
+  return new ChildProcessWorkerHandle(
     connection,
     child,
     socketPath,

@@ -20,10 +20,8 @@ import {
   type LogLevel,
 } from '../../../utils/logger.js';
 import type {
-  DriverChannel,
+  WorkerHandle,
   DriverMessage,
-  ReconnectCapability,
-  DetachCapability,
   StartupData,
 } from '../../driver.js';
 import type { ShutdownReason } from '../../../types/config.js';
@@ -108,15 +106,13 @@ export function encodeStartupData(data: StartupData): string {
 }
 
 /**
- * Channel implementation for HTTP driver.
+ * WorkerHandle implementation for HTTP driver.
  *
  * Wraps a ChildProcess and communicates via HTTP POST to the worker's
  * embedded HTTP server. Each `send()` call is a POST to `/message`
  * and the response body is parsed as the reply message.
  */
-export class HttpChannel
-  implements DriverChannel, ReconnectCapability, DetachCapability
-{
+export class HttpWorkerHandle implements WorkerHandle {
   private _isConnected: boolean;
   private _detached: boolean;
   private readonly _logger: Logger;
@@ -166,6 +162,10 @@ export class HttpChannel
 
   get pid(): number | undefined {
     return this.child.pid;
+  }
+
+  getHandle(): ChildProcess {
+    return this.child;
   }
 
   get detached(): boolean {
@@ -345,12 +345,12 @@ export class HttpChannel
  *
  * @param script - Path to the worker script
  * @param options - Spawn options
- * @returns Promise resolving to an HttpChannel
+ * @returns Promise resolving to an HttpWorkerHandle
  */
 export async function spawnWorker(
   script: string | URL,
   options: HttpDriverOptions = {}
-): Promise<HttpChannel> {
+): Promise<HttpWorkerHandle> {
   let resolvedScript: string;
   if (typeof script === 'string') {
     resolvedScript = script;
@@ -454,7 +454,7 @@ export async function spawnWorker(
   }
 
   // Create and return the channel
-  return new HttpChannel(child, assignedPort, serializer, {
+  return new HttpWorkerHandle(child, assignedPort, serializer, {
     detached,
     logger,
     onShutdown,

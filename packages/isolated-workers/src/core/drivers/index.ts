@@ -12,15 +12,13 @@
 export {
   defineWorkerDriver,
   type ChildProcessCapabilities,
-  type DetachCapability,
   type Driver,
   type DriverCapabilities,
-  type DriverChannel,
   type DriverConfig,
   type DriverMessage,
+  type WorkerHandle,
   type HttpCapabilities,
   type InferCapabilities,
-  type ReconnectCapability,
   type ServerChannel,
   type ServerOptions,
   type StartupData,
@@ -30,7 +28,7 @@ export {
 
 // Child process driver
 export {
-  ChildProcessChannel,
+  ChildProcessWorkerHandle,
   ChildProcessDriver,
   ChildProcessServerChannel,
   DEFAULT_SERVER_CONNECT_TIMEOUT,
@@ -45,7 +43,7 @@ export {
 // Worker threads driver
 export {
   STARTUP_DATA_WORKER_KEY,
-  WorkerThreadsChannel,
+  WorkerThreadsWorkerHandle,
   WorkerThreadsDriver,
   WorkerThreadsServerChannel,
   type WorkerThreadsDriverOptions,
@@ -56,7 +54,7 @@ export {
 
 // HTTP driver
 export {
-  HttpChannel,
+  HttpWorkerHandle,
   HttpDriver,
   HttpServerChannel,
   DEFAULT_SERVER_CONNECT_TIMEOUT as HTTP_DEFAULT_SERVER_CONNECT_TIMEOUT,
@@ -70,7 +68,7 @@ export {
 
 // Web Worker driver
 export {
-  WebWorkerChannel,
+  WebWorkerWorkerHandle,
   WebWorkerDriver,
   WebWorkerServerChannel,
   type WebWorkerDriverOptions,

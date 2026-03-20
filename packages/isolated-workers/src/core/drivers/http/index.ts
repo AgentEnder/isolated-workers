@@ -11,7 +11,7 @@ export { HttpDriver, type HttpDriverType } from './driver.js';
 export {
   spawnWorker,
   encodeStartupData,
-  HttpChannel,
+  HttpWorkerHandle,
   STARTUP_DATA_ENV_KEY,
   type HttpDriverOptions,
   type HttpStartupData,

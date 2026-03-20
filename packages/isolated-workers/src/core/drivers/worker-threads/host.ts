@@ -17,7 +17,7 @@ import {
 import type { Serializer } from '../../../utils/serializer.js';
 import { defaultSerializer } from '../../../utils/serializer.js';
 import type {
-  DriverChannel,
+  WorkerHandle,
   DriverMessage,
   StartupData,
 } from '../../driver.js';
@@ -52,12 +52,12 @@ export type WorkerThreadsDriverOptions = WorkerOptions & {
 };
 
 /**
- * Channel implementation for worker threads driver.
+ * WorkerHandle implementation for worker threads driver.
  *
- * Wraps a Worker and provides the DriverChannel interface
+ * Wraps a Worker and provides the WorkerHandle interface
  * using MessagePort-based communication.
  */
-export class WorkerThreadsChannel implements DriverChannel {
+export class WorkerThreadsWorkerHandle implements WorkerHandle {
   private _isConnected: boolean;
   private readonly _logger: Logger;
   private messageHandlers: Array<(message: DriverMessage) => void> = [];
@@ -168,6 +168,10 @@ export class WorkerThreadsChannel implements DriverChannel {
     return undefined;
   }
 
+  getHandle(): InstanceType<typeof import('worker_threads').Worker> {
+    return this.worker;
+  }
+
   async send(message: DriverMessage): Promise<void> {
     if (!this.isConnected) {
       throw new Error('Channel is not connected');
@@ -273,12 +277,12 @@ function filterExecArgv(argv: string[]): string[] {
  *
  * @param script - Path to the worker script (or code if eval is true)
  * @param options - Spawn options
- * @returns Promise resolving to a WorkerThreadsChannel
+ * @returns Promise resolving to a WorkerThreadsWorkerHandle
  */
 export async function spawnWorker(
   script: string | URL,
   options: WorkerThreadsDriverOptions = {}
-): Promise<WorkerThreadsChannel> {
+): Promise<WorkerThreadsWorkerHandle> {
   let resolvedScript: string;
   if (typeof script === 'string') {
     resolvedScript = script;
@@ -460,5 +464,5 @@ export async function spawnWorker(
   logger.info('Worker thread ready', { threadId: worker.threadId });
 
   // Create and return the channel
-  return new WorkerThreadsChannel(worker, { serializer, logger });
+  return new WorkerThreadsWorkerHandle(worker, { serializer, logger });
 }

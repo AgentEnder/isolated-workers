@@ -47,7 +47,7 @@ export const ChildProcessDriver = defineWorkerDriver({
    *
    * @param script - Path to the worker script
    * @param options - Spawn options
-   * @returns Promise resolving to a DriverChannel
+   * @returns Promise resolving to a WorkerHandle
    */
   async spawn(script: string | URL, options: ChildProcessDriverOptions = {}) {
     const { spawnWorker } = await import('./host.js');

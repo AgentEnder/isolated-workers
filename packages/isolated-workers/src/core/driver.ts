@@ -25,13 +25,13 @@ export interface DriverMessage {
 }
 
 /**
- * Communication channel returned by driver spawn.
+ * Handle representing a spawned worker.
  *
- * The channel provides a unified interface for sending messages,
- * handling events, and managing the connection lifecycle.
+ * The handle provides a unified interface for sending messages,
+ * handling events, and managing the worker lifecycle.
  */
-export interface DriverChannel {
-  /** Send a message through the channel */
+export interface WorkerHandle {
+  /** Send a message through the handle */
   send(message: DriverMessage): Promise<void>;
   /** Register a message handler */
   onMessage(handler: (message: DriverMessage) => void): void;
@@ -41,12 +41,21 @@ export interface DriverChannel {
   onClose(handler: () => void): void;
   /** Register a shutdown handler */
   onShutdown(handler: (reason: ShutdownReason) => void): void;
-  /** Close the channel */
+  /** Close the handle */
   close(): Promise<void>;
-  /** Whether the channel is connected */
+  /** Whether the handle is connected */
   readonly isConnected: boolean;
   /** Process ID (undefined for worker_threads) */
   readonly pid: number | undefined;
+  /**
+   * Get the raw underlying worker instance (ChildProcess, Worker, etc.).
+   * The return type is specific to each driver's WorkerHandle implementation.
+   */
+  getHandle(): unknown;
+  /** Disconnect from worker, keeping it alive. Present on reconnect-capable handles. */
+  disconnect?(): Promise<void>;
+  /** Reconnect to a previously disconnected worker. Present on reconnect-capable handles. */
+  reconnect?(): Promise<void>;
 }
 
 /**
@@ -94,8 +103,8 @@ export interface Driver<
   readonly name: string;
   /** Driver capabilities */
   readonly capabilities: TCapabilities;
-  /** Spawn a worker and return communication channel */
-  spawn(script: string | URL, options: TOptions): Promise<DriverChannel>;
+  /** Spawn a worker and return a worker handle */
+  spawn(script: string | URL, options: TOptions): Promise<WorkerHandle>;
 }
 
 /**
@@ -152,30 +161,6 @@ export interface WebWorkerCapabilities extends DriverCapabilities {
   reconnect: false;
   detach: false;
   sharedMemory: true;
-}
-
-/**
- * Reconnect capability mixin.
- *
- * Channels that support reconnection implement this interface
- * to allow disconnecting while keeping the worker alive.
- */
-export interface ReconnectCapability {
-  /** Disconnect from worker but keep process alive */
-  disconnect(): Promise<void>;
-  /** Reconnect to existing worker */
-  reconnect(): Promise<void>;
-}
-
-/**
- * Detach capability mixin.
- *
- * Channels that support detaching expose this to indicate
- * whether the worker is running detached from the parent.
- */
-export interface DetachCapability {
-  /** Whether the worker is detached */
-  readonly detached: boolean;
 }
 
 /**
@@ -257,7 +242,7 @@ export interface DriverConfig<
   name: string;
 
   /** Spawn a worker (host side) */
-  spawn(script: string | URL, options: TOptions): Promise<DriverChannel>;
+  spawn(script: string | URL, options: TOptions): Promise<WorkerHandle>;
 
   /** Get startup data (server side) - throws if not available */
   getStartupData(): TStartupData | Promise<TStartupData>;

@@ -11,7 +11,7 @@
 
 import type { ShutdownReason } from '../../../types/config.js';
 import type {
-  DriverChannel,
+  WorkerHandle,
   DriverMessage,
   StartupData,
 } from '../../driver.js';
@@ -54,13 +54,13 @@ export interface WebWorkerDriverOptions {
 }
 
 /**
- * Channel implementation for web worker driver.
+ * WorkerHandle implementation for web worker driver.
  *
- * Wraps a Worker and a MessagePort to provide the DriverChannel interface.
+ * Wraps a Worker and a MessagePort to provide the WorkerHandle interface.
  * Communication happens through a dedicated MessagePort, not the global
  * postMessage channel.
  */
-export class WebWorkerChannel implements DriverChannel {
+export class WebWorkerWorkerHandle implements WorkerHandle {
   private _isConnected: boolean;
   private messageHandlers: Array<(message: DriverMessage) => void> = [];
   private errorHandlers: Array<(error: Error) => void> = [];
@@ -127,6 +127,10 @@ export class WebWorkerChannel implements DriverChannel {
     return undefined;
   }
 
+  getHandle(): Worker {
+    return this.worker;
+  }
+
   async send(message: DriverMessage): Promise<void> {
     if (!this.isConnected) {
       throw new Error('Channel is not connected');
@@ -174,12 +178,12 @@ export class WebWorkerChannel implements DriverChannel {
  *
  * @param script - URL to the worker script (must be a URL object)
  * @param options - Spawn options
- * @returns Promise resolving to a WebWorkerChannel
+ * @returns Promise resolving to a WebWorkerWorkerHandle
  */
 export function spawnWorker(
   script: string | URL,
   options: WebWorkerDriverOptions = {}
-): Promise<WebWorkerChannel> {
+): Promise<WebWorkerWorkerHandle> {
   if (typeof script === 'string') {
     throw new Error(
       'WebWorkerDriver requires a URL object for the script parameter. ' +
@@ -204,5 +208,5 @@ export function spawnWorker(
   // port1 stays on the host side
   port1.start();
 
-  return Promise.resolve(new WebWorkerChannel(worker, port1));
+  return Promise.resolve(new WebWorkerWorkerHandle(worker, port1));
 }
