@@ -8,8 +8,8 @@
  */
 
 import { createWorker, type Middleware } from 'isolated-workers';
-import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import type { Messages } from './messages.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -54,6 +54,7 @@ async function main() {
     timeout: 10000,
     middleware: [loggingMiddleware, timingMiddleware],
   });
+
   // #endregion create-worker-with-middleware
 
   console.log(`Worker spawned with PID: ${worker.pid}\n`);

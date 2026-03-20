@@ -8,6 +8,7 @@
  */
 
 import { createWorker, WorkerClient } from 'isolated-workers';
+import { ChildProcessDriverType } from 'isolated-workers/drivers';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import type { Messages } from './messages.js';
@@ -15,7 +16,7 @@ import type { Messages } from './messages.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // #region print-status
-function printStatus(worker: WorkerClient) {
+function printStatus(worker: WorkerClient<{}, ChildProcessDriverType>) {
   console.log(`  PID: ${worker.pid}`);
   console.log(`  isActive: ${worker.isActive}`);
   console.log(`  isConnected: ${worker.isConnected}`);
@@ -31,6 +32,7 @@ async function main() {
   });
 
   console.log('--- Worker Created ---');
+  worker.getHandle;
   printStatus(worker);
   console.log();
 

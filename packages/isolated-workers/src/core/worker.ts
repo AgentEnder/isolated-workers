@@ -26,12 +26,8 @@ import {
   deserializeError,
   type Serializer,
 } from '../utils/serializer.js';
-import type {
-  ChildProcessCapabilities,
-  Driver,
-  DriverCapabilities,
-  WorkerHandle,
-} from './driver.js';
+import type { Driver, DriverCapabilities, WorkerHandle } from './driver.js';
+import { ChildProcessDriverType } from './drivers/index.js';
 import {
   applyMiddleware,
   getTimeoutValue,
@@ -139,7 +135,7 @@ export type UnderlyingWorkerOf<TDriver extends Driver> =
  */
 export interface WorkerOptions<
   TDefs extends MessageDefs = MessageDefs,
-  TDriver extends Driver = Driver<ChildProcessCapabilities>
+  TDriver extends Driver = ChildProcessDriverType
 > {
   /** Path to worker script or URL (file:// for Node drivers, any for web_worker) */
   script: string | URL;
@@ -310,11 +306,11 @@ interface PendingRequest {
  * Dynamically loads the default child_process driver.
  * This allows tree-shaking when using a different driver.
  */
-async function loadDefaultDriver(): Promise<Driver<ChildProcessCapabilities>> {
+async function loadDefaultDriver(): Promise<ChildProcessDriverType> {
   const { ChildProcessDriver } = await import(
     './drivers/child-process/index.js'
   );
-  return ChildProcessDriver as unknown as Driver<ChildProcessCapabilities>;
+  return ChildProcessDriver;
 }
 
 /**
@@ -349,7 +345,7 @@ async function loadDefaultDriver(): Promise<Driver<ChildProcessCapabilities>> {
  */
 export async function createWorker<
   TMessages extends Record<string, { payload: unknown; result?: unknown }>,
-  TDriver extends Driver = Driver<ChildProcessCapabilities>
+  TDriver extends Driver = ChildProcessDriverType
 >(
   options: WorkerOptions<TMessages, TDriver>
 ): Promise<WorkerClient<TMessages, TDriver>> {

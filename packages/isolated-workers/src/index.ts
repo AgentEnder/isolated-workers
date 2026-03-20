@@ -20,16 +20,13 @@ export {
   createWorker,
   startWorkerServer,
   type BuiltInTimeoutKey,
-  type ChildProcessCapabilities,
+  type CapabilitiesOf,
   type ChildProcessDriverOptions,
   // Driver types
   type Driver,
   type DriverCapabilities,
   type DriverMessage,
-  type WorkerHandle,
   type DriverOptionsFor,
-  type CapabilitiesOf,
-  type UnderlyingWorkerOf,
   type MessageHandler,
   // Messaging types
   type MiddlewareContext,
@@ -40,13 +37,14 @@ export {
   type TimeoutConfig,
   type TypedMessage,
   type TypedResult,
+  type UnderlyingWorkerOf,
   type WorkerClient,
+  type WorkerHandle,
   type WorkerHandler,
   type WorkerHandlers,
   type WorkerOptions,
   type WorkerServer,
   type WorkerServerOptions,
-  type WorkerThreadsCapabilities,
   type WorkerThreadsDriverOptions,
 } from './core/index.js';
 
