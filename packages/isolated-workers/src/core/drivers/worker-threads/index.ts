@@ -11,7 +11,7 @@ export { WorkerThreadsDriver, type WorkerThreadsDriverType } from './driver.js';
 export {
   spawnWorker,
   STARTUP_DATA_WORKER_KEY,
-  WorkerThreadsChannel,
+  WorkerThreadsWorkerHandle,
   type WorkerThreadsDriverOptions,
   type WorkerThreadsStartupData,
 } from './host.js';

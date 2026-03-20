@@ -10,7 +10,7 @@ export { WebWorkerDriver, type WebWorkerDriverType } from './driver.js';
 // Host-side exports (for advanced usage)
 export {
   spawnWorker,
-  WebWorkerChannel,
+  WebWorkerWorkerHandle,
   type BrowserWorkerConstructorOptions,
   type WebWorkerDriverOptions,
   type WebWorkerStartupData,

@@ -46,7 +46,7 @@ export const WorkerThreadsDriver = defineWorkerDriver({
    *
    * @param script - Path to the worker script (or code if eval option is true)
    * @param options - Spawn options
-   * @returns Promise resolving to a DriverChannel
+   * @returns Promise resolving to a WorkerHandle
    */
   async spawn(script: string | URL, options: WorkerThreadsDriverOptions = {}) {
     const { spawnWorker } = await import('./host.js');

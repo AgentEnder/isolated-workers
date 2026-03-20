@@ -11,7 +11,7 @@ export { ChildProcessDriver, type ChildProcessDriverType } from './driver.js';
 export {
   spawnWorker,
   encodeStartupData,
-  ChildProcessChannel,
+  ChildProcessWorkerHandle,
   STARTUP_DATA_ENV_KEY,
   type ChildProcessDriverOptions,
   type ChildProcessStartupData,

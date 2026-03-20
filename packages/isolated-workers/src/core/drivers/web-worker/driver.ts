@@ -41,7 +41,7 @@ export const WebWorkerDriver = defineWorkerDriver({
    *
    * @param script - URL to the worker script (must be a URL object)
    * @param options - Spawn options
-   * @returns Promise resolving to a DriverChannel
+   * @returns Promise resolving to a WorkerHandle
    */
   async spawn(script: string | URL, options: WebWorkerDriverOptions = {}) {
     const { spawnWorker } = await import('./host.js');
