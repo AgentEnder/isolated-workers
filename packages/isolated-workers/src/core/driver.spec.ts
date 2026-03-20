@@ -6,13 +6,11 @@
 import { describe, test, expectTypeOf } from 'vitest';
 import type {
   DriverMessage,
-  DriverChannel,
+  WorkerHandle,
   DriverCapabilities,
   Driver,
   ChildProcessCapabilities,
   WorkerThreadsCapabilities,
-  ReconnectCapability,
-  DetachCapability,
 } from './driver.js';
 
 describe('driver types', () => {
@@ -36,36 +34,48 @@ describe('driver types', () => {
     });
   });
 
-  describe('DriverChannel', () => {
+  describe('WorkerHandle', () => {
     test('has send method returning Promise<void>', () => {
-      expectTypeOf<DriverChannel['send']>().toBeFunction();
-      expectTypeOf<DriverChannel['send']>().parameter(0).toMatchTypeOf<DriverMessage>();
-      expectTypeOf<DriverChannel['send']>().returns.toMatchTypeOf<Promise<void>>();
+      expectTypeOf<WorkerHandle['send']>().toBeFunction();
+      expectTypeOf<WorkerHandle['send']>().parameter(0).toMatchTypeOf<DriverMessage>();
+      expectTypeOf<WorkerHandle['send']>().returns.toMatchTypeOf<Promise<void>>();
     });
 
     test('has onMessage method', () => {
-      expectTypeOf<DriverChannel['onMessage']>().toBeFunction();
+      expectTypeOf<WorkerHandle['onMessage']>().toBeFunction();
     });
 
     test('has onError method', () => {
-      expectTypeOf<DriverChannel['onError']>().toBeFunction();
+      expectTypeOf<WorkerHandle['onError']>().toBeFunction();
     });
 
     test('has onClose method', () => {
-      expectTypeOf<DriverChannel['onClose']>().toBeFunction();
+      expectTypeOf<WorkerHandle['onClose']>().toBeFunction();
     });
 
     test('has close method returning Promise<void>', () => {
-      expectTypeOf<DriverChannel['close']>().toBeFunction();
-      expectTypeOf<DriverChannel['close']>().returns.toMatchTypeOf<Promise<void>>();
+      expectTypeOf<WorkerHandle['close']>().toBeFunction();
+      expectTypeOf<WorkerHandle['close']>().returns.toMatchTypeOf<Promise<void>>();
     });
 
     test('has isConnected boolean property', () => {
-      expectTypeOf<DriverChannel['isConnected']>().toBeBoolean();
+      expectTypeOf<WorkerHandle['isConnected']>().toBeBoolean();
     });
 
     test('has pid that is number or undefined', () => {
-      expectTypeOf<DriverChannel['pid']>().toMatchTypeOf<number | undefined>();
+      expectTypeOf<WorkerHandle['pid']>().toMatchTypeOf<number | undefined>();
+    });
+
+    test('has getHandle method', () => {
+      expectTypeOf<WorkerHandle['getHandle']>().toBeFunction();
+    });
+
+    test('has optional disconnect method', () => {
+      expectTypeOf<WorkerHandle>().toHaveProperty('disconnect');
+    });
+
+    test('has optional reconnect method', () => {
+      expectTypeOf<WorkerHandle>().toHaveProperty('reconnect');
     });
   });
 
@@ -119,24 +129,6 @@ describe('driver types', () => {
     });
   });
 
-  describe('ReconnectCapability', () => {
-    test('has disconnect method returning Promise<void>', () => {
-      expectTypeOf<ReconnectCapability['disconnect']>().toBeFunction();
-      expectTypeOf<ReconnectCapability['disconnect']>().returns.toMatchTypeOf<Promise<void>>();
-    });
-
-    test('has reconnect method returning Promise<void>', () => {
-      expectTypeOf<ReconnectCapability['reconnect']>().toBeFunction();
-      expectTypeOf<ReconnectCapability['reconnect']>().returns.toMatchTypeOf<Promise<void>>();
-    });
-  });
-
-  describe('DetachCapability', () => {
-    test('has detached boolean property', () => {
-      expectTypeOf<DetachCapability['detached']>().toBeBoolean();
-    });
-  });
-
   describe('Driver', () => {
     test('has name property', () => {
       expectTypeOf<Driver>().toHaveProperty('name');
@@ -152,9 +144,9 @@ describe('driver types', () => {
       expectTypeOf<Driver['spawn']>().toBeFunction();
     });
 
-    test('spawn returns Promise<DriverChannel>', () => {
+    test('spawn returns Promise<WorkerHandle>', () => {
       type SpawnReturn = ReturnType<Driver['spawn']>;
-      expectTypeOf<SpawnReturn>().toMatchTypeOf<Promise<DriverChannel>>();
+      expectTypeOf<SpawnReturn>().toMatchTypeOf<Promise<WorkerHandle>>();
     });
   });
 });

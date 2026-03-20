@@ -11,7 +11,7 @@ import { describe, test, expect, vi } from 'vitest';
 import { createWorker } from '../worker.js';
 import { WorkerCrashedError } from '../../types/errors.js';
 import type { ShutdownReason } from '../../types/config.js';
-import type { DriverChannel, Driver } from '../driver.js';
+import type { WorkerHandle, Driver } from '../driver.js';
 import type { ChildProcessCapabilities } from '../driver.js';
 
 // Test message definitions
@@ -29,7 +29,7 @@ function createMockDriver() {
   const shutdownHandlers: Array<(reason: ShutdownReason) => void> = [];
   let connected = true;
 
-  const mockChannel: DriverChannel = {
+  const mockChannel: WorkerHandle = {
     get isConnected() {
       return connected;
     },
@@ -53,6 +53,7 @@ function createMockDriver() {
       errorHandlers.forEach((h) => h(new Error('Worker closed')));
       shutdownHandlers.forEach((h) => h({ type: 'close' }));
     }),
+    getHandle: () => ({}),
   };
 
   const mockDriver: Driver<ChildProcessCapabilities> = {

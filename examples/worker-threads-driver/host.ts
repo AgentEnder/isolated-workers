@@ -13,8 +13,8 @@
 
 import { createWorker } from 'isolated-workers';
 import { WorkerThreadsDriver } from 'isolated-workers/drivers/worker-threads';
-import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import type { Messages } from './messages.js';
 
 async function main() {
@@ -25,7 +25,9 @@ async function main() {
   console.log(`Capabilities:`);
   console.log(`  - Reconnect: ${WorkerThreadsDriver.capabilities.reconnect}`);
   console.log(`  - Detach: ${WorkerThreadsDriver.capabilities.detach}`);
-  console.log(`  - Shared Memory: ${WorkerThreadsDriver.capabilities.sharedMemory}`);
+  console.log(
+    `  - Shared Memory: ${WorkerThreadsDriver.capabilities.sharedMemory}`
+  );
   console.log();
 
   // Create the worker using the worker_threads driver
@@ -42,7 +44,6 @@ async function main() {
     });
 
     console.log(`Worker spawned (pid: ${worker.pid ?? 'N/A - same process'})`);
-    console.log(`Worker capabilities: reconnect=${worker.capabilities.reconnect}, sharedMemory=${worker.capabilities.sharedMemory}`);
 
     // Send a compute request
     console.log('\nSending compute request...');
