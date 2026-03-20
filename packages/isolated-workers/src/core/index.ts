@@ -44,12 +44,10 @@ export {
 
 // Driver types (re-exported from driver.ts)
 export type {
-  ChildProcessCapabilities,
   Driver,
   DriverCapabilities,
   DriverMessage,
   WorkerHandle,
-  WorkerThreadsCapabilities,
 } from './driver.js';
 export type {
   ChildProcessDriverOptions,

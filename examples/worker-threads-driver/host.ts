@@ -50,8 +50,10 @@ async function main() {
     const response = await worker.send('compute', { value: 42 });
     console.log(`Result: ${response.result}`);
 
+    // @ts-expect-error
     // Note: disconnect/reconnect are not available with worker_threads
     // worker.disconnect() would be a type error because capabilities.reconnect is false!
+    worker.disconnect;
 
     // Clean up
     await worker.close();

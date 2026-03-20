@@ -108,62 +108,6 @@ export interface Driver<
 }
 
 /**
- * Capability type for child_process driver.
- *
- * Child process workers support reconnection and detaching,
- * but cannot use SharedArrayBuffer across the IPC boundary.
- *
- * @category Drivers
- */
-export interface ChildProcessCapabilities extends DriverCapabilities {
-  reconnect: true;
-  detach: true;
-  sharedMemory: false;
-}
-
-/**
- * Capability type for worker_threads driver.
- *
- * Worker thread workers support SharedArrayBuffer but cannot
- * be reconnected or detached from the parent.
- *
- * @category Drivers
- */
-export interface WorkerThreadsCapabilities extends DriverCapabilities {
-  reconnect: false;
-  detach: false;
-  sharedMemory: true;
-}
-
-/**
- * Capability type for HTTP driver.
- *
- * HTTP workers support reconnection and detaching (same as child_process)
- * but cannot use SharedArrayBuffer across the HTTP boundary.
- *
- * @category Drivers
- */
-export interface HttpCapabilities extends DriverCapabilities {
-  reconnect: true;
-  detach: true;
-  sharedMemory: false;
-}
-
-/**
- * Capability type for web_worker driver.
- *
- * Web Workers support SharedArrayBuffer (with COOP/COEP headers)
- * but cannot be reconnected or detached from the page.
- *
- * @category Drivers
- */
-export interface WebWorkerCapabilities extends DriverCapabilities {
-  reconnect: false;
-  detach: false;
-  sharedMemory: true;
-}
-
-/**
  * Options for creating a server channel
  */
 export interface ServerOptions {

@@ -11,26 +11,22 @@
 // Re-export driver types and utilities from parent
 export {
   defineWorkerDriver,
-  type ChildProcessCapabilities,
   type Driver,
   type DriverCapabilities,
   type DriverConfig,
   type DriverMessage,
-  type WorkerHandle,
-  type HttpCapabilities,
   type InferCapabilities,
   type ServerChannel,
   type ServerOptions,
   type StartupData,
-  type WebWorkerCapabilities,
-  type WorkerThreadsCapabilities,
+  type WorkerHandle,
 } from '../driver.js';
 
 // Child process driver
 export {
-  ChildProcessWorkerHandle,
   ChildProcessDriver,
   ChildProcessServerChannel,
+  ChildProcessWorkerHandle,
   DEFAULT_SERVER_CONNECT_TIMEOUT,
   encodeStartupData,
   STARTUP_DATA_ENV_KEY,
@@ -43,9 +39,9 @@ export {
 // Worker threads driver
 export {
   STARTUP_DATA_WORKER_KEY,
-  WorkerThreadsWorkerHandle,
   WorkerThreadsDriver,
   WorkerThreadsServerChannel,
+  WorkerThreadsWorkerHandle,
   type WorkerThreadsDriverOptions,
   type WorkerThreadsDriverType,
   type ResponseFunction as WorkerThreadsResponseFunction,
@@ -54,12 +50,12 @@ export {
 
 // HTTP driver
 export {
-  HttpWorkerHandle,
-  HttpDriver,
-  HttpServerChannel,
   DEFAULT_SERVER_CONNECT_TIMEOUT as HTTP_DEFAULT_SERVER_CONNECT_TIMEOUT,
-  encodeStartupData as httpEncodeStartupData,
   STARTUP_DATA_ENV_KEY as HTTP_STARTUP_DATA_ENV_KEY,
+  HttpDriver,
+  encodeStartupData as httpEncodeStartupData,
+  HttpServerChannel,
+  HttpWorkerHandle,
   type HttpDriverOptions,
   type HttpDriverType,
   type ResponseFunction as HttpResponseFunction,
@@ -68,9 +64,9 @@ export {
 
 // Web Worker driver
 export {
-  WebWorkerWorkerHandle,
   WebWorkerDriver,
   WebWorkerServerChannel,
+  WebWorkerWorkerHandle,
   type WebWorkerDriverOptions,
   type WebWorkerDriverType,
   type ResponseFunction as WebWorkerResponseFunction,

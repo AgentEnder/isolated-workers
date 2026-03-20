@@ -7,12 +7,17 @@
  * @packageDocumentation
  */
 
-import { describe, test, expect, vi } from 'vitest';
-import { createWorker } from '../worker.js';
-import { WorkerCrashedError } from '../../types/errors.js';
+import { describe, expect, test, vi } from 'vitest';
 import type { ShutdownReason } from '../../types/config.js';
-import type { WorkerHandle, Driver } from '../driver.js';
-import type { ChildProcessCapabilities } from '../driver.js';
+import { WorkerCrashedError } from '../../types/errors.js';
+import type { Driver, WorkerHandle } from '../driver.js';
+import { createWorker } from '../worker.js';
+
+type MockDriver = Driver<{
+  reconnect: true;
+  detach: true;
+  sharedMemory: false;
+}>;
 
 // Test message definitions
 type TestMessages = {
@@ -56,7 +61,7 @@ function createMockDriver() {
     getHandle: () => ({}),
   };
 
-  const mockDriver: Driver<ChildProcessCapabilities> = {
+  const mockDriver: MockDriver = {
     name: 'mock_driver',
     capabilities: { reconnect: true, detach: true, sharedMemory: false },
     spawn: vi.fn().mockResolvedValue(mockChannel),
@@ -80,10 +85,7 @@ describe('Unexpected Worker Shutdown Handling - Unit Tests', () => {
     test('exit event triggers shutdown handler with correct reason', async () => {
       const { mockDriver, triggerShutdown } = createMockDriver();
 
-      const worker = await createWorker<
-        TestMessages,
-        Driver<ChildProcessCapabilities>
-      >({
+      const worker = await createWorker<TestMessages, MockDriver>({
         script: './worker.js',
         driver: mockDriver,
       });
@@ -98,10 +100,7 @@ describe('Unexpected Worker Shutdown Handling - Unit Tests', () => {
     test('socket error triggers shutdown handler with correct reason', async () => {
       const { mockDriver, triggerShutdown } = createMockDriver();
 
-      const worker = await createWorker<
-        TestMessages,
-        Driver<ChildProcessCapabilities>
-      >({
+      const worker = await createWorker<TestMessages, MockDriver>({
         script: './worker.js',
         driver: mockDriver,
       });
@@ -119,10 +118,7 @@ describe('Unexpected Worker Shutdown Handling - Unit Tests', () => {
     test('socket close triggers shutdown handler with correct reason', async () => {
       const { mockDriver, triggerShutdown } = createMockDriver();
 
-      const worker = await createWorker<
-        TestMessages,
-        Driver<ChildProcessCapabilities>
-      >({
+      const worker = await createWorker<TestMessages, MockDriver>({
         script: './worker.js',
         driver: mockDriver,
       });
@@ -140,10 +136,7 @@ describe('Unexpected Worker Shutdown Handling - Unit Tests', () => {
       const { mockDriver, triggerShutdown } = createMockDriver();
       const errorSpy = vi.fn();
 
-      const worker = await createWorker<
-        TestMessages,
-        Driver<ChildProcessCapabilities>
-      >({
+      const worker = await createWorker<TestMessages, MockDriver>({
         script: './worker.js',
         driver: mockDriver,
       });
@@ -166,10 +159,7 @@ describe('Unexpected Worker Shutdown Handling - Unit Tests', () => {
     test('close() uses normal rejection, not retry logic', async () => {
       const { mockDriver } = createMockDriver();
 
-      const worker = await createWorker<
-        TestMessages,
-        Driver<ChildProcessCapabilities>
-      >({
+      const worker = await createWorker<TestMessages, MockDriver>({
         script: './worker.js',
         driver: mockDriver,
       });
@@ -187,10 +177,7 @@ describe('Unexpected Worker Shutdown Handling - Unit Tests', () => {
     test('reject strategy rejects all pending requests with WorkerCrashedError', async () => {
       const { mockDriver, triggerShutdown } = createMockDriver();
 
-      const worker = await createWorker<
-        TestMessages,
-        Driver<ChildProcessCapabilities>
-      >({
+      const worker = await createWorker<TestMessages, MockDriver>({
         script: './worker.js',
         driver: mockDriver,
         unexpectedShutdown: { strategy: 'reject' },
@@ -214,10 +201,7 @@ describe('Unexpected Worker Shutdown Handling - Unit Tests', () => {
     test('retry strategy rejects requests when no retry capability exists', async () => {
       const { mockDriver, triggerShutdown } = createMockDriver();
 
-      const worker = await createWorker<
-        TestMessages,
-        Driver<ChildProcessCapabilities>
-      >({
+      const worker = await createWorker<TestMessages, MockDriver>({
         script: './worker.js',
         driver: mockDriver,
         unexpectedShutdown: { strategy: 'retry', attempts: 1 },
@@ -233,10 +217,7 @@ describe('Unexpected Worker Shutdown Handling - Unit Tests', () => {
     test('retry strategy rejects requests at or above attempt limit', async () => {
       const { mockDriver, triggerShutdown } = createMockDriver();
 
-      const worker = await createWorker<
-        TestMessages,
-        Driver<ChildProcessCapabilities>
-      >({
+      const worker = await createWorker<TestMessages, MockDriver>({
         script: './worker.js',
         driver: mockDriver,
         unexpectedShutdown: { strategy: 'retry', attempts: 1 },
@@ -254,10 +235,7 @@ describe('Unexpected Worker Shutdown Handling - Unit Tests', () => {
     test('per-message-type configuration overrides apply correctly', async () => {
       const { mockDriver, triggerShutdown } = createMockDriver();
 
-      const worker = await createWorker<
-        TestMessages,
-        Driver<ChildProcessCapabilities>
-      >({
+      const worker = await createWorker<TestMessages, MockDriver>({
         script: './worker.js',
         driver: mockDriver,
         unexpectedShutdown: {
@@ -282,10 +260,7 @@ describe('Unexpected Worker Shutdown Handling - Unit Tests', () => {
     test('WorkerCrashedError includes correct exit details and attempt count', async () => {
       const { mockDriver, triggerShutdown } = createMockDriver();
 
-      const worker = await createWorker<
-        TestMessages,
-        Driver<ChildProcessCapabilities>
-      >({
+      const worker = await createWorker<TestMessages, MockDriver>({
         script: './worker.js',
         driver: mockDriver,
         unexpectedShutdown: { strategy: 'reject' },
@@ -321,7 +296,7 @@ describe('Unexpected Worker Shutdown Handling - Driver Integration', () => {
   test('onShutdown callback is registered when worker is created', async () => {
     const { mockDriver, mockChannel } = createMockDriver();
 
-    await createWorker<TestMessages, Driver<ChildProcessCapabilities>>({
+    await createWorker<TestMessages, MockDriver>({
       script: './worker.js',
       driver: mockDriver,
     });
@@ -332,10 +307,7 @@ describe('Unexpected Worker Shutdown Handling - Driver Integration', () => {
   test('shutdown handler processes all registered shutdown callbacks', async () => {
     const { mockDriver, triggerShutdown, mockChannel } = createMockDriver();
 
-    const worker = await createWorker<
-      TestMessages,
-      Driver<ChildProcessCapabilities>
-    >({
+    const worker = await createWorker<TestMessages, MockDriver>({
       script: './worker.js',
       driver: mockDriver,
     });
@@ -352,10 +324,7 @@ describe('Unexpected Worker Shutdown Handling - Driver Integration', () => {
   test('graceful shutdown uses normal rejection, not retry logic', async () => {
     const { mockDriver } = createMockDriver();
 
-    const worker = await createWorker<
-      TestMessages,
-      Driver<ChildProcessCapabilities>
-    >({
+    const worker = await createWorker<TestMessages, MockDriver>({
       script: './worker.js',
       driver: mockDriver,
     });
