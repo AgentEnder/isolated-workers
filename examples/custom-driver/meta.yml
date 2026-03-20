@@ -1,0 +1,9 @@
+title: Custom Driver
+description: |
+  Define a custom driver using `defineWorkerDriver`. This example implements
+  a minimal "loopback" driver that runs in-process, demonstrating the type
+  flow for driver options, capabilities, and underlying worker access.
+include:
+  - messages.ts
+  - loopback-driver.ts
+  - host.ts

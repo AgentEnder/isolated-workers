@@ -21,6 +21,7 @@ This directory contains the phased implementation plans for the isolated-workers
 | 13  | [Documentation Accuracy Fixes](./10-documentation-accuracy-fixes.md)                       | ✅ Completed | Fix all accuracy issues in /docs/ folder       |
 | 14  | [E2E Isolation Tests](./e2e-isolation-tests.md)                                        | 🔄 In Progress | Global and module isolation tests with Vite           |
 | 15  | [Cross-Environment Web Worker Driver](./15-cross-environment-web-worker-driver.md)     | 📝 Draft        | Web Worker driver for browser environments            |
+| 16  | [Flatten Channel Abstraction](../../docs/plans/2026-03-20-flatten-channel-abstraction.md) | 📝 Draft     | Eliminate channel classes, inline into driver spawn |
 
 ## Status Legend
 
