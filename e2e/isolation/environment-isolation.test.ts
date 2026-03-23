@@ -39,14 +39,14 @@ describe.each([
   });
 
   it('isolates process.env between workers', async () => {
-    const worker1 = await createWorker<EnvMessages>({
+    const worker1 = await createWorker<EnvMessages, typeof Driver>({
       script: envFixture,
       driver: Driver,
       spawnOptions: Driver ? undefined : { execArgv: ['--import', 'tsx'] },
     });
     workers.push(worker1);
 
-    const worker2 = await createWorker<EnvMessages>({
+    const worker2 = await createWorker<EnvMessages, typeof Driver>({
       script: envFixture,
       driver: Driver,
       spawnOptions: Driver ? undefined : { execArgv: ['--import', 'tsx'] },
@@ -98,7 +98,7 @@ describe.each([
   // worker_threads share process.env with the main thread — spawn-time env
   // isolation only works with child_process (separate processes).
   it.skipIf(driverName === 'worker-threads')('respects spawn-time environment variables', async () => {
-    const worker1 = await createWorker<EnvMessages>({
+    const worker1 = await createWorker<EnvMessages, typeof Driver>({
       script: envFixture,
       driver: Driver,
       spawnOptions: Driver ? undefined : { execArgv: ['--import', 'tsx'] },
@@ -109,7 +109,7 @@ describe.each([
     });
     workers.push(worker1);
 
-    const worker2 = await createWorker<EnvMessages>({
+    const worker2 = await createWorker<EnvMessages, typeof Driver>({
       script: envFixture,
       driver: Driver,
       spawnOptions: Driver ? undefined : { execArgv: ['--import', 'tsx'] },
@@ -136,14 +136,14 @@ describe.each([
   });
 
   it('clears environment variables independently', async () => {
-    const worker1 = await createWorker<EnvMessages>({
+    const worker1 = await createWorker<EnvMessages, typeof Driver>({
       script: envFixture,
       driver: Driver,
       spawnOptions: Driver ? undefined : { execArgv: ['--import', 'tsx'] },
     });
     workers.push(worker1);
 
-    const worker2 = await createWorker<EnvMessages>({
+    const worker2 = await createWorker<EnvMessages, typeof Driver>({
       script: envFixture,
       driver: Driver,
       spawnOptions: Driver ? undefined : { execArgv: ['--import', 'tsx'] },

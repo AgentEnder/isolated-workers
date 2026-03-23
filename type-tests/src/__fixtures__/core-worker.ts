@@ -11,8 +11,6 @@ import type {
   WorkerClient,
   WorkerOptions,
   TimeoutConfig,
-  Connection,
-  ConnectionOptions,
   Middleware,
   MiddlewareContext,
   MiddlewareDirection,
@@ -88,37 +86,6 @@ const _workerOptions2: WorkerOptions = {
   socketPath: '/tmp/test.sock',
   debug: true,
 };
-
-// ============================================================================
-// Connection and ConnectionOptions Type Tests
-// ============================================================================
-
-// Test: ConnectionOptions interface structure
-const _connectionOptions1: ConnectionOptions = {
-  socketPath: '/tmp/test.sock',
-};
-
-const _connectionOptions2: ConnectionOptions = {
-  socketPath: '/tmp/test.sock',
-  reconnect: true,
-  maxRetries: 10,
-  retryDelay: 500,
-  maxDelay: 5000,
-  timeout: 60000,
-};
-
-// Test: ConnectionOptions with custom delay function
-const _connectionOptions3: ConnectionOptions = {
-  socketPath: '/tmp/test.sock',
-  retryDelay: (attempt) => attempt * 100,
-};
-
-// Test: Connection interface structure (using a mock)
-declare const mockConnection: Connection;
-const _socketCheck = mockConnection.socket;
-const _isConnectedCheck: boolean = mockConnection.isConnected;
-const _sendCheck: Promise<void> = mockConnection.send({} as TypedMessage);
-const _connCloseCheck: Promise<void> = mockConnection.close();
 
 // ============================================================================
 // Messaging Types Tests
@@ -237,23 +204,10 @@ type _MiddlewareContextCheck = MiddlewareContext extends {
   : never;
 const _middlewareContextCheck: _MiddlewareContextCheck = true;
 
-// Verify Connection interface has required methods
-type _ConnectionCheck = Connection extends {
-  send: (message: TypedMessage) => Promise<void>;
-  onMessage: (handler: (message: TypedResult) => void) => void;
-  onError: (handler: (error: Error) => void) => void;
-  onClose: (handler: () => void) => void;
-  close: () => Promise<void>;
-  isConnected: boolean;
-}
-  ? true
-  : never;
-const _connectionCheck: _ConnectionCheck = true;
-
 // Verify WorkerOptions has required properties
 // Note: timeout can be number | TimeoutConfig<TDefs>
 type _WorkerOptionsCheck = WorkerOptions extends {
-  script: string;
+  script: string | URL;
   env?: Record<string, string>;
   timeout?: number | TimeoutConfig;
   socketPath?: string;
@@ -263,16 +217,3 @@ type _WorkerOptionsCheck = WorkerOptions extends {
   : never;
 const _workerOptionsCheck: _WorkerOptionsCheck = true;
 
-// Verify ConnectionOptions has required properties
-// Note: retryDelay can be number | ((attempt: number) => number)
-type _ConnectionOptionsCheck = Required<ConnectionOptions> extends {
-  socketPath: string;
-  reconnect: boolean;
-  maxRetries: number;
-  retryDelay: number | ((attempt: number) => number);
-  maxDelay: number;
-  timeout: number;
-}
-  ? true
-  : never;
-const _connectionOptionsCheck: _ConnectionOptionsCheck = true;

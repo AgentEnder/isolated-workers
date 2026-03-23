@@ -18,7 +18,7 @@ import { createWorker } from 'isolated-workers';
 import { WorkerThreadsDriver } from 'isolated-workers/drivers/worker-threads';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import type { Messages } from '../fixtures/module-pollution-worker.js';
+import type { Messages } from './fixtures/module-pollution-worker.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

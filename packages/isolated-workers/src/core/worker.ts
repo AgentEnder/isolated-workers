@@ -27,7 +27,7 @@ import {
   type Serializer,
 } from '../utils/serializer.js';
 import type { Driver, DriverCapabilities, WorkerHandle } from './driver.js';
-import { ChildProcessDriverType } from './drivers/index.js';
+import type { ChildProcessDriverType } from './drivers/index.js';
 import {
   applyMiddleware,
   getTimeoutValue,
@@ -390,7 +390,8 @@ export async function createWorker<
   const workerLogger = createMetaLogger(customLogger, effectiveLogLevel);
 
   // Load driver: use provided driver or dynamically load child_process driver
-  const driver = providedDriver ?? ((await loadDefaultDriver()) as TDriver);
+  const driver =
+    providedDriver ?? ((await loadDefaultDriver()) as unknown as TDriver);
 
   workerLogger.info('Creating worker', {
     script,
@@ -645,8 +646,11 @@ export async function createWorker<
   const client = {
     pid: channel.pid,
 
-    getHandle() {
-      return channel.getHandle();
+    getHandle(): UnderlyingWorkerOf<TDriver> {
+      // channel is typed as base WorkerHandle (getHandle(): unknown),
+      // but TDriver's spawn() returns a concrete handle with a typed getHandle().
+      // The cast is safe because channel was created by driver.spawn().
+      return channel.getHandle() as UnderlyingWorkerOf<TDriver>;
     },
 
     get isActive() {
@@ -795,7 +799,11 @@ export async function createWorker<
           workerLogger.info('Reconnected to worker', { pid: channel.pid });
         }
       : undefined,
-  } as WorkerClient<TMessages, TDriver>;
+    // The disconnect/reconnect fields are conditionally `undefined` at runtime,
+    // but WorkerClient uses OmitNever to strip them at the type level when the
+    // driver lacks reconnect capability. This structural mismatch requires the
+    // intermediate `unknown` cast — the runtime behavior is correct.
+  } as unknown as WorkerClient<TMessages, TDriver>;
 
   return client;
 }

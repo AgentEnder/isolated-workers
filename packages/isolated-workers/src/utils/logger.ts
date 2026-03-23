@@ -7,7 +7,7 @@
 /**
  * Log level enum
  */
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
 /**
  * Logger interface - must implement all log level methods
@@ -27,6 +27,7 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
   info: 1,
   warn: 2,
   error: 3,
+  silent: 4,
 };
 
 /**

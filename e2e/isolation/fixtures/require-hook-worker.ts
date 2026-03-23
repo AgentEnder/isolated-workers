@@ -11,7 +11,11 @@
 
 import { startWorkerServer, Handlers } from 'isolated-workers';
 import type { DefineMessages } from 'isolated-workers';
+import { createRequire } from 'node:module';
 import { resolveDriver } from './resolve-driver.js';
+
+// require.extensions is a CJS-only API. In ESM contexts, we need createRequire.
+const require = createRequire(import.meta.url);
 
 export type Messages = DefineMessages<{
   setRequireHook: {
@@ -40,7 +44,8 @@ const handlers: Handlers<Messages> = {
     const ext = extension.startsWith('.') ? extension : `.${extension}`;
 
     require.extensions[ext] = function (module, filename) {
-      const content = module._compile(transform, filename);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const content = (module as any)._compile(transform, filename);
       return content;
     };
 

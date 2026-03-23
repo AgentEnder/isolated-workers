@@ -5,7 +5,7 @@
     "build": "vike build && pnpm exec pagefind --site dist/client",
     "preview": "vike build && pnpm exec pagefind --site dist/client && vike preview",
     "lint": "eslint .",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "functional-examples": "^0.1.0",

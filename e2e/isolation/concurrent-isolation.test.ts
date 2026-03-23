@@ -12,7 +12,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createWorker } from 'isolated-workers';
 import { WorkerThreadsDriver } from 'isolated-workers/drivers/worker-threads';
 import type { Messages as GlobalPollutionMessages } from './fixtures/global-pollution-worker.ts';
-import type { Messages as ModuleMessages } from './fixtures/shared-module.ts';
 import type { Messages as EnvMessages } from './fixtures/env-modification-worker.ts';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -58,7 +57,7 @@ describe.each([
 
         const envWorkers = await Promise.all(
           workerIds.map((id) =>
-            createWorker<EnvMessages>({
+            createWorker<EnvMessages, typeof Driver>({
               script: envFixture,
               driver: Driver,
               spawnOptions: Driver
@@ -101,7 +100,7 @@ describe.each([
 
         const workersList = await Promise.all(
           workerIds.map((id) =>
-            createWorker<GlobalPollutionMessages>({
+            createWorker<GlobalPollutionMessages, typeof Driver>({
               script: globalPollutionFixture,
               driver: Driver,
               spawnOptions: Driver
@@ -157,7 +156,7 @@ describe.each([
 
         const globalWorkers = await Promise.all(
           workerIds.map((id) =>
-            createWorker<GlobalPollutionMessages>({
+            createWorker<GlobalPollutionMessages, typeof Driver>({
               script: globalPollutionFixture,
               driver: Driver,
               spawnOptions: Driver
@@ -169,7 +168,7 @@ describe.each([
 
         const envWorkers = await Promise.all(
           workerIds.map((id) =>
-            createWorker<EnvMessages>({
+            createWorker<EnvMessages, typeof Driver>({
               script: envFixture,
               driver: Driver,
               spawnOptions: Driver
@@ -233,7 +232,7 @@ describe.each([
 
         const workersList = await Promise.all(
           workerIds.map((id) =>
-            createWorker<GlobalPollutionMessages>({
+            createWorker<GlobalPollutionMessages, typeof Driver>({
               script: globalPollutionFixture,
               driver: Driver,
               spawnOptions: Driver

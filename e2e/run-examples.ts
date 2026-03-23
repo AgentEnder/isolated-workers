@@ -1,12 +1,14 @@
 import { execSync } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
 
 function lines(...strs: (string | false)[]): string {
   return strs.filter((s) => s).join('\n');
 }
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = join(__dirname, '..');
 const examplesRoot = join(workspaceRoot, 'examples');
 

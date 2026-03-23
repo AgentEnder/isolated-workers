@@ -1,6 +1,7 @@
 {
   "name": "isolated-workers-e2e",
   "private": true,
+  "type": "module",
   "dependencies": {
     "isolated-workers": "workspace:*",
     "yaml": "^2.3.4"
