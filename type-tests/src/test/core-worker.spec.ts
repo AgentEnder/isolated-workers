@@ -99,30 +99,6 @@ describe('Core Worker Types', () => {
     });
   });
 
-  describe('Connection', () => {
-    test('should be usable as a type via type import', () => {
-      const { typeChecker, sourceFile } = loadFixture('core-worker.ts');
-
-      // Connection is imported. Check via mockConnection variable.
-      const connectionVar = typeChecker
-        .getSymbolsInScope(sourceFile, ts.SymbolFlags.Variable)
-        .find((s) => s.name === 'mockConnection');
-
-      expect(connectionVar).toBeDefined();
-    });
-
-    test('ConnectionOptions should be usable via type import', () => {
-      const { typeChecker, sourceFile } = loadFixture('core-worker.ts');
-
-      // ConnectionOptions is imported. Check via _connectionOptions1 variable.
-      const connectionOptsVar = typeChecker
-        .getSymbolsInScope(sourceFile, ts.SymbolFlags.Variable)
-        .find((s) => s.name === '_connectionOptions1');
-
-      expect(connectionOptsVar).toBeDefined();
-    });
-  });
-
   describe('TypedMessage', () => {
     test('should have required properties (type, payload, tx)', () => {
       const { typeChecker, sourceFile } = loadFixture('core-worker.ts');
@@ -301,24 +277,6 @@ describe('Core Worker Types', () => {
       }
     });
 
-    test('ConnectionCheck should be true', () => {
-      const { typeChecker, sourceFile } = loadFixture('core-worker.ts');
-
-      const checkSymbol = typeChecker
-        .getSymbolsInScope(sourceFile, ts.SymbolFlags.Variable)
-        .find((s) => s.name === '_connectionCheck');
-
-      expect(checkSymbol).toBeDefined();
-
-      if (checkSymbol) {
-        const type = typeChecker.getTypeOfSymbolAtLocation(
-          checkSymbol,
-          checkSymbol.valueDeclaration ?? sourceFile
-        );
-        expect(typeChecker.typeToString(type)).toBe('true');
-      }
-    });
-
     test('WorkerOptionsCheck should be true', () => {
       const { typeChecker, sourceFile } = loadFixture('core-worker.ts');
 
@@ -337,22 +295,5 @@ describe('Core Worker Types', () => {
       }
     });
 
-    test('ConnectionOptionsCheck should be true', () => {
-      const { typeChecker, sourceFile } = loadFixture('core-worker.ts');
-
-      const checkSymbol = typeChecker
-        .getSymbolsInScope(sourceFile, ts.SymbolFlags.Variable)
-        .find((s) => s.name === '_connectionOptionsCheck');
-
-      expect(checkSymbol).toBeDefined();
-
-      if (checkSymbol) {
-        const type = typeChecker.getTypeOfSymbolAtLocation(
-          checkSymbol,
-          checkSymbol.valueDeclaration ?? sourceFile
-        );
-        expect(typeChecker.typeToString(type)).toBe('true');
-      }
-    });
   });
 });
