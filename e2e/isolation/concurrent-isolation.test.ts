@@ -11,6 +11,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createWorker } from 'isolated-workers';
 import { WorkerThreadsDriver } from 'isolated-workers/drivers/worker-threads';
+import { aggressive as stressConnection } from 'isolated-workers/backoff-curves';
 import type { Messages as GlobalPollutionMessages } from './fixtures/global-pollution-worker.ts';
 import type { Messages as EnvMessages } from './fixtures/env-modification-worker.ts';
 import { fileURLToPath } from 'url';
@@ -63,6 +64,7 @@ describe.each([
               spawnOptions: Driver
                 ? undefined
                 : { execArgv: ['--import', 'tsx'] },
+              connection: stressConnection,
             })
           )
         );
@@ -106,6 +108,7 @@ describe.each([
               spawnOptions: Driver
                 ? undefined
                 : { execArgv: ['--import', 'tsx'] },
+              connection: stressConnection,
             })
           )
         );
@@ -162,6 +165,7 @@ describe.each([
               spawnOptions: Driver
                 ? undefined
                 : { execArgv: ['--import', 'tsx'] },
+              connection: stressConnection,
             })
           )
         );
@@ -174,6 +178,7 @@ describe.each([
               spawnOptions: Driver
                 ? undefined
                 : { execArgv: ['--import', 'tsx'] },
+              connection: stressConnection,
             })
           )
         );
@@ -238,6 +243,8 @@ describe.each([
               spawnOptions: Driver
                 ? undefined
                 : { execArgv: ['--import', 'tsx'] },
+              // More generous connection settings for 20 concurrent spawns
+              connection: stressConnection,
             })
           )
         );
