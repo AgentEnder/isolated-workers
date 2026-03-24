@@ -47,6 +47,11 @@
       "import": "./dist/core/drivers/web-worker/index.js",
       "types": "./dist/core/drivers/web-worker/index.d.ts",
       "default": "./dist/core/drivers/web-worker/index.js"
+    },
+    "./backoff-curves": {
+      "import": "./dist/backoff/index.js",
+      "types": "./dist/backoff/index.d.ts",
+      "default": "./dist/backoff/index.js"
     }
   },
   "scripts": {
