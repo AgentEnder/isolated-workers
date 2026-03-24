@@ -18,41 +18,66 @@ export {
 } from './worker.js';
 
 /**
+ * The type accepted for retry delay configuration.
+ *
+ * - **`number`** — base delay in ms, used with exponential backoff
+ * - **`(attempt) => number`** — custom delay curve returning ms
+ * - **`(attempt) => Promise<void>`** — async delay where the promise IS the wait
+ *
+ * @internal
+ */
+export type DelayConfig =
+  | number
+  | ((attempt: number) => number | Promise<void>);
+
+/**
  * Calculate delay for connection retry.
- * Supports both number (exponential backoff) and function (custom curve).
+ * Supports number (exponential backoff), sync function (custom curve),
+ * and async function (promise-based delay).
  *
  * @param config - Base delay in ms, or custom delay function
  * @param attempt - Current attempt number (0-based)
  * @param maxDelay - Maximum delay cap in ms
  * @param jitter - Optional jitter to add (default: random 0-100ms)
- * @returns Calculated delay in ms
+ * @returns Delay in ms, or a Promise that IS the delay
  *
  * @internal
  */
 export function calculateDelay(
-  config: number | ((attempt: number) => number),
+  config: DelayConfig,
   attempt: number,
   maxDelay: number,
   jitter?: number
-): number {
-  let delay: number;
-
-  if (typeof config === 'function') {
-    delay = config(attempt);
-
-    if (typeof delay !== 'number' || delay < 0 || !isFinite(delay)) {
-      throw new Error(
-        `Delay function must return a positive number, got: ${delay}`
-      );
-    }
-  } else {
+): number | Promise<void> {
+  if (typeof config !== 'function') {
     // Exponential backoff: baseDelay * 2^attempt
-    delay = config * Math.pow(2, attempt);
+    const delay = config * Math.pow(2, attempt);
+    const actualJitter = jitter ?? Math.random() * 100;
+    return Math.min(delay, maxDelay) + actualJitter;
   }
 
-  // Apply max delay cap and add jitter to prevent thundering herd
+  const result = config(attempt);
+
+  // Async delay: the promise IS the wait — no jitter/cap applied
+  if (result != null && typeof result === 'object' && 'then' in result) {
+    return (result as Promise<unknown>).then((resolved) => {
+      if (resolved !== undefined) {
+        throw new Error(
+          `Async delay function must resolve to void, got: ${typeof resolved}`
+        );
+      }
+    });
+  }
+
+  // Sync delay: validate, cap, and jitter
+  if (typeof result !== 'number' || result < 0 || !isFinite(result)) {
+    throw new Error(
+      `Delay function must return a positive number or Promise<void>, got: ${result}`
+    );
+  }
+
   const actualJitter = jitter ?? Math.random() * 100;
-  return Math.min(delay, maxDelay) + actualJitter;
+  return Math.min(result, maxDelay) + actualJitter;
 }
 
 /**

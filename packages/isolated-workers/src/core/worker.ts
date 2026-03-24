@@ -206,7 +206,7 @@ export interface WorkerOptions<
    */
   connection?: {
     attempts?: number; // Max reconnection attempts (default: 5)
-    delay?: number | ((attempt: number) => number); // Delay in ms or function (default: 100)
+    delay?: number | ((attempt: number) => number | Promise<void>); // Delay in ms, function returning ms, or async function where the promise IS the delay (default: 100)
     maxDelay?: number; // Max delay cap (default: 5000ms)
   };
 
@@ -419,7 +419,7 @@ export async function createWorker<
       serverConnectTimeout,
       connection: {
         maxRetries: attempts,
-        retryDelay: typeof delay === 'number' ? delay : 100,
+        retryDelay: delay,
         maxDelay,
       },
     });
