@@ -1,0 +1,18 @@
+title: Backoff Curves
+description: |
+  Configure connection retry strategies using backoff curve utilities.
+  Shows pre-built presets (aggressive, gentle, patient) that spread directly
+  into connection options, plus factory functions for custom stepped and
+  exponential backoff curves.
+include:
+  - messages.ts
+  - host.ts
+  - worker.ts
+entryPoint: host.ts
+commands:
+  - command: 'pnpm run:backoff-curves'
+    title: Run the backoff curves example
+    assertions:
+      - contains: 'Pre-built Presets'
+      - contains: 'Custom Curves'
+      - contains: 'All backoff examples completed successfully'
