@@ -21,8 +21,8 @@ export interface ConnectionOptions<TDefs extends MessageDefs = MessageDefs> {
   reconnect?: boolean;
   /** Maximum number of retry attempts (default: 5) */
   maxRetries?: number;
-  /** Base delay in ms between retries, or custom delay function (default: 100) */
-  retryDelay?: number | ((attempt: number) => number);
+  /** Base delay in ms, custom delay curve, or async function where the promise IS the delay (default: 100) */
+  retryDelay?: number | ((attempt: number) => number | Promise<void>);
   /** Maximum delay cap in ms (default: 5000) */
   maxDelay?: number;
   /** Connection timeout in ms (default: 10000) */
@@ -98,8 +98,13 @@ export async function createConnection<TDefs extends MessageDefs = MessageDefs>(
 
       if (attempt < maxRetries - 1) {
         const delay = calculateDelay(retryDelay, attempt, maxDelay);
-        logger.debug('Retrying after delay', { delay: delay.toFixed(0) });
-        await sleep(delay);
+        if (typeof delay === 'number') {
+          logger.debug('Retrying after delay', { delay: delay.toFixed(0) });
+          await sleep(delay);
+        } else {
+          logger.debug('Awaiting async delay');
+          await delay;
+        }
       }
     }
   }

@@ -69,27 +69,60 @@ describe('core/internals', () => {
       test('throws on negative return', () => {
         const negative = () => -100;
         expect(() => calculateDelay(negative, 0, 10000, 0)).toThrow(
-          'Delay function must return a positive number'
+          'Delay function must return a positive number or Promise<void>'
         );
       });
 
       test('throws on NaN return', () => {
         const nan = () => NaN;
         expect(() => calculateDelay(nan, 0, 10000, 0)).toThrow(
-          'Delay function must return a positive number'
+          'Delay function must return a positive number or Promise<void>'
         );
       });
 
       test('throws on Infinity return', () => {
         const inf = () => Infinity;
         expect(() => calculateDelay(inf, 0, 10000, 0)).toThrow(
-          'Delay function must return a positive number'
+          'Delay function must return a positive number or Promise<void>'
         );
       });
 
       test('allows zero return', () => {
         const zero = () => 0;
         expect(calculateDelay(zero, 0, 10000, 0)).toBe(0);
+      });
+    });
+
+    describe('with async delay function', () => {
+      test('returns a Promise<void> directly', () => {
+        const asyncDelay = () => new Promise<void>((r) => setTimeout(r, 1));
+        const result = calculateDelay(asyncDelay, 0, 10000, 0);
+        expect(result).toBeInstanceOf(Promise);
+      });
+
+      test('resolves successfully for void promises', async () => {
+        const asyncDelay = () => Promise.resolve(undefined as void);
+        const result = calculateDelay(asyncDelay, 0, 10000, 0);
+        await expect(result).resolves.toBeUndefined();
+      });
+
+      test('rejects when promise resolves to non-void', async () => {
+        const badAsync = () =>
+          Promise.resolve('not void') as unknown as Promise<void>;
+        const result = calculateDelay(badAsync, 0, 10000, 0);
+        await expect(result).rejects.toThrow(
+          'Async delay function must resolve to void'
+        );
+      });
+
+      test('passes attempt number to async function', () => {
+        const attempts: number[] = [];
+        const asyncDelay = (attempt: number) => {
+          attempts.push(attempt);
+          return Promise.resolve(undefined as void);
+        };
+        calculateDelay(asyncDelay, 3, 10000, 0);
+        expect(attempts).toEqual([3]);
       });
     });
   });

@@ -25,6 +25,7 @@ import type {
   StartupData,
 } from '../../driver.js';
 import type { ShutdownReason } from '../../../types/config.js';
+import { calculateDelay } from '../../internals.js';
 
 /**
  * Environment variable key for startup data
@@ -61,8 +62,8 @@ export interface HttpDriverOptions {
   /** Maximum health-check retry attempts (default: 10) */
   maxRetries?: number;
 
-  /** Initial retry delay in ms for health-check backoff (default: 100) */
-  retryDelay?: number;
+  /** Retry delay: ms for exponential backoff, or custom delay curve (default: 100) */
+  retryDelay?: number | ((attempt: number) => number | Promise<void>);
 
   /** Maximum retry delay cap in ms (default: 5000) */
   maxDelay?: number;
@@ -518,13 +519,13 @@ function waitForPortNotification(
 }
 
 /**
- * Wait for the worker HTTP server to become healthy with exponential backoff
+ * Wait for the worker HTTP server to become healthy with configurable backoff
  */
-function waitForHealthy(
+async function waitForHealthy(
   port: number,
   options: {
     maxRetries: number;
-    retryDelay: number;
+    retryDelay: number | ((attempt: number) => number | Promise<void>);
     maxDelay: number;
     timeout: number;
     logger: Logger;
@@ -532,45 +533,42 @@ function waitForHealthy(
 ): Promise<void> {
   const { maxRetries, retryDelay, maxDelay, logger } = options;
 
-  return new Promise<void>((resolve, reject) => {
-    let attempt = 0;
-
-    function tryHealthCheck() {
-      attempt++;
-      const url = new URL('/health', `http://127.0.0.1:${port}`);
-      const req = http.request(url, { method: 'GET' }, (res) => {
-        res.resume();
-        if (res.statusCode === 200) {
-          resolve();
-        } else {
-          retryOrFail(`Health check returned HTTP ${res.statusCode}`);
-        }
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const url = new URL('/health', `http://127.0.0.1:${port}`);
+        const req = http.request(url, { method: 'GET' }, (res) => {
+          res.resume();
+          if (res.statusCode === 200) {
+            resolve();
+          } else {
+            reject(new Error(`Health check returned HTTP ${res.statusCode}`));
+          }
+        });
+        req.on('error', reject);
+        req.end();
       });
-
-      req.on('error', (err) => {
-        retryOrFail(err.message);
-      });
-
-      req.end();
-    }
-
-    function retryOrFail(reason: string) {
-      if (attempt >= maxRetries) {
-        reject(
-          new Error(
-            `Worker HTTP server not healthy after ${maxRetries} attempts: ${reason}`
-          )
+      return; // healthy
+    } catch (err) {
+      const reason = (err as Error).message;
+      if (attempt >= maxRetries - 1) {
+        throw new Error(
+          `Worker HTTP server not healthy after ${maxRetries} attempts: ${reason}`
         );
-        return;
       }
 
-      const delay = Math.min(retryDelay * Math.pow(2, attempt - 1), maxDelay);
-      logger.debug(
-        `Health check attempt ${attempt} failed (${reason}), retrying in ${delay}ms`
-      );
-      setTimeout(tryHealthCheck, delay);
+      const delay = calculateDelay(retryDelay, attempt, maxDelay);
+      if (typeof delay === 'number') {
+        logger.debug(
+          `Health check attempt ${attempt + 1} failed (${reason}), retrying in ${delay.toFixed(0)}ms`
+        );
+        await new Promise<void>((r) => setTimeout(r, delay));
+      } else {
+        logger.debug(
+          `Health check attempt ${attempt + 1} failed (${reason}), awaiting async delay`
+        );
+        await delay;
+      }
     }
-
-    tryHealthCheck();
-  });
+  }
 }
