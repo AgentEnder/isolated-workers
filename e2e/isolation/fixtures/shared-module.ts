@@ -12,7 +12,7 @@
 
 export const state: {
   counter: number;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   lastModifiedBy: string | null;
 } = {
   counter: 0,
@@ -26,7 +26,7 @@ export function incrementCounter(workerId: string): number {
   return state.counter;
 }
 
-export function setData(key: string, value: any, workerId: string): void {
+export function setData(key: string, value: unknown, workerId: string): void {
   state.data[key] = value;
   state.lastModifiedBy = workerId;
 }

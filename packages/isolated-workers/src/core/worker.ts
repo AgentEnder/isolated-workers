@@ -422,11 +422,9 @@ export async function createWorker<
       detached,
       startupTimeout,
       serverConnectTimeout,
-      connection: {
-        maxRetries: attempts,
-        retryDelay: delay,
-        maxDelay,
-      },
+      maxRetries: attempts,
+      retryDelay: delay,
+      maxDelay,
     });
   }
 

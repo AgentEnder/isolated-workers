@@ -10,5 +10,5 @@ const handlers: Handlers<Messages> = {
   },
 };
 
-const server = await startWorkerServer(handlers);
+await startWorkerServer(handlers);
 console.log('Backoff curves worker ready');
