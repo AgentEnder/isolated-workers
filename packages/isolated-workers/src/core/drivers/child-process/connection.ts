@@ -5,6 +5,7 @@
  */
 
 import { type Socket, createConnection as createNetConnection } from 'net';
+import { aggressive as aggressiveBackoff } from '../../../backoff/index.js';
 import { createMetaLogger, type Logger } from '../../../utils/index.js';
 import { defaultSerializer, type Serializer } from '../../../utils/serializer.js';
 import { TypedMessage, TypedResult } from '../../messaging.js';
@@ -66,8 +67,8 @@ export async function createConnection<TDefs extends MessageDefs = MessageDefs>(
   const {
     socketPath,
     reconnect = false,
-    maxRetries = 5,
-    retryDelay = 100,
+    maxRetries = aggressiveBackoff.attempts,
+    retryDelay = aggressiveBackoff.delay,
     maxDelay = 5000,
     timeout = 10000,
     serializer = defaultSerializer,

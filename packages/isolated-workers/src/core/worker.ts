@@ -5,6 +5,7 @@
  */
 
 import { type ForkOptions } from 'child_process';
+import { aggressive as aggressiveBackoff } from '../backoff/index.js';
 import type {
   ShutdownReason,
   UnexpectedShutdownConfig,
@@ -409,7 +410,11 @@ export async function createWorker<
 
   // Handle legacy options for child_process driver
   if (driver.name === 'child_process') {
-    const { attempts = 5, delay = 100, maxDelay = 5000 } = connectionConfig;
+    const {
+      attempts = aggressiveBackoff.attempts,
+      delay = aggressiveBackoff.delay,
+      maxDelay = 5000,
+    } = connectionConfig;
     Object.assign(mergedDriverOptions, {
       socketPath: customSocketPath,
       env,
