@@ -17,13 +17,13 @@ const GLOBAL_PREFIX = '__isolated_workers_test__';
 
 export type Messages = DefineMessages<{
   setGlobal: {
-    payload: { key: string; value: any; workerId: string };
+    payload: { key: string; value: unknown; workerId: string };
     result: { success: boolean; globalKey: string };
   };
 
   getGlobal: {
     payload: { workerId: string };
-    result: { keys: string[]; values: Record<string, any> };
+    result: { keys: string[]; values: Record<string, unknown> };
   };
 
   clearGlobals: {
@@ -35,7 +35,7 @@ export type Messages = DefineMessages<{
 const handlers: Handlers<Messages> = {
   setGlobal: ({ key, value, workerId }) => {
     const globalKey = `${GLOBAL_PREFIX}_${workerId}_${key}`;
-    (globalThis as any)[globalKey] = value;
+    (globalThis as Record<string, unknown>)[globalKey] = value;
     console.log(
       `Worker ${workerId}: Set global ${globalKey} = ${JSON.stringify(value)}`
     );
@@ -45,13 +45,13 @@ const handlers: Handlers<Messages> = {
   getGlobal: ({ workerId }) => {
     const prefix = `${GLOBAL_PREFIX}_${workerId}_`;
     const keys: string[] = [];
-    const values: Record<string, any> = {};
+    const values: Record<string, unknown> = {};
 
     for (const key of Object.keys(globalThis)) {
       if (key.startsWith(prefix)) {
         const shortKey = key.replace(prefix, '');
         keys.push(shortKey);
-        values[shortKey] = (globalThis as any)[key];
+        values[shortKey] = (globalThis as Record<string, unknown>)[key];
       }
     }
 
@@ -64,7 +64,7 @@ const handlers: Handlers<Messages> = {
 
     for (const key of Object.keys(globalThis)) {
       if (key.startsWith(prefix)) {
-        delete (globalThis as any)[key];
+        delete (globalThis as Record<string, unknown>)[key];
         clearedCount++;
       }
     }

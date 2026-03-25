@@ -26,6 +26,7 @@ import type {
   StartupData,
 } from '../../driver.js';
 import type { ShutdownReason } from '../../../types/config.js';
+import { aggressive as aggressiveBackoff } from '../../../backoff/index.js';
 
 /**
  * Environment variable key for startup data
@@ -51,11 +52,11 @@ export interface ChildProcessDriverOptions {
   /** Connection timeout in ms (default: 10000) */
   timeout?: number;
 
-  /** Maximum connection retry attempts (default: 5) */
+  /** Maximum connection retry attempts (default: aggressive backoff preset) */
   maxRetries?: number;
 
-  /** Retry delay in ms (default: 100) */
-  retryDelay?: number;
+  /** Retry delay in ms or BackoffCurve delay function (default: aggressive backoff preset) */
+  retryDelay?: number | ((attempt: number) => number | Promise<void>);
 
   /** Maximum retry delay cap (default: 5000) */
   maxDelay?: number;
@@ -117,7 +118,7 @@ export class ChildProcessWorkerHandle implements WorkerHandle {
     private readonly connectionOptions: {
       timeout: number;
       maxRetries: number;
-      retryDelay: number;
+      retryDelay: number | ((attempt: number) => number | Promise<void>);
       maxDelay: number;
       serializer: Serializer;
     },
@@ -307,8 +308,8 @@ export async function spawnWorker(
     spawnOptions = {},
     serializer = defaultSerializer,
     timeout = 10_000,
-    maxRetries = 5,
-    retryDelay = 100,
+    maxRetries = aggressiveBackoff.attempts,
+    retryDelay = aggressiveBackoff.delay,
     maxDelay = 5000,
     serverConnectTimeout = 30_000,
     logLevel = 'error',

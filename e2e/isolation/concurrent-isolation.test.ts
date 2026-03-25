@@ -21,7 +21,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const fixturesDir = join(__dirname, 'fixtures');
 
 const globalPollutionFixture = join(fixturesDir, 'global-pollution-worker.ts');
-const sharedModuleFixture = join(fixturesDir, 'shared-module.ts');
 const envFixture = join(fixturesDir, 'env-modification-worker.ts');
 
 describe.each([
@@ -29,7 +28,7 @@ describe.each([
   ['worker-threads', WorkerThreadsDriver, 60000],
 ])(
   'Concurrent Isolation Stress Tests (%s)',
-  (driverName, Driver, testTimeout) => {
+  (_driverName, Driver, testTimeout) => {
     const workers: Array<{ close: () => Promise<void> }> = [];
 
     beforeEach(() => {
@@ -57,7 +56,7 @@ describe.each([
         );
 
         const envWorkers = await Promise.all(
-          workerIds.map((id) =>
+          workerIds.map((_id) =>
             createWorker<EnvMessages, typeof Driver>({
               script: envFixture,
               driver: Driver,
@@ -101,7 +100,7 @@ describe.each([
         );
 
         const workersList = await Promise.all(
-          workerIds.map((id) =>
+          workerIds.map((_id) =>
             createWorker<GlobalPollutionMessages, typeof Driver>({
               script: globalPollutionFixture,
               driver: Driver,
@@ -115,7 +114,7 @@ describe.each([
 
         workers.push(...workersList);
 
-        const promises: Promise<any>[] = [];
+        const promises: Promise<unknown>[] = [];
         for (let i = 0; i < numWorkers; i++) {
           for (let j = 0; j < 5; j++) {
             promises.push(
@@ -158,7 +157,7 @@ describe.each([
         );
 
         const globalWorkers = await Promise.all(
-          workerIds.map((id) =>
+          workerIds.map((_id) =>
             createWorker<GlobalPollutionMessages, typeof Driver>({
               script: globalPollutionFixture,
               driver: Driver,
@@ -171,7 +170,7 @@ describe.each([
         );
 
         const envWorkers = await Promise.all(
-          workerIds.map((id) =>
+          workerIds.map((_id) =>
             createWorker<EnvMessages, typeof Driver>({
               script: envFixture,
               driver: Driver,
@@ -185,7 +184,7 @@ describe.each([
 
         workers.push(...globalWorkers, ...envWorkers);
 
-        const setPromises: Promise<any>[] = [];
+        const setPromises: Promise<unknown>[] = [];
         for (let i = 0; i < numWorkers; i++) {
           setPromises.push(
             globalWorkers[i].send('setGlobal', {
@@ -217,7 +216,7 @@ describe.each([
 
           expect(globalResult.keys).toContain('load-test-key');
           expect(
-            envResult.vars.some((v: any) => v.key.includes('LOAD_TEST_VAR'))
+            envResult.vars.some((v: { key: string }) => v.key.includes('LOAD_TEST_VAR'))
           ).toBe(true);
         });
 
@@ -236,7 +235,7 @@ describe.each([
         );
 
         const workersList = await Promise.all(
-          workerIds.map((id) =>
+          workerIds.map((_id) =>
             createWorker<GlobalPollutionMessages, typeof Driver>({
               script: globalPollutionFixture,
               driver: Driver,

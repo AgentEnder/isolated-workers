@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createWorker } from 'isolated-workers';
+import { createWorker, type WorkerClient } from 'isolated-workers';
 import { WorkerThreadsDriver } from 'isolated-workers/drivers/worker-threads';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -26,8 +26,8 @@ describe('Module-Level Isolation', () => {
   describe.each([
     ['child_process', undefined],
     ['worker_threads', WorkerThreadsDriver],
-  ])('%s driver', (driverName, driver) => {
-    const workers: Array<{ worker: any; workerId: string }> = [];
+  ])('%s driver', (_driverName, driver) => {
+    const workers: Array<{ worker: WorkerClient<Messages>; workerId: string }> = [];
 
     beforeEach(async () => {
       workers.length = 0;

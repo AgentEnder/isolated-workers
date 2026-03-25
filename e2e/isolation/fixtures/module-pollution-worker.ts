@@ -20,7 +20,7 @@ export type Messages = DefineMessages<{
     payload: {
       action: 'increment' | 'set';
       key?: string;
-      value?: any;
+      value?: unknown;
       workerId: string;
     };
     result: { success: boolean; newState: typeof state };
