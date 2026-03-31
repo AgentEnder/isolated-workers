@@ -54,3 +54,5 @@ Thumbs.db
 
 # TypeDoc output
 .typedoc/
+
+.claude/worktrees
