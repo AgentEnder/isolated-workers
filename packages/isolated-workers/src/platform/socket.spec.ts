@@ -49,7 +49,7 @@ describe('socket utilities', () => {
 
       if (isWindows()) {
         // Windows named pipe format: \\.\pipe\name
-        expect(socketPath).toMatch(/^\\\\\.\pipe\\/);
+        expect(socketPath).toMatch(/^\\\\\.\\pipe\\/);
       } else {
         // Unix socket: /tmp/something.sock or similar
         expect(socketPath).toMatch(/\.sock$/);
@@ -79,7 +79,14 @@ describe('socket utilities', () => {
       vi.mocked(fs.unlinkSync).mockReset();
     });
 
-    test('removes socket file if it exists', () => {
+    test('removes socket file if it exists (Unix only)', () => {
+      if (isWindows()) {
+        // Windows named pipes don't need file cleanup
+        cleanupSocketPath('\\\\.\\pipe\\test');
+        expect(fs.unlinkSync).not.toHaveBeenCalled();
+        return;
+      }
+
       vi.mocked(fs.existsSync).mockReturnValue(true);
 
       cleanupSocketPath('/tmp/test.sock');
@@ -88,6 +95,8 @@ describe('socket utilities', () => {
     });
 
     test('does nothing if socket does not exist', () => {
+      if (isWindows()) return; // Not applicable to Windows named pipes
+
       vi.mocked(fs.existsSync).mockReturnValue(false);
 
       cleanupSocketPath('/tmp/nonexistent.sock');
@@ -96,6 +105,8 @@ describe('socket utilities', () => {
     });
 
     test('handles cleanup errors gracefully', () => {
+      if (isWindows()) return; // Not applicable to Windows named pipes
+
       vi.mocked(fs.existsSync).mockReturnValue(true);
       vi.mocked(fs.unlinkSync).mockImplementation(() => {
         throw new Error('Permission denied');
