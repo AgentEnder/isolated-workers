@@ -56,3 +56,4 @@ Thumbs.db
 .typedoc/
 
 .claude/worktrees
+.claude/settings.local.json
