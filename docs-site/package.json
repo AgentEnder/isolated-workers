@@ -30,7 +30,7 @@
     "unist-util-visit": "^5.0.0",
     "vike": "^0.4.252",
     "vike-react": "^0.6.19",
-    "yaml": "^2.8.2"
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
