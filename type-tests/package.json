@@ -13,6 +13,7 @@
   },
   "devDependencies": {
     "@nx/vitest": "catalog:",
+    "@types/node": "catalog:",
     "vitest": "catalog:"
   },
   "nx": {

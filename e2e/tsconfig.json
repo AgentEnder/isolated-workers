@@ -4,5 +4,7 @@
     "outDir": "./dist",
     "rootDir": "."
   },
+  "include": ["**/*.ts", "**/*.test.ts"],
+  "exclude": ["node_modules", "dist", "vitest.config.ts"],
   "references": []
 }
