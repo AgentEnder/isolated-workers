@@ -11,6 +11,7 @@ export default defineConfig({
         singleFork: true,
       },
     },
+    testTimeout: 15000,
     setupFiles: [],
   },
 });

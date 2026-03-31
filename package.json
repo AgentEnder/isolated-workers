@@ -9,10 +9,10 @@
   },
   "private": true,
   "devDependencies": {
-    "@functional-examples/documentation": "^0.1.1",
-    "@functional-examples/javascript": "^0.1.1",
-    "@functional-examples/test": "^0.1.1",
-    "@functional-examples/yaml-manifest": "^0.1.1",
+    "@functional-examples/documentation": "^0.1.2",
+    "@functional-examples/javascript": "^0.1.2",
+    "@functional-examples/test": "^0.1.2",
+    "@functional-examples/yaml-manifest": "^0.1.2",
     "@nx/eslint": "catalog:",
     "@nx/eslint-plugin": "catalog:",
     "@nx/js": "catalog:",
@@ -21,14 +21,14 @@
     "@typescript-eslint/eslint-plugin": "catalog:",
     "@typescript-eslint/parser": "catalog:",
     "eslint": "catalog:",
-    "functional-examples": "^0.1.1",
+    "functional-examples": "^0.1.2",
     "nx": "catalog:",
     "nx-github-pages": "catalog:",
     "prettier": "catalog:",
-    "rehype-typedoc": "^0.1.0",
+    "rehype-typedoc": "^0.2.0",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "vike-plugin-typedoc": "^0.1.0"
+    "vike-plugin-typedoc": "^0.2.0"
   },
   "nx": {
     "includedScripts": []
