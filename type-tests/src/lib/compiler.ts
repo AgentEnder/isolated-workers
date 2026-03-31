@@ -43,6 +43,14 @@ function findProjectRoot(): string {
 
 const projectRoot = findProjectRoot();
 
+/**
+ * Normalize a path to use forward slashes (for cross-platform comparison).
+ * TypeScript's compiler API may pass paths with either separator style.
+ */
+function normalizePath(p: string): string {
+  return p.replace(/\\/g, '/');
+}
+
 // Resolve paths to isolated-workers package
 const isolatedWorkersRoot = path.join(
   projectRoot,
@@ -63,11 +71,16 @@ export function loadFixture(fixturePath: string): {
   getTypeOfSymbol: (symbolName: string) => ts.Type | undefined;
   getSymbolAtLocation: (node: ts.Node) => ts.Symbol | undefined;
 } {
-  const fullPath = path.resolve(__dirname, '../__fixtures__', fixturePath);
+  const fullPath = normalizePath(
+    path.resolve(__dirname, '../__fixtures__', fixturePath)
+  );
 
   if (!fs.existsSync(fullPath)) {
     throw new Error(`Fixture file not found: ${fullPath}`);
   }
+
+  const normalizedIndex = normalizePath(isolatedWorkersIndex);
+  const normalizedRoot = normalizePath(isolatedWorkersRoot);
 
   const compilerOptions: ts.CompilerOptions = {
     strict: true,
@@ -77,12 +90,12 @@ export function loadFixture(fixturePath: string): {
     skipLibCheck: true,
     noEmit: true,
     paths: {
-      'isolated-workers': [isolatedWorkersIndex],
+      'isolated-workers': [normalizedIndex],
     },
-    baseUrl: process.cwd(),
+    baseUrl: normalizePath(process.cwd()),
   };
 
-  // Read fixture file content
+  // Read fixture file content — all Map keys use normalized (forward-slash) paths
   const fileContents = new Map<string, string>();
   const fixtureContent = fs.readFileSync(fullPath, 'utf-8');
   fileContents.set(fullPath, fixtureContent);
@@ -91,17 +104,17 @@ export function loadFixture(fixturePath: string): {
   function readDeclarationFiles(dir: string): void {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
+      const entryPath = normalizePath(path.join(dir, entry.name));
       if (entry.isDirectory()) {
-        readDeclarationFiles(fullPath);
+        readDeclarationFiles(entryPath);
       } else if (entry.name.endsWith('.d.ts')) {
-        fileContents.set(fullPath, fs.readFileSync(fullPath, 'utf-8'));
+        fileContents.set(entryPath, fs.readFileSync(entryPath, 'utf-8'));
       }
     }
   }
-  readDeclarationFiles(isolatedWorkersRoot);
+  readDeclarationFiles(normalizedRoot);
 
-  // Create source files
+  // Create source files — all Map keys use normalized paths
   const sourceFiles = new Map<string, ts.SourceFile>();
   const fixtureSourceFile = ts.createSourceFile(
     fullPath,
@@ -130,20 +143,21 @@ export function loadFixture(fixturePath: string): {
   const resolveDeclarationFile = (
     requestedPath: string
   ): string | undefined => {
-    if (requestedPath.endsWith('.d.ts')) {
-      return fileContents.has(requestedPath) ? requestedPath : undefined;
+    const normalized = normalizePath(requestedPath);
+    if (normalized.endsWith('.d.ts')) {
+      return fileContents.has(normalized) ? normalized : undefined;
     }
-    if (requestedPath.endsWith('.js')) {
-      const dtsPath = requestedPath.slice(0, -3) + '.d.ts';
+    if (normalized.endsWith('.js')) {
+      const dtsPath = normalized.slice(0, -3) + '.d.ts';
       if (fileContents.has(dtsPath)) {
         return dtsPath;
       }
     }
-    const withDts = requestedPath + '.d.ts';
+    const withDts = normalized + '.d.ts';
     if (fileContents.has(withDts)) {
       return withDts;
     }
-    const withIndex = path.join(requestedPath, 'index.d.ts');
+    const withIndex = normalizePath(path.join(normalized, 'index.d.ts'));
     if (fileContents.has(withIndex)) {
       return withIndex;
     }
@@ -153,49 +167,52 @@ export function loadFixture(fixturePath: string): {
   const compilerHost: ts.CompilerHost = {
     ...defaultCompilerHost,
     getSourceFile: (name, target) => {
-      if (sourceFiles.has(name)) {
-        return sourceFiles.get(name);
+      const normalized = normalizePath(name);
+      if (sourceFiles.has(normalized)) {
+        return sourceFiles.get(normalized);
       }
-      const resolvedPath = resolveDeclarationFile(name);
+      const resolvedPath = resolveDeclarationFile(normalized);
       if (resolvedPath && sourceFiles.has(resolvedPath)) {
         return sourceFiles.get(resolvedPath);
       }
       return defaultCompilerHost.getSourceFile(name, target);
     },
     readFile: (fileName) => {
-      if (fileContents.has(fileName)) {
-        return fileContents.get(fileName) as string;
+      const normalized = normalizePath(fileName);
+      if (fileContents.has(normalized)) {
+        return fileContents.get(normalized) as string;
       }
-      const resolvedPath = resolveDeclarationFile(fileName);
+      const resolvedPath = resolveDeclarationFile(normalized);
       if (resolvedPath && fileContents.has(resolvedPath)) {
         return fileContents.get(resolvedPath) as string;
       }
       return defaultCompilerHost.readFile(fileName);
     },
     fileExists: (fileName) => {
-      if (sourceFiles.has(fileName)) return true;
-      if (fileContents.has(fileName)) return true;
-      const resolvedPath = resolveDeclarationFile(fileName);
+      const normalized = normalizePath(fileName);
+      if (sourceFiles.has(normalized)) return true;
+      if (fileContents.has(normalized)) return true;
+      const resolvedPath = resolveDeclarationFile(normalized);
       if (resolvedPath && fileContents.has(resolvedPath)) {
         return true;
       }
       return defaultCompilerHost.fileExists(fileName);
     },
     resolveModuleNames: (moduleNames, containingFile) => {
+      const normalizedContaining = normalizePath(containingFile);
       return moduleNames.map((moduleName) => {
         if (moduleName === 'isolated-workers') {
           return {
-            resolvedFileName: isolatedWorkersIndex,
+            resolvedFileName: normalizedIndex,
             isExternalLibraryImport: false,
           };
         }
         if (
-          containingFile.startsWith(isolatedWorkersRoot) &&
+          normalizedContaining.startsWith(normalizedRoot) &&
           moduleName.startsWith('.')
         ) {
-          const resolved = path.resolve(
-            path.dirname(containingFile),
-            moduleName
+          const resolved = normalizePath(
+            path.resolve(path.dirname(containingFile), moduleName)
           );
           let finalPath = resolved;
           if (moduleName.endsWith('.js')) {
@@ -208,7 +225,9 @@ export function loadFixture(fixturePath: string): {
             if (fileContents.has(dtsPath)) {
               finalPath = dtsPath;
             } else {
-              const indexPath = path.join(resolved, 'index.d.ts');
+              const indexPath = normalizePath(
+                path.join(resolved, 'index.d.ts')
+              );
               if (fileContents.has(indexPath)) {
                 finalPath = indexPath;
               }
@@ -288,6 +307,9 @@ export function createTestProgram(
   sourceFile: ts.SourceFile;
   typeChecker: ts.TypeChecker;
 } {
+  const normalizedIndex = normalizePath(isolatedWorkersIndex);
+  const normalizedRoot = normalizePath(isolatedWorkersRoot);
+
   const compilerOptions: ts.CompilerOptions = {
     strict: true,
     target: ts.ScriptTarget.ES2022,
@@ -296,17 +318,17 @@ export function createTestProgram(
     skipLibCheck: true,
     noEmit: true,
     paths: {
-      'isolated-workers': [isolatedWorkersIndex],
+      'isolated-workers': [normalizedIndex],
     },
-    baseUrl: process.cwd(),
+    baseUrl: normalizePath(process.cwd()),
   };
 
-  // Read all declaration files upfront
+  // Read all declaration files upfront — all Map keys use normalized (forward-slash) paths
   const fileContents = new Map<string, string>();
 
   if (fs.existsSync(isolatedWorkersIndex)) {
     fileContents.set(
-      isolatedWorkersIndex,
+      normalizedIndex,
       fs.readFileSync(isolatedWorkersIndex, 'utf-8')
     );
   }
@@ -314,15 +336,15 @@ export function createTestProgram(
   function readDeclarationFiles(dir: string): void {
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
+      const entryPath = normalizePath(path.join(dir, entry.name));
       if (entry.isDirectory()) {
-        readDeclarationFiles(fullPath);
+        readDeclarationFiles(entryPath);
       } else if (entry.name.endsWith('.d.ts')) {
-        fileContents.set(fullPath, fs.readFileSync(fullPath, 'utf-8'));
+        fileContents.set(entryPath, fs.readFileSync(entryPath, 'utf-8'));
       }
     }
   }
-  readDeclarationFiles(isolatedWorkersRoot);
+  readDeclarationFiles(normalizedRoot);
 
   const sourceFiles = new Map<string, ts.SourceFile>();
   const testSourceFile = ts.createSourceFile(
@@ -350,20 +372,21 @@ export function createTestProgram(
   const resolveDeclarationFile = (
     requestedPath: string
   ): string | undefined => {
-    if (requestedPath.endsWith('.d.ts')) {
-      return fileContents.has(requestedPath) ? requestedPath : undefined;
+    const normalized = normalizePath(requestedPath);
+    if (normalized.endsWith('.d.ts')) {
+      return fileContents.has(normalized) ? normalized : undefined;
     }
-    if (requestedPath.endsWith('.js')) {
-      const dtsPath = requestedPath.slice(0, -3) + '.d.ts';
+    if (normalized.endsWith('.js')) {
+      const dtsPath = normalized.slice(0, -3) + '.d.ts';
       if (fileContents.has(dtsPath)) {
         return dtsPath;
       }
     }
-    const withDts = requestedPath + '.d.ts';
+    const withDts = normalized + '.d.ts';
     if (fileContents.has(withDts)) {
       return withDts;
     }
-    const withIndex = path.join(requestedPath, 'index.d.ts');
+    const withIndex = normalizePath(path.join(normalized, 'index.d.ts'));
     if (fileContents.has(withIndex)) {
       return withIndex;
     }
@@ -373,49 +396,52 @@ export function createTestProgram(
   const compilerHost: ts.CompilerHost = {
     ...defaultCompilerHost,
     getSourceFile: (name, target) => {
-      if (sourceFiles.has(name)) {
-        return sourceFiles.get(name);
+      const normalized = normalizePath(name);
+      if (sourceFiles.has(normalized)) {
+        return sourceFiles.get(normalized);
       }
-      const resolvedPath = resolveDeclarationFile(name);
+      const resolvedPath = resolveDeclarationFile(normalized);
       if (resolvedPath && sourceFiles.has(resolvedPath)) {
         return sourceFiles.get(resolvedPath);
       }
       return defaultCompilerHost.getSourceFile(name, target);
     },
     readFile: (fileName) => {
-      if (fileContents.has(fileName)) {
-        return fileContents.get(fileName) as string;
+      const normalized = normalizePath(fileName);
+      if (fileContents.has(normalized)) {
+        return fileContents.get(normalized) as string;
       }
-      const resolvedPath = resolveDeclarationFile(fileName);
+      const resolvedPath = resolveDeclarationFile(normalized);
       if (resolvedPath && fileContents.has(resolvedPath)) {
         return fileContents.get(resolvedPath) as string;
       }
       return defaultCompilerHost.readFile(fileName);
     },
     fileExists: (fileName) => {
-      if (sourceFiles.has(fileName)) return true;
-      if (fileContents.has(fileName)) return true;
-      const resolvedPath = resolveDeclarationFile(fileName);
+      const normalized = normalizePath(fileName);
+      if (sourceFiles.has(normalized)) return true;
+      if (fileContents.has(normalized)) return true;
+      const resolvedPath = resolveDeclarationFile(normalized);
       if (resolvedPath && fileContents.has(resolvedPath)) {
         return true;
       }
       return defaultCompilerHost.fileExists(fileName);
     },
     resolveModuleNames: (moduleNames, containingFile) => {
+      const normalizedContaining = normalizePath(containingFile);
       return moduleNames.map((moduleName) => {
         if (moduleName === 'isolated-workers') {
           return {
-            resolvedFileName: isolatedWorkersIndex,
+            resolvedFileName: normalizedIndex,
             isExternalLibraryImport: false,
           };
         }
         if (
-          containingFile.startsWith(isolatedWorkersRoot) &&
+          normalizedContaining.startsWith(normalizedRoot) &&
           moduleName.startsWith('.')
         ) {
-          const resolved = path.resolve(
-            path.dirname(containingFile),
-            moduleName
+          const resolved = normalizePath(
+            path.resolve(path.dirname(containingFile), moduleName)
           );
           let finalPath = resolved;
           if (moduleName.endsWith('.js')) {
@@ -428,7 +454,9 @@ export function createTestProgram(
             if (fileContents.has(dtsPath)) {
               finalPath = dtsPath;
             } else {
-              const indexPath = path.join(resolved, 'index.d.ts');
+              const indexPath = normalizePath(
+                path.join(resolved, 'index.d.ts')
+              );
               if (fileContents.has(indexPath)) {
                 finalPath = indexPath;
               }

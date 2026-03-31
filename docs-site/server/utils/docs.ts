@@ -52,8 +52,8 @@ function filePathToUrlPath(filePath: string, docsRoot: string): string {
   // Get relative path from docs root
   const relative = path.relative(docsRoot, filePath);
 
-  // Remove .md extension
-  let urlPath = relative.replace(/\.md$/, '');
+  // Remove .md extension and normalize to forward slashes (URL paths are always posix)
+  let urlPath = relative.replace(/\.md$/, '').replace(/\\/g, '/');
 
   // Handle index files (no trailing slash to match Vike routes):
   // - 'index' (root) -> '/docs'
